@@ -1,0 +1,388 @@
+{
+  "account_id": "SYNTHETIC-DEMO",
+  "client_id": "00000000000000000000000000000000",
+  "api_mode": "development",
+  "created_at": "2026-09-01T12:00:00Z",
+  "status": "completed synthetic example",
+  "errors": [],
+  "playlists": [
+    {
+      "exported": true,
+      "metadata": {
+        "id": "Chill",
+        "name": "Chill",
+        "snapshot_id": "demo-1"
+      }
+    },
+    {
+      "exported": true,
+      "metadata": {
+        "id": "Festival",
+        "name": "Festival",
+        "snapshot_id": "demo-1"
+      }
+    },
+    {
+      "exported": true,
+      "metadata": {
+        "id": "AllLeaks",
+        "name": "AllLeaks",
+        "snapshot_id": "demo-1"
+      }
+    }
+  ],
+  "occurrences": [
+    {
+      "source": "Chill",
+      "source_name": "Chill",
+      "position": 0,
+      "returned_id": "AAAAAAAAAAAAAAAAAAAAAA",
+      "original_id": null,
+      "returned_uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Moonrise",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        "DDDDDDDDDDDDDDDDDDDDDD"
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": false,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": "AAAAAAAAAAAAAAAAAAAAAA",
+          "uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+          "name": "Moonrise",
+          "is_local": false,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": "DDDDDDDDDDDDDDDDDDDDDD",
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    },
+    {
+      "source": "Chill",
+      "source_name": "Chill",
+      "position": 1,
+      "returned_id": "BBBBBBBBBBBBBBBBBBBBBB",
+      "original_id": null,
+      "returned_uri": "spotify:track:BBBBBBBBBBBBBBBBBBBBBB",
+      "title": "Harbor",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        "DDDDDDDDDDDDDDDDDDDDDD"
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": false,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": "BBBBBBBBBBBBBBBBBBBBBB",
+          "uri": "spotify:track:BBBBBBBBBBBBBBBBBBBBBB",
+          "name": "Harbor",
+          "is_local": false,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": "DDDDDDDDDDDDDDDDDDDDDD",
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    },
+    {
+      "source": "Chill",
+      "source_name": "Chill",
+      "position": 2,
+      "returned_id": "AAAAAAAAAAAAAAAAAAAAAA",
+      "original_id": null,
+      "returned_uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Moonrise",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        "DDDDDDDDDDDDDDDDDDDDDD"
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": false,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": "AAAAAAAAAAAAAAAAAAAAAA",
+          "uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+          "name": "Moonrise",
+          "is_local": false,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": "DDDDDDDDDDDDDDDDDDDDDD",
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    },
+    {
+      "source": "Festival",
+      "source_name": "Festival",
+      "position": 0,
+      "returned_id": "AAAAAAAAAAAAAAAAAAAAAA",
+      "original_id": null,
+      "returned_uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Moonrise",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        "DDDDDDDDDDDDDDDDDDDDDD"
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": false,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": "AAAAAAAAAAAAAAAAAAAAAA",
+          "uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+          "name": "Moonrise",
+          "is_local": false,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": "DDDDDDDDDDDDDDDDDDDDDD",
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    },
+    {
+      "source": "Festival",
+      "source_name": "Festival",
+      "position": 1,
+      "returned_id": "CCCCCCCCCCCCCCCCCCCCCC",
+      "original_id": null,
+      "returned_uri": "spotify:track:CCCCCCCCCCCCCCCCCCCCCC",
+      "title": "Night Drive",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        "DDDDDDDDDDDDDDDDDDDDDD"
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": false,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": "CCCCCCCCCCCCCCCCCCCCCC",
+          "uri": "spotify:track:CCCCCCCCCCCCCCCCCCCCCC",
+          "name": "Night Drive",
+          "is_local": false,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": "DDDDDDDDDDDDDDDDDDDDDD",
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    },
+    {
+      "source": "liked",
+      "source_name": "liked",
+      "position": 0,
+      "returned_id": "AAAAAAAAAAAAAAAAAAAAAA",
+      "original_id": null,
+      "returned_uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+      "title": "Moonrise",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        "DDDDDDDDDDDDDDDDDDDDDD"
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": false,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": "AAAAAAAAAAAAAAAAAAAAAA",
+          "uri": "spotify:track:AAAAAAAAAAAAAAAAAAAAAA",
+          "name": "Moonrise",
+          "is_local": false,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": "DDDDDDDDDDDDDDDDDDDDDD",
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    },
+    {
+      "source": "liked",
+      "source_name": "liked",
+      "position": 1,
+      "returned_id": "BBBBBBBBBBBBBBBBBBBBBB",
+      "original_id": null,
+      "returned_uri": "spotify:track:BBBBBBBBBBBBBBBBBBBBBB",
+      "title": "Harbor",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        "DDDDDDDDDDDDDDDDDDDDDD"
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": false,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": "BBBBBBBBBBBBBBBBBBBBBB",
+          "uri": "spotify:track:BBBBBBBBBBBBBBBBBBBBBB",
+          "name": "Harbor",
+          "is_local": false,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": "DDDDDDDDDDDDDDDDDDDDDD",
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    },
+    {
+      "source": "AllLeaks",
+      "source_name": "AllLeaks",
+      "position": 0,
+      "returned_id": null,
+      "original_id": null,
+      "returned_uri": "spotify:local:Demo+Artist::Warehouse+Edit:180",
+      "title": "Warehouse Edit",
+      "artists": [
+        "Demo Artist"
+      ],
+      "artist_ids": [
+        null
+      ],
+      "isrc": null,
+      "duration_ms": 180000,
+      "explicit": null,
+      "is_playable": null,
+      "is_local": true,
+      "missing": false,
+      "added_at": "2026-09-01T12:00:00Z",
+      "added_by": null,
+      "raw": {
+        "added_at": "2026-09-01T12:00:00Z",
+        "item": {
+          "id": null,
+          "uri": "spotify:local:Demo+Artist::Warehouse+Edit:180",
+          "name": "Warehouse Edit",
+          "is_local": true,
+          "duration_ms": 180000,
+          "artists": [
+            {
+              "id": null,
+              "name": "Demo Artist"
+            }
+          ],
+          "album": {
+            "id": "EEEEEEEEEEEEEEEEEEEEEE",
+            "name": "Synthetic examples",
+            "release_date": "2026-01-01"
+          }
+        }
+      }
+    }
+  ]
+}
