@@ -2,6 +2,8 @@
 
 A local catalog for your Spotify playlists, Liked Songs, and local-track references. This project began as **Spotify Shadow Track Migration**; that repair tool is now one part of the bigger music-library project.
 
+GitHub: [personal-music-library](https://github.com/mrdc1790/personal-music-library). Renamed September 17, 2026. The existing local folder is still named `spotify-shadow-track-migration`; your launchers and paths continue to work there.
+
 **The immediate benefit:** answer “where is this song saved?”, find overlap between playlists, keep historical copies, and export your collection into readable files. You do not need to build a streaming service or install a music server to use these features.
 
 ## Start here — one small step
@@ -58,6 +60,7 @@ python view_catalog.py 'backups/YOUR_DEMO_FOLDER/catalog.sqlite'
 | Artist follows/unfollows and genre enrichment | Planned | Different from the artist playlist counts already exported |
 | Nested folder capture | Planned | This version does not import or reconstruct Spotify folders |
 | Same recording across different releases | Planned | Current queries do not automatically merge different Spotify IDs |
+| Visual smart-playlist recipes | Planned | Smarter Playlists-inspired sources, rules, and result previews; current set queries provide part of the foundation |
 | Symfonium/M3U/Navidrome integration | Planned | No player, server, or audio transfer has been installed |
 | Online uploads / scheduled backups | Not configured | ZIP creation works; no cloud uploader or schedule was enabled |
 
@@ -255,6 +258,7 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 - `mappings.example.json`: unapproved example replacement mapping.
 - [Examples](docs/EXAMPLES.md): exact sample data, commands and expected results.
 - [Master plan](docs/MASTER_PLAN.md): all conversation requirements and priorities.
+- [Smart playlist design](docs/SMART_PLAYLISTS.md): Smarter Playlists inspiration, an example, and what is still planned.
 - [Data dictionary](docs/DATA_MODEL.md): identity, timestamps, tables, and limits.
 - [Backups](docs/BACKUPS.md): metadata versus audio, local versus online copies, recovery.
 - [Migration](docs/MIGRATION.md): advanced write operations and restrictions.

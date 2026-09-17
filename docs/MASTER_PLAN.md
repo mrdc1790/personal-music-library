@@ -1,12 +1,12 @@
 # Master project brief
 
-Updated September 16, 2026. This document consolidates the shared conversations; it is a requirements record, not a claim that every idea is implemented.
+Updated September 17, 2026. This document consolidates the shared conversations; it is a requirements record, not a claim that every idea is implemented.
 
 ## Purpose
 
 Build a durable, searchable personal music catalog. Start with useful Spotify metadata exports and local queries. Use that foundation later for shadow-release repair, local-file auditing, artist history, richer organization, and selected playback/export integrations.
 
-The existing repository name reflects the first repair problem. The umbrella product is now called **Personal Music Library** in its documentation. No folder, repository, account, or chat was renamed.
+The umbrella product is **Personal Music Library**. Its GitHub repository was renamed to [personal-music-library](https://github.com/mrdc1790/personal-music-library) on September 17, 2026. The local folder remains `spotify-shadow-track-migration`, so existing paths and launchers still work. No account or chat was renamed.
 
 ## Why this matters to you
 
@@ -31,6 +31,8 @@ All seven pages below were read through the browser on September 16, 2026. The f
 The original shared answer (private source omitted) was read earlier and motivated the initial migration tool. No further unrelated links were followed and no chats were reorganized.
 
 ## Decisions for this implementation
+
+Additional design reference: the user supplied [Smarter Playlists](https://smarterplaylists.playlistmachinery.com/#editor) on September 17, 2026 and likes its workflow. Its public landing page describes connected components for mixing, filtering, sorting, and scheduling playlists. Only the public page was inspected; its signed-in editor and live Spotify behavior were not tested. [The smart-playlist design](SMART_PLAYLISTS.md) translates this inspiration into a proposed local workflow with explicit implementation boundaries.
 
 1. SQLite is the local working catalog; immutable raw scan JSON remains provenance.
 2. Each scan remains distinguishable. Importing a new scan never replaces prior snapshots.
@@ -77,6 +79,8 @@ Existing migration commands are tested offline, but the example IDs and actual a
 Preserve manually captured nested folder hierarchy, sibling order and source provenance. Later create local static or rule-based collections that can exceed a service's limit. Project these into multiple service playlists only with a reviewed synchronization plan.
 
 Folder names are not a reliable unique identity; use stable local IDs and parent IDs. This version has no folder import or editing command, and CSV exports do not claim to contain a folder tree.
+
+For rule-based collections, prioritize the [Smarter Playlists-inspired recipe interface](SMART_PLAYLISTS.md): select a snapshot, connect sources and set operations, inspect the result, and save a reusable recipe. Start with local previews; scheduling and publishing to Spotify are later, separate capabilities.
 
 ### 6. Symfonium and owned audio — planned
 
