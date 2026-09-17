@@ -100,6 +100,14 @@ class Spotify:
                 with urlopen(req, timeout=45) as response:
                     return json.load(response)
             except HTTPError as error:
+                if error.code in (500, 502, 503, 504):
+                    if attempt < 4:
+                        delay = 2 ** (attempt + 1)
+                        print(f"Spotify server error HTTP {error.code}; retrying this read in {delay} seconds.", flush=True)
+                        time.sleep(delay)
+                        continue
+                    raise RuntimeError(f"Spotify server error HTTP {error.code} reading {urlsplit(url).path} "
+                                       "after retries. Try the audit again later; this does not mean your library is empty.") from None
                 if error.code == 429 and attempt < 4:
                     delay = max(1, int(error.headers.get("Retry-After", "5")))
                     if delay > 60:

@@ -4,8 +4,11 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
+from io import BytesIO
+from urllib.error import HTTPError
 
-from audit import OLD, NEW, occurrence, pages, migration_plan, export_report, stable_playlist, scan
+from audit import OLD, NEW, Spotify, occurrence, pages, migration_plan, export_report, stable_playlist, scan
 
 
 class FakeAPI:
@@ -22,6 +25,34 @@ class FakeAPI:
 
 
 class AuditTests(unittest.TestCase):
+    def test_server_error_retries_same_read_then_succeeds(self):
+        api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})
+        error = HTTPError('https://api.spotify.com/v1/me/tracks', 502, 'Bad Gateway', {}, None)
+        with patch('audit.urlopen', side_effect=[error, BytesIO(b'{"items": [], "total": 0}')]) as request, patch('audit.time.sleep') as sleep:
+            self.assertEqual(api.get('me/tracks')['total'], 0)
+            self.assertEqual(request.call_count, 2)
+            self.assertEqual(request.call_args_list[0].args[0].full_url, request.call_args_list[1].args[0].full_url)
+            self.assertEqual(request.call_args_list[1].args[0].get_method(), 'GET')
+            sleep.assert_called_once_with(2)
+
+    def test_server_errors_stop_after_bounded_retries(self):
+        api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})
+        error = HTTPError('https://api.spotify.com/v1/me/tracks', 503, 'Unavailable', {}, None)
+        with patch('audit.urlopen', side_effect=error) as request, patch('audit.time.sleep') as sleep:
+            with self.assertRaisesRegex(RuntimeError, 'after retries'):
+                api.get('me/tracks')
+            self.assertEqual(request.call_count, 5)
+            self.assertEqual([c.args[0] for c in sleep.call_args_list], [2, 4, 8, 16])
+
+    def test_access_denial_is_not_retried_as_server_error(self):
+        api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})
+        error = HTTPError('https://api.spotify.com/v1/me/tracks', 403, 'Forbidden', {}, None)
+        with patch('audit.urlopen', side_effect=error) as request, patch('audit.time.sleep') as sleep:
+            with self.assertRaisesRegex(RuntimeError, 'HTTP 403'):
+                api.get('me/tracks')
+            self.assertEqual(request.call_count, 1)
+            sleep.assert_not_called()
+
     def test_missing_original_id_is_never_invented(self):
         row = occurrence('p', 'P', 0, {'item': {'id': NEW, 'name': 'Song'}})
         self.assertIsNone(row['original_id'])

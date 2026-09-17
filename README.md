@@ -246,6 +246,7 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 | Development Mode migration blocker | Catalog features can still work; automatic repair cannot safely infer hidden original IDs |
 | Local track found in export but unavailable on phone | The reference is present; this does not establish where its audio exists or phone playback state |
 | Spotify login/rate-limit/access failure | Preserve partial exports, inspect the report, and resolve access before treating a scan as complete |
+| Spotify HTTP 500/502/503/504 | Read requests now retry up to four times with short waits. If still failing, retry the audit later. This is not evidence of an empty library or a bad Client ID |
 
 ## Files and more detail
 
@@ -259,6 +260,7 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 - [Examples](docs/EXAMPLES.md): exact sample data, commands and expected results.
 - [Master plan](docs/MASTER_PLAN.md): all conversation requirements and priorities.
 - [Smart playlist design](docs/SMART_PLAYLISTS.md): Smarter Playlists inspiration, an example, and what is still planned.
+- [What you can do today](docs/CURRENT_CAPABILITIES.md): browsing, duplicates, relinking, local audio, Symfonium, and the 10k limit.
 - [Data dictionary](docs/DATA_MODEL.md): identity, timestamps, tables, and limits.
 - [Backups](docs/BACKUPS.md): metadata versus audio, local versus online copies, recovery.
 - [Migration](docs/MIGRATION.md): advanced write operations and restrictions.
@@ -269,4 +271,4 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 python -m unittest -v
 ```
 
-34 tests passed on September 16, 2026. Coverage includes snapshot history, incomplete exports, duplicate set semantics, CSV formula escaping, backup/restore integrity, and the previous migration tests. The offline walkthrough also successfully restored its backup. No large real-library benchmark, live Spotify test, phone audit, or cloud upload has been performed.
+37 tests passed on September 17, 2026. Coverage includes snapshot history, incomplete exports, duplicate set semantics, CSV formula escaping, backup/restore integrity, bounded server-error retries, and the previous migration tests. The offline walkthrough also successfully restored its backup. The first live audit attempt stopped on HTTP 502 before exporting any songs; successful live scanning and repair remain unvalidated. No large real-library benchmark, phone audit, or cloud upload has been performed.

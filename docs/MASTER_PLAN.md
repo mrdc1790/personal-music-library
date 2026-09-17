@@ -32,6 +32,10 @@ The original shared answer (private source omitted) was read earlier and motivat
 
 ## Decisions for this implementation
 
+The Spotify alt app idea Google Doc (private source omitted) was read on September 17, 2026. It reinforces the combined metadata catalog, local audio, playlist overlap, DJ enrichment, discovery, and multi-provider vision. Its embedded prior assistant answer is a proposal, not validated implementation or proof of feasibility. In particular, a local database does not supply Spotify audio, remove Spotify's playlist limit, reproduce Spotify Connect, or guarantee unlimited performance. The owned-audio player route depends on actually having the files and matching them correctly.
+
+Latest user priority: the 10k Spotify playlist limit is the main remaining pain point. After a successful real import, prioritize playlist size/overlap/duplicate visibility and a design for one large local collection with multiple bounded Spotify outputs. The existing milestone numbers group work; they do not require finishing artist enrichment before addressing this priority. See [current capabilities and practical boundaries](CURRENT_CAPABILITIES.md).
+
 Additional design reference: the user supplied [Smarter Playlists](https://smarterplaylists.playlistmachinery.com/#editor) on September 17, 2026 and likes its workflow. Its public landing page describes connected components for mixing, filtering, sorting, and scheduling playlists. Only the public page was inspected; its signed-in editor and live Spotify behavior were not tested. [The smart-playlist design](SMART_PLAYLISTS.md) translates this inspiration into a proposed local workflow with explicit implementation boundaries.
 
 1. SQLite is the local working catalog; immutable raw scan JSON remains provenance.
