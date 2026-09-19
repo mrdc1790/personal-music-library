@@ -46,6 +46,8 @@ Next step: rerun `Start audit.cmd`, complete sign-in, and check the report's sta
 
 ## Large audit memory fix — September 19
 
+Further resilience update: 44 tests now pass. A paginated read that exhausts server-error retries can fall back once from a larger page to 10 entries at the same offset. Persistent Liked Songs server failures no longer prevent attempting playlists. The explicit `liked_exported` field distinguishes unread likes from an empty collection; the catalog importer honors it. Failed partial Liked Songs rows are rolled back rather than represented as a complete source. Smaller pages may help but have not yet been validated against this account's live 502 failures. No automatic scan resume is implemented.
+
 The September 18 run's saved SQLite checkpoint contains [private count] placements and metadata for 148 successfully exported playlists. Its status is still incomplete. The snapshot JSON is approximately 1 GB, with an empty temporary JSON file left by the interrupted export. This supports excessive export memory use as a likely cause; the exact traceback was not available during diagnosis.
 
 The audit now stores completed sources in SQLite instead of keeping the whole library in RAM. Liked Songs pagination streams into a transaction; playlist stability checks still buffer one playlist at a time. Failed source inserts roll back. Each completed source checkpoints metadata, and final JSON/HTML output streams from disk. Existing JSON and SQLite formats are retained. Migration proposals retain lightweight location evidence in memory, so memory use is reduced substantially but not strictly constant for every possible library.

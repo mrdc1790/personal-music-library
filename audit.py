@@ -79,6 +79,10 @@ def authorize(client_id, scopes=SCOPES):
                               redirect_uri=REDIRECT, client_id=client_id, code_verifier=verifier))
 
 
+class SpotifyServerError(RuntimeError):
+    """A read exhausted its bounded retries for transient server failures."""
+
+
 class Spotify:
     def __init__(self, client_id, tokens):
         self.client_id = client_id
@@ -112,7 +116,7 @@ class Spotify:
                         print(f"Spotify HTTP {error.code}: {location}; retry {attempt + 1}/4 in {delay} seconds.", flush=True)
                         time.sleep(delay)
                         continue
-                    raise RuntimeError(f"Spotify server error HTTP {error.code} reading {urlsplit(url).path} "
+                    raise SpotifyServerError(f"Spotify server error HTTP {error.code} reading {location} "
                                        "after retries. Try the audit again later; this does not mean your library is empty.") from None
                 if error.code == 429 and attempt < 4:
                     delay = max(1, int(error.headers.get("Retry-After", "5")))
@@ -139,7 +143,17 @@ def iter_pages(api, path):
         if path in seen:
             raise RuntimeError("Pagination repeated a page; scan is incomplete.")
         seen.add(path)
-        page = api.get(path)
+        try:
+            page = api.get(path)
+        except SpotifyServerError:
+            parsed = urlsplit(path)
+            query = parse_qs(parsed.query, keep_blank_values=True)
+            if int(query.get("limit", ["0"])[0]) <= 10:
+                raise
+            query["limit"] = ["10"]
+            path = parsed._replace(query=urlencode(query, doseq=True)).geturl()
+            print(f"{label}: trying 10 entries per page at the same offset; no entries skipped.", flush=True)
+            continue
         if not isinstance(page.get("items"), list):
             raise RuntimeError("Spotify omitted the items array; cannot call this a complete export.")
         if expected is None:
@@ -290,13 +304,18 @@ def scan(api, folder, api_mode="development"):
     folder.mkdir(parents=True, exist_ok=False)
     snapshot = dict(created_at=datetime.now(timezone.utc).isoformat(), status="incomplete",
                     occurrences=DiskRows(folder / "library.sqlite"), playlists=[], errors=[], track_checks={},
-                    api_mode=api_mode, client_id=getattr(api, "client_id", None))
+                    api_mode=api_mode, liked_exported=False, client_id=getattr(api, "client_id", None))
     try:
         me = api.get("me")
         snapshot["account_id"] = me.get("account_id", me.get("id"))
         print("Backing up Liked Songs...", flush=True)
-        liked = iter_pages(api, "me/tracks?limit=50&market=from_token")
-        snapshot["occurrences"].extend(occurrence("liked", "Liked Songs", i, x) for i, x in enumerate(liked))
+        try:
+            liked = iter_pages(api, "me/tracks?limit=50&market=from_token")
+            snapshot["occurrences"].extend(occurrence("liked", "Liked Songs", i, x) for i, x in enumerate(liked))
+            snapshot["liked_exported"] = True
+        except SpotifyServerError as error:
+            snapshot["errors"].append("Liked Songs not exported: " + str(error))
+            print("Liked Songs could not be completed. Continuing to playlists; this backup will be partial.", flush=True)
         export_report(folder, snapshot, checkpoint_only=True)
         playlists = pages(api, "me/playlists?limit=50")
         for p in playlists:

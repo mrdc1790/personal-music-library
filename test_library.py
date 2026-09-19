@@ -27,6 +27,17 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(lib.rows(self.db, self.a)), 8)
         self.assertEqual(len(lib.rows(self.db, b)), 7)
 
+    def test_partial_scan_with_failed_likes_is_unknown_not_empty(self):
+        partial = deepcopy(self.before)
+        partial['status'] = 'partial'
+        partial['liked_exported'] = False
+        partial['occurrences'] = [r for r in partial['occurrences'] if r['source'] != 'liked']
+        sid = lib.import_snapshot(self.db, partial, 'failed likes')
+        coverage = {p['source']: p['exported'] for p in lib.sources(self.db, sid)}
+        self.assertEqual(coverage['liked'], 0)
+        with self.assertRaisesRegex(ValueError, 'not exported'):
+            lib.set_query(self.db, sid, 'intersection', ['liked', 'Chill'])
+
     def test_set_operations_and_reverse_lookup_retain_duplicate_evidence(self):
         shared = lib.set_query(self.db, self.a, "intersection", ["Chill", "Festival"])
         self.assertEqual([r["title"] for r in shared], ["Moonrise"])

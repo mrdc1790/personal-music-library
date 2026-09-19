@@ -248,6 +248,7 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 | Spotify login/rate-limit/access failure | Preserve partial exports, inspect the report, and resolve access before treating a scan as complete |
 | Spotify HTTP 500/502/503/504 | Read requests now retry up to four times with short waits. If still failing, retry the audit later. This is not evidence of an empty library or a bad Client ID |
 | Many retries returning to 2 seconds | Each page has its own retry budget. A reset usually means the previous read succeeded. New runs display received-entry counts, elapsed time, the failing page offset, and recovery messages. many likes require about many successful paginated reads. Updating the script does not update an already running process; do not restart a progressing scan just for the new messages. |
+| A page exhausts server-error retries | The paginator tries the same offset with 10 entries instead of 50, then follows Spotify's next-page links. It never skips entries. If Liked Songs still fails with server errors, the audit attempts playlists and marks the backup partial with `liked_exported: false`. Permission and rate-limit failures do not trigger smaller-page fallback. |
 | MemoryError during audit | Updated September 19: completed sources are stored in SQLite, and final JSON/HTML are streamed to disk. Restart `Start audit.cmd` to use the fix. A fresh run creates a new folder; automatic resume is not implemented. Prior completed SQLite checkpoints remain available. |
 
 ## Files and more detail

@@ -9,7 +9,7 @@ from unittest.mock import patch
 from io import BytesIO
 from urllib.error import HTTPError
 
-from audit import OLD, NEW, Spotify, DiskRows, occurrence, pages, migration_plan, export_report, stable_playlist, scan
+from audit import OLD, NEW, Spotify, SpotifyServerError, DiskRows, occurrence, pages, migration_plan, export_report, stable_playlist, scan
 
 
 class FakeAPI:
@@ -26,6 +26,40 @@ class FakeAPI:
 
 
 class AuditTests(unittest.TestCase):
+    def test_smaller_page_fallback_keeps_offset_and_every_entry(self):
+        api = FakeAPI({'one?limit=50': {'items': [1], 'total': 3, 'next': 'one?limit=50&offset=1'},
+            'one?limit=50&offset=1': SpotifyServerError('502'),
+            'one?limit=10&offset=1': {'items': [2], 'total': 3, 'next': 'one?limit=10&offset=2'},
+            'one?limit=10&offset=2': {'items': [3], 'total': 3}})
+        self.assertEqual(pages(api, 'one?limit=50'), [1, 2, 3])
+
+    def test_smaller_page_failure_stops_and_access_denial_does_not_fallback(self):
+        with self.assertRaises(SpotifyServerError):
+            pages(FakeAPI({'one?limit=50': SpotifyServerError('502'),
+                          'one?limit=10': SpotifyServerError('502')}), 'one?limit=50')
+        with self.assertRaisesRegex(RuntimeError, '403'):
+            pages(FakeAPI({'one?limit=50': RuntimeError('403')}), 'one?limit=50')
+
+    def test_liked_server_failure_continues_playlists_without_false_coverage(self):
+        api = FakeAPI({'me': {'id': 'me'},
+            'me/tracks?limit=50&market=from_token': {'items': [{'track': {'id': OLD}}], 'total': 2,
+                'next': 'me/tracks?limit=50&offset=1'},
+            'me/tracks?limit=50&offset=1': SpotifyServerError('502'),
+            'me/tracks?limit=10&offset=1': SpotifyServerError('502'),
+            'me/playlists?limit=50': {'items': [{'id': 'p', 'name': 'P'}], 'total': 1},
+            'playlists/p': {'id': 'p', 'snapshot_id': 'same'},
+            'playlists/p/items?limit=50&market=from_token': {'items': [{'track': {'id': NEW}}], 'total': 1},
+            f'tracks/{OLD}?market=from_token': {'id': OLD},
+            f'tracks/{NEW}?market=from_token': {'id': NEW}})
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory) / 'run'
+            result = scan(api, folder)
+            self.assertEqual(result['status'], 'partial')
+            self.assertFalse(result['liked_exported'])
+            self.assertTrue(result['playlists'][0]['exported'])
+            self.assertEqual([r['source'] for r in result['occurrences']], ['p'])
+            self.assertFalse(json.loads((folder / 'snapshot.json').read_text())['liked_exported'])
+
     def test_disk_export_memory_does_not_scale_with_raw_library(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)

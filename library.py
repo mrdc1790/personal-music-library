@@ -95,8 +95,9 @@ def import_snapshot(db, snapshot, label):
     with db:
         sid = db.execute("INSERT INTO snapshots(sha256,label,account_id,created_at,status,raw_json) VALUES (?,?,?,?,?,?)",
             (checksum, label, account, snapshot.get("created_at"), snapshot.get("status", "unknown"), raw)).lastrowid
-        # Liked coverage is only trusted for finished/partial scans; incomplete scans may have failed before likes.
-        liked_complete = snapshot.get("status", "") == "partial" or snapshot.get("status", "").startswith("completed")
+        # New audits explicitly report source coverage; older partial scans reached likes first.
+        legacy_liked_complete = snapshot.get("status", "") == "partial" or snapshot.get("status", "").startswith("completed")
+        liked_complete = snapshot.get("liked_exported", legacy_liked_complete)
         sources = {"liked": ("Liked Songs", int(liked_complete), {})}
         for p in snapshot.get("playlists", []):
             meta = p["metadata"]
