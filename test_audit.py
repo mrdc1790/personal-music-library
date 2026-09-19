@@ -69,12 +69,16 @@ class AuditTests(unittest.TestCase):
     def test_server_error_retries_same_read_then_succeeds(self):
         api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})
         error = HTTPError('https://api.spotify.com/v1/me/tracks', 502, 'Bad Gateway', {}, None)
-        with patch('audit.urlopen', side_effect=[error, BytesIO(b'{"items": [], "total": 0}')]) as request, patch('audit.time.sleep') as sleep:
+        with patch('audit.urlopen', side_effect=[error, BytesIO(b'{"items": [], "total": 0}')]) as request, patch('audit.time.sleep') as sleep, patch('builtins.print') as output:
             self.assertEqual(api.get('me/tracks')['total'], 0)
             self.assertEqual(request.call_count, 2)
             self.assertEqual(request.call_args_list[0].args[0].full_url, request.call_args_list[1].args[0].full_url)
             self.assertEqual(request.call_args_list[1].args[0].get_method(), 'GET')
             sleep.assert_called_once_with(2)
+            messages = ' '.join(str(c.args[0]) for c in output.call_args_list)
+            self.assertIn('offset 0', messages)
+            self.assertIn('retry 1/4', messages)
+            self.assertIn('Read succeeded', messages)
 
     def test_server_errors_stop_after_bounded_retries(self):
         api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})

@@ -89,6 +89,9 @@ class Spotify:
         url = path if path.startswith("https://") else API + path.lstrip("/")
         if not url.startswith(API):
             raise RuntimeError("Refusing an unexpected pagination destination.")
+        parsed = urlsplit(url)
+        offset = parse_qs(parsed.query).get("offset", ["0"])[0]
+        location = f"{parsed.path} (offset {offset})"
         for attempt in range(5):
             if time.monotonic() >= self.expires:
                 refreshed = token_request(dict(grant_type="refresh_token",
@@ -98,12 +101,15 @@ class Spotify:
             req = Request(url, headers={"Authorization": "Bearer " + self.tokens["access_token"]})
             try:
                 with urlopen(req, timeout=45) as response:
-                    return json.load(response)
+                    result = json.load(response)
+                if attempt:
+                    print(f"Read succeeded: {location}; continuing.", flush=True)
+                return result
             except HTTPError as error:
                 if error.code in (500, 502, 503, 504):
                     if attempt < 4:
                         delay = 2 ** (attempt + 1)
-                        print(f"Spotify server error HTTP {error.code}; retrying this read in {delay} seconds.", flush=True)
+                        print(f"Spotify HTTP {error.code}: {location}; retry {attempt + 1}/4 in {delay} seconds.", flush=True)
                         time.sleep(delay)
                         continue
                     raise RuntimeError(f"Spotify server error HTTP {error.code} reading {urlsplit(url).path} "
@@ -126,6 +132,9 @@ class Spotify:
 def iter_pages(api, path):
     seen, count = set(), 0
     expected = None
+    source_path = urlsplit(path).path
+    label = {"me/tracks": "Liked Songs", "me/playlists": "Playlist list"}.get(source_path, source_path)
+    started = time.monotonic()
     while path:
         if path in seen:
             raise RuntimeError("Pagination repeated a page; scan is incomplete.")
@@ -141,6 +150,9 @@ def iter_pages(api, path):
             count += 1
             yield item
         path = page.get("next")
+        total = f"{expected:,}" if isinstance(expected, int) else "unknown total"
+        elapsed = int(time.monotonic() - started)
+        print(f"{label}: read {count:,} / {total} entries ({elapsed // 60}m {elapsed % 60}s).", flush=True)
     if expected is not None and count != expected:
         raise RuntimeError("Export count differs from Spotify's total. Run a fresh scan.")
 
