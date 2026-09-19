@@ -43,3 +43,11 @@ The September 17 attempt ended with `status: incomplete`, zero occurrences, zero
 The read-only client now retries HTTP 500/502/503/504 with waits of 2, 4, 8, and 16 seconds, then reports a server error if it still fails. Access denials are not retried as server errors. Three regression tests cover recovery, exhaustion, and access denial; all 37 tests pass. This improves resilience but cannot guarantee the remote service will recover.
 
 Next step: rerun `Start audit.cmd`, complete sign-in, and check the report's status and errors before importing the new snapshot. Preserve the failed run for diagnosis.
+
+## Large audit memory fix — September 19
+
+The September 18 run's saved SQLite checkpoint contains [private count] placements and metadata for 148 successfully exported playlists. Its status is still incomplete. The snapshot JSON is approximately 1 GB, with an empty temporary JSON file left by the interrupted export. This supports excessive export memory use as a likely cause; the exact traceback was not available during diagnosis.
+
+The audit now stores completed sources in SQLite instead of keeping the whole library in RAM. Liked Songs pagination streams into a transaction; playlist stability checks still buffer one playlist at a time. Failed source inserts roll back. Each completed source checkpoints metadata, and final JSON/HTML output streams from disk. Existing JSON and SQLite formats are retained. Migration proposals retain lightweight location evidence in memory, so memory use is reduced substantially but not strictly constant for every possible library.
+
+All 40 tests pass, including a bounded-memory export, preservation of duplicate/null/local entries, and rollback of interrupted source writes. The previous backup was not modified. Restart the audit for the fix; it starts a new scan, not a resume. This change does not yet make the separate catalog importer or saved HTML viewer suitable for arbitrary-sized snapshots.

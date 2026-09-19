@@ -123,8 +123,8 @@ class Spotify:
         raise RuntimeError("Spotify request retry limit reached.")
 
 
-def pages(api, path):
-    rows, seen = [], set()
+def iter_pages(api, path):
+    seen, count = set(), 0
     expected = None
     while path:
         if path in seen:
@@ -137,11 +137,46 @@ def pages(api, path):
             expected = page.get("total")
         elif page.get("total") != expected:
             raise RuntimeError("Library changed during pagination. Run a fresh scan.")
-        rows.extend(page["items"])
+        for item in page["items"]:
+            count += 1
+            yield item
         path = page.get("next")
-    if expected is not None and len(rows) != expected:
+    if expected is not None and count != expected:
         raise RuntimeError("Export count differs from Spotify's total. Run a fresh scan.")
-    return rows
+
+
+def pages(api, path):
+    return list(iter_pages(api, path))
+
+
+class DiskRows(list):
+    """Replayable JSON list backed by SQLite, with at most one decoded row in RAM.
+
+    list inheritance lets json.dump stream this collection using its list encoder.
+    Never use json.dumps on it: that would assemble the entire output in memory.
+    """
+    def __init__(self, path):
+        self.path = Path(path)
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("CREATE TABLE IF NOT EXISTS occurrences (source TEXT, position INTEGER, returned_id TEXT, original_id TEXT, data TEXT, PRIMARY KEY(source,position))")
+            db.execute("CREATE INDEX IF NOT EXISTS returned_lookup ON occurrences(returned_id)")
+            db.execute("CREATE INDEX IF NOT EXISTS original_lookup ON occurrences(original_id)")
+
+    def __len__(self):
+        with closing(sqlite3.connect(self.path)) as db:
+            return db.execute("SELECT COUNT(*) FROM occurrences").fetchone()[0]
+
+    def __iter__(self):
+        with closing(sqlite3.connect(self.path)) as db:
+            for (data,) in db.execute("SELECT data FROM occurrences ORDER BY rowid"):
+                yield json.loads(data)
+
+    def extend(self, rows):
+        # Commit a complete source only. A pagination failure rolls it back.
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.executemany("INSERT INTO occurrences VALUES (?,?,?,?,?)", (
+                (r["source"], r["position"], r["returned_id"], r["original_id"],
+                 json.dumps(r, ensure_ascii=False)) for r in rows))
 
 
 def occurrence(source, name, position, entry):
@@ -192,30 +227,28 @@ def migration_plan(occurrences):
 
 def write_json(path, value):
     temp = path.with_suffix(path.suffix + ".tmp")
-    temp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
+    with temp.open("w", encoding="utf-8") as stream:
+        json.dump(value, stream, ensure_ascii=False, indent=2)
     temp.replace(path)
 
 
-def export_report(folder, snapshot):
+def export_report(folder, snapshot, checkpoint_only=False):
     rows = snapshot["occurrences"]
-    plan = migration_plan(rows)
-    write_json(folder / "snapshot.json", snapshot)
-    write_json(folder / "migration-plan.json", plan)
     with closing(sqlite3.connect(folder / "library.sqlite")) as db, db:
         db.execute("CREATE TABLE IF NOT EXISTS occurrences (source TEXT, position INTEGER, returned_id TEXT, original_id TEXT, data TEXT, PRIMARY KEY(source,position))")
-        db.execute("DELETE FROM occurrences")
-        db.executemany("INSERT INTO occurrences VALUES (?,?,?,?,?)", [
-            (r["source"], r["position"], r["returned_id"], r["original_id"], json.dumps(r)) for r in rows])
+        if not isinstance(rows, DiskRows):
+            db.execute("DELETE FROM occurrences")
+            db.executemany("INSERT INTO occurrences VALUES (?,?,?,?,?)", (
+                (r["source"], r["position"], r["returned_id"], r["original_id"], json.dumps(r)) for r in rows))
         db.execute("CREATE INDEX IF NOT EXISTS returned_lookup ON occurrences(returned_id)")
         db.execute("CREATE INDEX IF NOT EXISTS original_lookup ON occurrences(original_id)")
         db.execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, data TEXT)")
         db.execute("INSERT OR REPLACE INTO metadata VALUES (?,?)", ("snapshot", json.dumps({k:v for k,v in snapshot.items() if k != "occurrences"})))
+    if checkpoint_only:
+        return
+    write_json(folder / "snapshot.json", snapshot)
+    write_json(folder / "migration-plan.json", migration_plan(rows))
     esc = lambda value: html.escape(str(value if value is not None else "Unknown"))
-    issues = [r for r in rows if r["missing"] or r["is_playable"] is False or r["original_id"] or
-              r["returned_id"] in (OLD, NEW)]
-    table = "".join(f"<tr><td>{esc(r['source_name'])}</td><td>{r['position']+1}</td>"
-                    f"<td>{esc(r['title'])}</td><td>{esc(r['returned_id'])}</td>"
-                    f"<td>{esc(r['original_id'])}</td></tr>" for r in issues)
     errors = "".join(f"<li>{esc(e)}</li>" for e in snapshot["errors"])
     report = f"""<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Spotify library audit</title><style>body{{font:17px system-ui;background:#101916;color:#ecf4ef;max-width:1100px;margin:50px auto;padding:24px}}h1{{font-size:42px}}.note{{background:#22342b;padding:20px;border-radius:12px}}table{{border-collapse:collapse;width:100%;font-size:14px}}td,th{{text-align:left;padding:12px;border-bottom:1px solid #446052;overflow-wrap:anywhere}}code{{overflow-wrap:anywhere}}</style>
@@ -223,38 +256,50 @@ def export_report(folder, snapshot):
 <p>{len(rows)} occurrences exported. Scan status: <strong>{esc(snapshot['status'])}</strong>.</p>
 <div class="note">No Spotify songs or playlists were changed. Original IDs marked Unknown may be hidden by Spotify's API. An empty issue list does not mean your library has no shadowed songs.</div>
 <h2>Items to investigate</h2><p>Positions below start at 1; saved JSON and SQLite positions start at 0. Local files and missing entries stay in the backup.</p>
-<table><thead><tr><th>Location</th><th>Position</th><th>Title</th><th>Returned ID</th><th>Original ID evidence</th></tr></thead><tbody>{table}</tbody></table>
+<table><thead><tr><th>Location</th><th>Position</th><th>Title</th><th>Returned ID</th><th>Original ID evidence</th></tr></thead><tbody>ROW_CONTENT</tbody></table>
 <h2>Scan notes</h2><ul>{errors or '<li>No request errors recorded.</li>'}</ul>
 <p>API snapshots preserve what Spotify returned, not necessarily the original underlying IDs. Liked Songs have no snapshot token; avoid edits during the scan.</p>
 <h2>Next step</h2><p>Review the 2 Busy mapping and confirmed relinks, then use migrate.py plan with a reviewed mappings file. The separate migration command provides apply, resume, and rollback. Development Mode snapshots remain review-only because original IDs can be hidden. This audit never requests write access.</p>
 <p>Files alongside this report: snapshot.json (raw data), library.sqlite (searchable backup), migration-plan.json (proposals).</p></html>"""
-    (folder / "report.html").write_text(report, encoding="utf-8")
+    head, tail = report.split("ROW_CONTENT", 1)
+    temp = folder / "report.html.tmp"
+    with temp.open("w", encoding="utf-8") as stream:
+        stream.write(head)
+        for r in rows:
+            if r["missing"] or r["is_playable"] is False or r["original_id"] or r["returned_id"] in (OLD, NEW):
+                stream.write(f"<tr><td>{esc(r['source_name'])}</td><td>{r['position']+1}</td>"
+                             f"<td>{esc(r['title'])}</td><td>{esc(r['returned_id'])}</td>"
+                             f"<td>{esc(r['original_id'])}</td></tr>")
+        stream.write(tail)
+    temp.replace(folder / "report.html")
 
 
 def scan(api, folder, api_mode="development"):
     folder.mkdir(parents=True, exist_ok=False)
     snapshot = dict(created_at=datetime.now(timezone.utc).isoformat(), status="incomplete",
-                    occurrences=[], playlists=[], errors=[], track_checks={},
+                    occurrences=DiskRows(folder / "library.sqlite"), playlists=[], errors=[], track_checks={},
                     api_mode=api_mode, client_id=getattr(api, "client_id", None))
     try:
         me = api.get("me")
         snapshot["account_id"] = me.get("account_id", me.get("id"))
         print("Backing up Liked Songs...", flush=True)
-        liked = pages(api, "me/tracks?limit=50&market=from_token")
+        liked = iter_pages(api, "me/tracks?limit=50&market=from_token")
         snapshot["occurrences"].extend(occurrence("liked", "Liked Songs", i, x) for i, x in enumerate(liked))
-        export_report(folder, snapshot)
+        export_report(folder, snapshot, checkpoint_only=True)
         playlists = pages(api, "me/playlists?limit=50")
         for p in playlists:
             print("Reading playlist: " + p.get("name", p["id"]), flush=True)
             try:
                 meta, entries = stable_playlist(api, p["id"])
-                snapshot["playlists"].append(dict(metadata=meta, exported=True))
                 snapshot["occurrences"].extend(occurrence(p["id"], p.get("name", p["id"]), i, x)
                                                for i, x in enumerate(entries))
+                snapshot["playlists"].append(dict(metadata=meta, exported=True))
+                del entries
             except RuntimeError as error:
                 snapshot["playlists"].append(dict(metadata=p, exported=False))
                 snapshot["errors"].append(p.get("name", p["id"]) + ": " + str(error))
-            export_report(folder, snapshot)
+            export_report(folder, snapshot, checkpoint_only=True)
+            print(f"Saved {len(snapshot['occurrences']):,} placements to disk.", flush=True)
         for track_id in (OLD, NEW):
             try:
                 snapshot["track_checks"][track_id] = api.get(f"tracks/{track_id}?market=from_token")
@@ -262,9 +307,10 @@ def scan(api, folder, api_mode="development"):
                 snapshot["errors"].append(f"Example track {track_id}: {error}")
         snapshot["status"] = "partial" if snapshot["errors"] else "completed API export; hidden original IDs remain unknown"
     except Exception as error:
-        snapshot["errors"].append(str(error))
+        snapshot["errors"].append(str(error) or type(error).__name__)
         raise
     finally:
+        print("Writing final JSON and HTML exports from the saved database...", flush=True)
         export_report(folder, snapshot)
     return snapshot
 
@@ -285,8 +331,8 @@ def main():
         print("\n" + result["status"] + "\nReport: " + str(folder / "report.html"), flush=True)
         webbrowser.open((folder / "report.html").as_uri())
         return 0 if not result["errors"] else 2
-    except (RuntimeError, OSError, ValueError) as error:
-        print("Stopped: " + str(error))
+    except (RuntimeError, OSError, ValueError, MemoryError) as error:
+        print("Stopped: " + (str(error) or type(error).__name__))
         print("No Spotify changes were made. Any completed backup stages are in " + str(folder))
         return 1
 

@@ -3,12 +3,13 @@ from contextlib import closing
 from pathlib import Path
 import sqlite3
 import tempfile
+import tracemalloc
 import unittest
 from unittest.mock import patch
 from io import BytesIO
 from urllib.error import HTTPError
 
-from audit import OLD, NEW, Spotify, occurrence, pages, migration_plan, export_report, stable_playlist, scan
+from audit import OLD, NEW, Spotify, DiskRows, occurrence, pages, migration_plan, export_report, stable_playlist, scan
 
 
 class FakeAPI:
@@ -25,6 +26,46 @@ class FakeAPI:
 
 
 class AuditTests(unittest.TestCase):
+    def test_disk_export_memory_does_not_scale_with_raw_library(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            tracemalloc.start()
+            try:
+                rows = DiskRows(folder / 'library.sqlite')
+                rows.extend(occurrence('p', 'Playlist', i, {'track': {
+                    'id': 'test', 'name': str(i), 'extra': 'x' * 12000}}) for i in range(2000))
+                snapshot = dict(status='test', occurrences=rows, errors=[])
+                export_report(folder, snapshot)
+                _, peak = tracemalloc.get_traced_memory()
+            finally:
+                tracemalloc.stop()
+            self.assertEqual(len(rows), 2000)
+            self.assertGreater((folder / 'snapshot.json').stat().st_size, 24000000)
+            self.assertLess(peak, 8 * 1024 * 1024)
+            self.assertEqual(sum(1 for _ in rows), 2000)
+
+    def test_disk_source_rolls_back_failed_pagination(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows = DiskRows(Path(directory) / 'library.sqlite')
+            rows.extend([occurrence('saved', 'Saved', 0, {'track': {'id': 'one'}})])
+            def broken():
+                yield occurrence('failed', 'Failed', 0, {'track': {'id': 'two'}})
+                raise RuntimeError('incomplete pagination')
+            with self.assertRaisesRegex(RuntimeError, 'incomplete pagination'):
+                rows.extend(broken())
+            self.assertEqual([r['source'] for r in rows], ['saved'])
+
+    def test_disk_json_preserves_duplicates_null_and_local_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            rows = DiskRows(folder / 'library.sqlite')
+            entries = [{'track': {'id': OLD}}, {'track': {'id': OLD}},
+                       {'track': None}, {'is_local': True, 'track': {'uri': 'spotify:local:a'}}]
+            expected = [occurrence('p', 'P', i, e) for i, e in enumerate(entries)]
+            rows.extend(expected)
+            export_report(folder, dict(status='test', occurrences=rows, errors=[]))
+            self.assertEqual(json.loads((folder / 'snapshot.json').read_text())['occurrences'], expected)
+
     def test_server_error_retries_same_read_then_succeeds(self):
         api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})
         error = HTTPError('https://api.spotify.com/v1/me/tracks', 502, 'Bad Gateway', {}, None)

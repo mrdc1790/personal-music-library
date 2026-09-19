@@ -247,6 +247,7 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 | Local track found in export but unavailable on phone | The reference is present; this does not establish where its audio exists or phone playback state |
 | Spotify login/rate-limit/access failure | Preserve partial exports, inspect the report, and resolve access before treating a scan as complete |
 | Spotify HTTP 500/502/503/504 | Read requests now retry up to four times with short waits. If still failing, retry the audit later. This is not evidence of an empty library or a bad Client ID |
+| MemoryError during audit | Updated September 19: completed sources are stored in SQLite, and final JSON/HTML are streamed to disk. Restart `Start audit.cmd` to use the fix. A fresh run creates a new folder; automatic resume is not implemented. Prior completed SQLite checkpoints remain available. |
 
 ## Files and more detail
 
@@ -271,4 +272,4 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 python -m unittest -v
 ```
 
-37 tests passed on September 17, 2026. Coverage includes snapshot history, incomplete exports, duplicate set semantics, CSV formula escaping, backup/restore integrity, bounded server-error retries, and the previous migration tests. The offline walkthrough also successfully restored its backup. The first live audit attempt stopped on HTTP 502 before exporting any songs; successful live scanning and repair remain unvalidated. No large real-library benchmark, phone audit, or cloud upload has been performed.
+40 tests passed on September 19, 2026. Coverage includes snapshot history, incomplete exports, duplicate set semantics, CSV formula escaping, backup/restore integrity, bounded server-error retries, disk-backed audit exports, failed-source rollback, and the previous migration tests. A synthetic export larger than 24 MB stays below 8 MB of traced Python memory. The offline walkthrough also successfully restored its backup. The September 18 live audit saved [private count] placements across many exported playlists before the reported memory failure; its checkpoint remains incomplete. The new audit memory fix still needs a complete live run. Catalog import, viewer performance at that scale, live repair, phone playback, and cloud uploads remain unvalidated.
