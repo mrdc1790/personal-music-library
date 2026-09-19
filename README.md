@@ -264,6 +264,7 @@ No catalog query triggers a migration. Migration remains blocked without suffici
 - [Master plan](docs/MASTER_PLAN.md): all conversation requirements and priorities.
 - [Smart playlist design](docs/SMART_PLAYLISTS.md): Smarter Playlists inspiration, an example, and what is still planned.
 - [What you can do today](docs/CURRENT_CAPABILITIES.md): browsing, duplicates, relinking, local audio, Symfonium, and the 10k limit.
+- [Count discrepancies and local files](docs/COUNT_RECONCILIATION.md): API versus desktop/phone totals, the [private count] local tracks, and the required reconciliation workflow.
 - [Data dictionary](docs/DATA_MODEL.md): identity, timestamps, tables, and limits.
 - [Backups](docs/BACKUPS.md): metadata versus audio, local versus online copies, recovery.
 - [Migration](docs/MIGRATION.md): advanced write operations and restrictions.
