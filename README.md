@@ -1,5 +1,7 @@
 # Personal Music Library
 
+**Storage update (September 19):** real audits now default to `%LOCALAPPDATA%\PersonalMusicLibrary\backups`; the working catalog defaults to `%LOCALAPPDATA%\PersonalMusicLibrary\catalog.sqlite`. These are outside OneDrive Documents. Examples with explicit relative output paths still write where specified. See [storage and current next steps](docs/STORAGE_AND_NEXT_STEPS.md).
+
 A local catalog for your Spotify playlists, Liked Songs, and local-track references. This project began as **Spotify Shadow Track Migration**; that repair tool is now one part of the bigger music-library project.
 
 GitHub: [personal-music-library](https://github.com/mrdc1790/personal-music-library). Renamed September 17, 2026. The existing local folder is still named `spotify-shadow-track-migration`; your launchers and paths continue to work there.
@@ -108,7 +110,7 @@ Read [the master project brief](docs/MASTER_PLAN.md) for the full consolidation 
 Open PowerShell in this project folder. If necessary:
 
 ```powershell
-Set-Location '%USERPROFILE%\OneDrive\Documents\ChatGPT\spotify-shadow-track-migration'
+Set-Location '%USERPROFILE%\Projects\personal-music-library'
 python --version
 ```
 

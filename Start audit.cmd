@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python audit.py
+python audit.py %*
 pause

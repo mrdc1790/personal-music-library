@@ -1,5 +1,6 @@
 """Snapshot-backed Spotify migrations. Standard library only; Python 3.11+."""
 import argparse
+from storage_paths import data_root
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
@@ -331,7 +332,7 @@ def main():
     scan.add_argument("--client-id", required=True)
     scan.add_argument("--api-mode", choices=["development", "extended"], default="development",
                       help="Actual Spotify app quota mode; extended is not a workaround for hidden IDs")
-    scan.add_argument("--output", type=Path, default=Path("backups"))
+    scan.add_argument("--output", type=Path, default=data_root() / "backups")
     plan = sub.add_parser("plan", help="Offline review plan from a snapshot and mapping file")
     plan.add_argument("--snapshot", type=Path, required=True)
     plan.add_argument("--mappings", type=Path, required=True)

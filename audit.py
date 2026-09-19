@@ -4,6 +4,7 @@ No Spotify library mutation endpoints or write scopes are used.
 Tokens live only in process memory. JSON/SQLite exports contain library data.
 """
 import argparse
+from storage_paths import data_root
 from contextlib import closing
 import base64
 import hashlib
@@ -79,6 +80,10 @@ def authorize(client_id, scopes=SCOPES):
                               redirect_uri=REDIRECT, client_id=client_id, code_verifier=verifier))
 
 
+class SpotifyRateLimit(RuntimeError):
+    """Stop the entire scan when Spotify requires a long cooldown."""
+
+
 class SpotifyServerError(RuntimeError):
     """A read exhausted its bounded retries for transient server failures."""
 
@@ -118,10 +123,10 @@ class Spotify:
                         continue
                     raise SpotifyServerError(f"Spotify server error HTTP {error.code} reading {location} "
                                        "after retries. Try the audit again later; this does not mean your library is empty.") from None
-                if error.code == 429 and attempt < 4:
+                if error.code == 429:
                     delay = max(1, int(error.headers.get("Retry-After", "5")))
-                    if delay > 60:
-                        raise RuntimeError(f"Spotify rate limit: retry in {delay} seconds. Partial backup retained.") from None
+                    if delay > 60 or attempt == 4:
+                        raise SpotifyRateLimit(f"Spotify rate limit: retry in {delay} seconds. Partial backup retained.") from None
                     print(f"Spotify rate limit; waiting {delay} seconds.", flush=True)
                     time.sleep(delay)
                     continue
@@ -326,7 +331,10 @@ def scan(api, folder, api_mode="development"):
                                                for i, x in enumerate(entries))
                 snapshot["playlists"].append(dict(metadata=meta, exported=True))
                 del entries
+            except SpotifyRateLimit:
+                raise
             except RuntimeError as error:
+                print("Playlist not exported: " + str(error), flush=True)
                 snapshot["playlists"].append(dict(metadata=p, exported=False))
                 snapshot["errors"].append(p.get("name", p["id"]) + ": " + str(error))
             export_report(folder, snapshot, checkpoint_only=True)
@@ -334,6 +342,8 @@ def scan(api, folder, api_mode="development"):
         for track_id in (OLD, NEW):
             try:
                 snapshot["track_checks"][track_id] = api.get(f"tracks/{track_id}?market=from_token")
+            except SpotifyRateLimit:
+                raise
             except RuntimeError as error:
                 snapshot["errors"].append(f"Example track {track_id}: {error}")
         snapshot["status"] = "partial" if snapshot["errors"] else "completed API export; hidden original IDs remain unknown"
@@ -349,7 +359,7 @@ def scan(api, folder, api_mode="development"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--client-id", help="Public Spotify app Client ID; never a Client Secret")
-    parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parent / "backups")
+    parser.add_argument("--output", type=Path, default=data_root() / "backups")
     args = parser.parse_args()
     client_id = args.client_id or input("Paste your Spotify app Client ID (not Client Secret): ").strip()
     if len(client_id) != 32 or any(c not in "0123456789abcdefABCDEF" for c in client_id):

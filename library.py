@@ -4,6 +4,7 @@ This module has no network or Spotify mutation code. It stores observed identiti
 matching a URI is not a claim that two releases represent the same recording.
 """
 import argparse
+from storage_paths import data_root
 from collections import Counter, defaultdict
 from contextlib import closing
 import csv
@@ -331,7 +332,7 @@ def restore(archive_path, destination):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--db", type=Path, default=Path("data/catalog.sqlite"))
+    parser.add_argument("--db", type=Path, default=data_root() / "catalog.sqlite")
     sub = parser.add_subparsers(dest="command", required=True)
     imp = sub.add_parser("import", help="Add an audit snapshot without replacing history")
     imp.add_argument("snapshot", type=Path)

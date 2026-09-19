@@ -9,7 +9,7 @@ from unittest.mock import patch
 from io import BytesIO
 from urllib.error import HTTPError
 
-from audit import OLD, NEW, Spotify, SpotifyServerError, DiskRows, occurrence, pages, migration_plan, export_report, stable_playlist, scan
+from audit import OLD, NEW, Spotify, SpotifyRateLimit, SpotifyServerError, DiskRows, occurrence, pages, migration_plan, export_report, stable_playlist, scan
 
 
 class FakeAPI:
@@ -26,6 +26,29 @@ class FakeAPI:
 
 
 class AuditTests(unittest.TestCase):
+    def test_long_rate_limit_stops_without_another_request(self):
+        api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})
+        error = HTTPError('https://api.spotify.com/v1/me/tracks', 429, 'Limited', {'Retry-After': '24000'}, None)
+        with patch('audit.urlopen', side_effect=error) as request, patch('audit.time.sleep') as sleep:
+            with self.assertRaises(SpotifyRateLimit):
+                api.get('me/tracks')
+            self.assertEqual(request.call_count, 1)
+            sleep.assert_not_called()
+
+    def test_playlist_rate_limit_stops_whole_scan_and_preserves_checkpoint(self):
+        api = FakeAPI({'me': {'id': 'me'},
+            'me/tracks?limit=50&market=from_token': {'items': [{'track': {'id': OLD}}], 'total': 1},
+            'me/playlists?limit=50': {'items': [{'id': 'p', 'name': 'P'}, {'id': 'never', 'name': 'Never'}], 'total': 2},
+            'playlists/p': SpotifyRateLimit('retry in 24000 seconds')})
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory) / 'run'
+            with self.assertRaises(SpotifyRateLimit):
+                scan(api, folder)
+            saved = json.loads((folder / 'snapshot.json').read_text())
+            self.assertEqual(len(saved['occurrences']), 1)
+            self.assertEqual(saved['status'], 'incomplete')
+            self.assertIn('24000', saved['errors'][0])
+
     def test_smaller_page_fallback_keeps_offset_and_every_entry(self):
         api = FakeAPI({'one?limit=50': {'items': [1], 'total': 3, 'next': 'one?limit=50&offset=1'},
             'one?limit=50&offset=1': SpotifyServerError('502'),

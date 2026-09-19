@@ -1,5 +1,6 @@
 """Create a searchable, read-only HTML view of a local music catalog. No server required."""
 import argparse
+from storage_paths import data_root
 from contextlib import closing
 import html
 import json
@@ -11,6 +12,9 @@ import library
 
 def default_catalog():
     root = Path(__file__).resolve().parent
+    external = data_root() / 'catalog.sqlite'
+    if external.exists():
+        return external
     real = root / 'data/catalog.sqlite'
     if real.exists():
         return real
