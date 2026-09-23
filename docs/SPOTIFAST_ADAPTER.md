@@ -12,7 +12,17 @@ Spotify explicitly documents that its Web API does not return or create folders:
 
 [Spotifast's own capability documentation](https://spotifast.rocks/what-spotify-allows/) says it reads playlist folders/order from the account rootlist over a librespot session. It documents folder reading, not creating, renaming, or moving Spotify folders. It also documents session-based reads for some playlist contents. This is useful evidence of feasibility, not proof that our adapter is implemented or that this user's installed version exposes an export.
 
-[Its connection documentation](https://spotifast.rocks/how-it-connects/) ties rootlist reads to an authenticated local playback session and describes account-scoped handling. [Cargo.toml](https://github.com/crmne/spotifast/blob/main/Cargo.toml) identifies a librespot fork and playlist4 protobuf parsing. A folder reader will need a deliberate integration; installing a generic library does not automatically add this to our Python catalog. This review checked the published documentation and dependency manifest, not the complete rootlist parser or a live export.
+[Its connection documentation](https://spotifast.rocks/how-it-connects/) ties rootlist reads to an authenticated local playback session and describes account-scoped handling. [Cargo.toml](https://github.com/crmne/spotifast/blob/main/Cargo.toml) identifies a librespot fork and playlist4 protobuf parsing. A folder reader will need a deliberate integration; installing a generic library does not automatically add this to our Python catalog. The source review below checks the actual reader and parser; no live account export was attempted.
+
+## Source verification
+
+Reviewed Spotifast commit `f6ce05b1dd1a9c97cdd1e93999e90f441fec54da` on September 23, 2026:
+
+- [src/player.rs](https://github.com/crmne/spotifast/blob/f6ce05b1dd1a9c97cdd1e93999e90f441fec54da/src/player.rs): `Engine::rootlist` calls `session.spclient().get_rootlist(from, Some(500))`, decodes playlist4 `SelectedListContent`, and collects pages before parsing structure. `RootlistEntry` represents playlist URIs, folder starts with IDs/names, and folder ends. `parse_rootlist` recognizes `spotify:start-group:` and `spotify:end-group:` markers and decodes folder names. This is concrete evidence for a read adapter.
+- The parser is suitable for display but should not be copied unchanged for archival evidence: it ignores unmatched closing markers, discards unsupported URI types, and synthesizes closes for unfinished folders. Our importer should retain raw ordered rows and flag malformed/incomplete structure separately from any repaired display tree.
+- [examples/rootlist_probe.rs](https://github.com/crmne/spotifast/blob/f6ce05b1dd1a9c97cdd1e93999e90f441fec54da/examples/rootlist_probe.rs) is an existing diagnostic example, not a ready catalog export. It uses stored Spotifast playback credentials and prints permission metadata. We inspected its source only; did not execute it or access credentials.
+
+The linked September 23 ChatGPT conversation was read in full. Its useful direction is to make captured data visible (playlist overlap and Saved In browsing), inventory actual audio files, and eventually introduce reviewed recording identities. Rootlist capture complements those steps. Claims that it will recover original relinked IDs remain hypotheses requiring sample evidence.
 
 ## Proposed architecture
 
