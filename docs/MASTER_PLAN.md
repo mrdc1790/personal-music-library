@@ -1,5 +1,7 @@
 # Master project brief
 
+**September 22 implementation update:** [Durable resumable scanning](RESUMABLE_SCANS.md) now checkpoints pages, validates source versions, and enforces saved cooldowns. Liked Songs prefix validation is intentionally more expensive; see the consolidated status table for current boundaries.
+
 Updated September 17, 2026. This document consolidates the shared conversations; it is a requirements record, not a claim that every idea is implemented.
 
 ## Purpose

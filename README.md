@@ -1,5 +1,7 @@
 # Personal Music Library
 
+**September 22: resumable scanning is now the default.** Data now defaults to `%USERPROFILE%\MusicLibraryData` outside OneDrive and the desktop app cache; this supersedes the September 19 AppData default. Use `Start audit.cmd` once for a new run; use `Resume this audit.cmd` inside that run folder after an interruption. [Resume instructions and consolidated feature table](docs/RESUMABLE_SCANS.md). Rate limits pause with a saved cooldown; SQLite is the primary output and large JSON exports are optional. This supersedes older fresh-run-only instructions below.
+
 **Storage update (September 19):** real audits now default to `%LOCALAPPDATA%\PersonalMusicLibrary\backups`; the working catalog defaults to `%LOCALAPPDATA%\PersonalMusicLibrary\catalog.sqlite`. These are outside OneDrive Documents. Examples with explicit relative output paths still write where specified. See [storage and current next steps](docs/STORAGE_AND_NEXT_STEPS.md).
 
 A local catalog for your Spotify playlists, Liked Songs, and local-track references. This project began as **Spotify Shadow Track Migration**; that repair tool is now one part of the bigger music-library project.

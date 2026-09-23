@@ -81,7 +81,12 @@ def authorize(client_id, scopes=SCOPES):
 
 
 class SpotifyRateLimit(RuntimeError):
-    """Stop the entire scan when Spotify requires a long cooldown."""
+    """Stop the entire scan and retain the server's cooldown expiry."""
+    def __init__(self, message, delay=60):
+        super().__init__(message)
+        self.retry_after = delay
+        self.retry_at = time.time() + delay
+
 
 
 class SpotifyServerError(RuntimeError):
@@ -115,6 +120,9 @@ class Spotify:
                     print(f"Read succeeded: {location}; continuing.", flush=True)
                 return result
             except HTTPError as error:
+                if hasattr(self, "audit_event"):
+                    self.audit_event("http_error", endpoint=location, status=error.code, attempt=attempt + 1,
+                                     retry_after=error.headers.get("Retry-After"))
                 if error.code in (500, 502, 503, 504):
                     if attempt < 4:
                         delay = 2 ** (attempt + 1)
@@ -124,12 +132,13 @@ class Spotify:
                     raise SpotifyServerError(f"Spotify server error HTTP {error.code} reading {location} "
                                        "after retries. Try the audit again later; this does not mean your library is empty.") from None
                 if error.code == 429:
-                    delay = max(1, int(error.headers.get("Retry-After", "5")))
-                    if delay > 60 or attempt == 4:
-                        raise SpotifyRateLimit(f"Spotify rate limit: retry in {delay} seconds. Partial backup retained.") from None
-                    print(f"Spotify rate limit; waiting {delay} seconds.", flush=True)
-                    time.sleep(delay)
-                    continue
+                    delay = max(1, int(error.headers.get("Retry-After", "60")))
+                    failure = SpotifyRateLimit(f"HTTP 429 at {location}; retry after {delay} seconds.", delay)
+                    from resumable_audit import cooldown_path
+                    cooldown = cooldown_path(self.client_id)
+                    cooldown.parent.mkdir(parents=True, exist_ok=True)
+                    write_json(cooldown, dict(retry_at=failure.retry_at, endpoint=location, retry_after=delay))
+                    raise failure from None
                 if error.code == 401 and attempt == 0 and "refresh_token" in self.tokens:
                     self.expires = 0
                     continue
@@ -356,7 +365,7 @@ def scan(api, folder, api_mode="development"):
     return snapshot
 
 
-def main():
+def legacy_main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--client-id", help="Public Spotify app Client ID; never a Client Secret")
     parser.add_argument("--output", type=Path, default=data_root() / "backups")
@@ -376,6 +385,11 @@ def main():
         print("Stopped: " + (str(error) or type(error).__name__))
         print("No Spotify changes were made. Any completed backup stages are in " + str(folder))
         return 1
+
+
+def main():
+    from resumable_audit import main as resumable_main
+    return resumable_main()
 
 
 if __name__ == "__main__":

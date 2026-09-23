@@ -1,5 +1,7 @@
 # What you can do today
 
+**September 22 update:** [Resumable scans and the consolidated status table](RESUMABLE_SCANS.md) supersede the earlier restart-only audit workflow described below.
+
 Updated September 17, 2026. The conversations have been consolidated into one project and roadmap. The complete music hub described in them has not been built.
 
 ## Browse your music
