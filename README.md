@@ -62,7 +62,7 @@ python view_catalog.py 'backups/YOUR_DEMO_FOLDER/catalog.sqlite'
 | Shadow-track migration | Implemented; offline tests only; restricted | Requires reviewed mappings, suitable identity evidence, and explicit execution |
 | Local audio-file scanning/matching | Planned | Local playlist references are saved; your actual music folders are not scanned |
 | Artist follows/unfollows and genre enrichment | Planned | Different from the artist playlist counts already exported |
-| Nested folder capture | Planned | This version does not import or reconstruct Spotify folders |
+| Nested folder capture | Planned; second-adapter candidate identified | Current scan is flat. [Spotifast/librespot rootlist investigation](docs/SPOTIFAST_ADAPTER.md) describes a possible read-only folder importer |
 | Same recording across different releases | Planned | Current queries do not automatically merge different Spotify IDs |
 | Visual smart-playlist recipes | Planned | Smarter Playlists-inspired sources, rules, and result previews; current set queries provide part of the foundation |
 | Symfonium/M3U/Navidrome integration | Planned | No player, server, or audio transfer has been installed |

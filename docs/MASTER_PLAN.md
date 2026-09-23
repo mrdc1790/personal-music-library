@@ -84,6 +84,8 @@ Existing migration commands are tested offline, but the example IDs and actual a
 
 ### 5. Collections and folder organization — planned
 
+September 23: [Spotifast/librespot rootlist adapter investigation](SPOTIFAST_ADAPTER.md) identifies a documented read-only route for folder structure and ordering outside the Web API. Keep the existing catalog and add structure as a separately sourced snapshot; validate a small real folder-tree export before claiming support. No adapter is implemented yet.
+
 Preserve manually captured nested folder hierarchy, sibling order and source provenance. Later create local static or rule-based collections that can exceed a service's limit. Project these into multiple service playlists only with a reviewed synchronization plan.
 
 Folder names are not a reliable unique identity; use stable local IDs and parent IDs. This version has no folder import or editing command, and CSV exports do not claim to contain a folder tree.
