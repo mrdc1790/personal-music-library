@@ -1,6 +1,10 @@
 # Spotifast / librespot as a second Spotify adapter
 
-Investigated September 23, 2026. Status: **documented candidate, not integrated or live-tested with this account**.
+Investigated September 23–24, 2026. Status: **offline Spotifast rootlist-cache adapter implemented; actual account tree and direct live fetching not yet validated**.
+
+`folder_tree.py` now reads account-scoped Spotifast SessionState/CachedRootlist JSON or an explicit account/URI envelope. It preserves source hierarchy payload, nested/empty folders, IDs, parent relationships, sibling order and separate historical snapshots in hierarchy.sqlite. `preview_audit.py` joins that structure to completed audit sources by playlist ID. [Usage and validation limits](TRIAL_AND_FOLDERS.md).
+
+The rest of this document records the source investigation and remaining live-adapter work. The installed older Fastpotify session inspected September 24 had no rootlist field; collapsed folder IDs alone cannot reconstruct a tree.
 
 ## What our scanner currently misses
 
@@ -31,7 +35,7 @@ Keep the existing catalog, historical snapshots, raw data, source identities, ba
 ```mermaid
 flowchart LR
     A[Web API audit: playlist contents] --> C[Personal Music Library catalog]
-    B[Proposed rootlist adapter: folders and order] --> C
+    B[Spotifast cache adapter: folders and order] --> C
     D[Planned audio-folder inventory] --> C
     C --> E[Folder browsing and saved rules]
 ```

@@ -6,9 +6,11 @@ Updated September 17, 2026. The conversations have been consolidated into one pr
 
 ## Browse your music
 
+**September 24:** `Preview saved music.cmd` reads a bounded selection of completed audit sources directly. It shows overlap, two-playlist set operations, and every selected placement of a song. It does not need a full scan or JSON import. The optional Spotifast folder importer now preserves separate hierarchy snapshots; this account still needs a session containing a rootlist. [Guide](TRIAL_AND_FOLDERS.md).
+
 Double-click `View music catalog.cmd` to search songs and browse playlist placements in an imported catalog. Until a real scan is successfully imported, this opens synthetic demo music. Running the audit and importing it into the catalog are currently separate steps; the README explains the import.
 
-There is no all-library overlap map yet. Union, intersection, and difference already work as commands. A useful next interface would show playlist sizes, rank the playlists sharing the most songs with a selected playlist, and let you click a shared count to inspect those songs. For hundreds of playlists, this is a more readable starting design than displaying every song as a connected dot.
+There is no all-library overlap map yet. The bounded trial now ranks overlap with the selected playlist and makes shared counts clickable. Saved visual recipes and full-library exploration remain future work.
 
 ## Three distinct problems
 

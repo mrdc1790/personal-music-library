@@ -1,0 +1,34 @@
+{
+  "rootlist": {
+    "account_id": "SYNTHETIC-FOLDERS",
+    "entries": [
+      {
+        "FolderStart": {
+          "id": "dance",
+          "name": "Dance"
+        }
+      },
+      {
+        "FolderStart": {
+          "id": "bass",
+          "name": "Bass"
+        }
+      },
+      {
+        "Playlist": "spotify:playlist:AAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "FolderEnd",
+      {
+        "FolderStart": {
+          "id": "empty",
+          "name": "Empty folder"
+        }
+      },
+      "FolderEnd",
+      "FolderEnd",
+      {
+        "Playlist": "spotify:playlist:BBBBBBBBBBBBBBBBBBBBBB"
+      }
+    ]
+  }
+}

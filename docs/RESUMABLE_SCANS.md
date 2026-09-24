@@ -45,8 +45,8 @@ This can be large. The catalog importer still loads the JSON in memory, so impro
 | Rate limit / pause / resume? | Durable per-page SQLite checkpoints, automatic pause on 429, saved expiry, and a same-folder resume launcher. No need to restart every playlist. Likes require full saved-prefix revalidation, which still costs requests. |
 | New run versus resumed run? | Resume continues one run with validation. Start audit creates a separate fresh dated run. No automatic cross-run diff or account-wide atomic snapshot. |
 | Difference between runs? | After importing two snapshots, the catalog compare command compares placements, ordering and coverage. A failed/unread source remains unknown. Resume is recovery, not a historical diff. |
-| Visualization/database? | Read-only searchable table and snapshot/playlist filters; durable audit database and status log. Large-scale catalog ingestion/viewer improvements and an overlap map remain planned. |
-| Smarter Playlists? | CLI union/intersection/difference work. Saved recipes and visual rule editing are planned. |
+| Visualization/database? | Bounded real-data explorer reads completed sources directly: overlap, two-playlist set operations and song placements. Full-library scalable exploration remains planned. [Trial guide](TRIAL_AND_FOLDERS.md). |
+| Smarter Playlists? | CLI and bounded trial union/intersection/difference work. Saved recipes and visual rule editing are planned. |
 | DJ / central media hub? | Metadata/identity/history foundation. Audio matching, analysis (BPM/key), cue points, DJ exports, and player integration remain planned. Duration is already stored; raw album/release fields are preserved when supplied. |
 | Spotify 10k limit? | Remains a Spotify output constraint. Larger local collections and bounded output playlists are the proposed route; splitting/publishing is not implemented. |
 | Local songs? | Preserve API-returned playlist references and duration. Audio-folder inventory, matching, missing-file/device checks, and explaining past disappearance still require work. |
@@ -55,3 +55,7 @@ This can be large. The catalog importer still loads the JSON in memory, so impro
 58 tests passed September 22, including recovery after interruption, snapshot changes, unchanged playlist reuse, same-count liked shifts, failed-prefix handling, cooldown guards and concurrent-writer exclusion. These are offline tests, not proof of successful full-library live coverage.
 
 Windows data paths now use the physical profile MusicLibraryData folder because packaged desktop apps can redirect AppData into a private cache. Older AppData backups remain untouched. Explicit `--output` and `PERSONAL_MUSIC_LIBRARY_DATA` overrides still take priority.
+
+## Try saved results before continuing
+
+Use `Preview saved music.cmd` for a bounded offline trial. It does not start or resume a scan. A status file saying running is the last persisted state, not a heartbeat: abrupt termination may leave that label unchanged. Rate-limit pauses appear in the terminal, RUN STATUS.txt, and run.log.jsonl; there is no toast, email, or automatic wakeup. Folder import is a separate optional step and does not require restarting track capture. See [trial and folders](TRIAL_AND_FOLDERS.md).

@@ -1,8 +1,8 @@
 # Personal Music Library
 
-**September 22: resumable scanning is now the default.** Data now defaults to `%USERPROFILE%\MusicLibraryData` outside OneDrive and the desktop app cache; this supersedes the September 19 AppData default. Use `Start audit.cmd` once for a new run; use `Resume this audit.cmd` inside that run folder after an interruption. [Resume instructions and consolidated feature table](docs/RESUMABLE_SCANS.md). Rate limits pause with a saved cooldown; SQLite is the primary output and large JSON exports are optional. This supersedes older fresh-run-only instructions below.
+**Start with your saved music:** double-click **`Preview saved music.cmd`**. It builds a small, real-data playlist explorer from completed sources in your latest resumable audit. No Spotify login, new scan, or large JSON export is needed. Browse overlap, compare two playlists, and click songs to see their placements. [Trial and folder guide](docs/TRIAL_AND_FOLDERS.md).
 
-**Storage update (September 19):** real audits now default to `%LOCALAPPDATA%\PersonalMusicLibrary\backups`; the working catalog defaults to `%LOCALAPPDATA%\PersonalMusicLibrary\catalog.sqlite`. These are outside OneDrive Documents. Examples with explicit relative output paths still write where specified. See [storage and current next steps](docs/STORAGE_AND_NEXT_STEPS.md).
+**Storage:** scans, hierarchy snapshots, and previews default to `%USERPROFILE%\MusicLibraryData`, outside OneDrive Documents. `Start audit.cmd` creates a new run; `Resume this audit.cmd` inside an existing run continues it after validation. [Resume and rate-limit instructions](docs/RESUMABLE_SCANS.md).
 
 A local catalog for your Spotify playlists, Liked Songs, and local-track references. This project began as **Spotify Shadow Track Migration**; that repair tool is now one part of the bigger music-library project.
 
@@ -34,7 +34,7 @@ python library_demo.py
 
 ## View the database without learning SQL
 
-Double-click **`View music catalog.cmd`**. It opens a searchable, read-only view in your browser. It uses `data/catalog.sqlite` if present; otherwise it opens your most recent offline demo catalog.
+Double-click **`View music catalog.cmd`**. It opens a searchable, read-only view in your browser. It first checks `%USERPROFILE%\MusicLibraryData\catalog.sqlite`, then the legacy `data/catalog.sqlite`, then the most recent offline demo catalog. For a small real-data view without a catalog import, use `Preview saved music.cmd`.
 
 Use **Saved snapshot** to choose a scan, **Playlist** to browse a list, or search a song with all playlists selected to see everywhere it appears. Each row is one placement, so repeated rows may be intentional duplicates. Positions in this viewer start at 1. Synthetic examples are prominently labeled.
 
@@ -51,7 +51,8 @@ python view_catalog.py 'backups/YOUR_DEMO_FOLDER/catalog.sqlite'
 | Capability | Status | Meaning |
 |---|---|---|
 | Offline demo | Working; tested | Try the workflow with synthetic examples |
-| Browser catalog viewer | Working; read-only | Browse snapshots, filter playlists and search songs |
+| Small real-data explorer | Working; read-only | Read completed audit sources directly; overlap, set operations, song placements; bounded to 8 playlists / 10,000 placements by default |
+| Browser catalog viewer | Working; read-only | Browse imported snapshots, filter playlists and search songs |
 | Historical local database | Working; tested | Import multiple audit snapshots without overwriting earlier scans |
 | Song → playlists search | Working; tested | Search title, artist text, or Spotify ID; see each occurrence |
 | Union / intersection / difference | Working; tested | Compare observed identities in successfully exported playlists |
@@ -62,13 +63,13 @@ python view_catalog.py 'backups/YOUR_DEMO_FOLDER/catalog.sqlite'
 | Shadow-track migration | Implemented; offline tests only; restricted | Requires reviewed mappings, suitable identity evidence, and explicit execution |
 | Local audio-file scanning/matching | Planned | Local playlist references are saved; your actual music folders are not scanned |
 | Artist follows/unfollows and genre enrichment | Planned | Different from the artist playlist counts already exported |
-| Nested folder capture | Planned; second-adapter candidate identified | Current scan is flat. [Spotifast/librespot rootlist investigation](docs/SPOTIFAST_ADAPTER.md) describes a possible read-only folder importer |
+| Nested folder preservation | Spotifast cache importer implemented and tested; actual account tree pending | Import an account-scoped `session.json` tree separately, retaining nesting, empty folders, order and history. Web API scans remain flat. [Instructions and limits](docs/TRIAL_AND_FOLDERS.md) |
 | Same recording across different releases | Planned | Current queries do not automatically merge different Spotify IDs |
 | Visual smart-playlist recipes | Planned | Smarter Playlists-inspired sources, rules, and result previews; current set queries provide part of the foundation |
 | Symfonium/M3U/Navidrome integration | Planned | No player, server, or audio transfer has been installed |
 | Online uploads / scheduled backups | Not configured | ZIP creation works; no cloud uploader or schedule was enabled |
 
-**No real Spotify account scan or migration has been performed in this workspace.** Passing tests means the code works against known examples and a simulated API. It does not establish compatibility with your live account.
+**Real partial scans exist, but full-account coverage and real Spotify migration are not established.** The trial uses captured sources; tests cover known examples and a simulated API. Folder import has not yet been validated against this account’s live folder tree.
 
 ## The three parts, in plain English
 
@@ -79,7 +80,7 @@ python view_catalog.py 'backups/YOUR_DEMO_FOLDER/catalog.sqlite'
 ```mermaid
 flowchart LR
     Spotify[Spotify metadata] --> Scan[Read-only scan]
-    Scan --> Snapshot[Dated JSON snapshot]
+    Scan --> Snapshot[Dated SQLite snapshot; optional JSON]
     Snapshot --> Catalog[Local SQLite catalog]
     Catalog --> Reports[Search and CSV reports]
     Catalog --> Backup[Versioned backup ZIP]
