@@ -34,7 +34,7 @@ Phone, desktop, and web clients can show incompatible membership state even when
 
 “Not shown on phone” is conflicting or unknown evidence, never a removal. Recheck with an authoritative library/playlist scan before a destructive action. A preview is read-only discovery; an actual migration must have a durable write journal.
 
-The known `[private track ID]` incident is recorded in [Historical observations](HISTORICAL_OBSERVATIONS.md): desktop and phone disagreed, while a long migrator Build preview showed discovery only. It cannot be attributed as an account write.
+The known client-disagreement incident is recorded in [Historical observations](HISTORICAL_OBSERVATIONS.md): desktop and phone disagreed, while a long migrator Build preview showed discovery only. Its private track identity is intentionally omitted, and it cannot be attributed as an account write.
 
 ## Query and safety rules
 

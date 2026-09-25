@@ -14,6 +14,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import audit
+from spotify_config import spotify_client_id
 
 WRITE_SCOPES = audit.SCOPES + " user-library-modify playlist-modify-private playlist-modify-public"
 ID = re.compile(r"[A-Za-z0-9]{22}\Z")
@@ -329,7 +330,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     scan = sub.add_parser("scan", help="Read-only JSON/SQLite snapshot and HTML audit")
-    scan.add_argument("--client-id", required=True)
+    scan.add_argument("--client-id", help="Overrides SPOTIFY_CLIENT_ID from the environment or .env")
     scan.add_argument("--api-mode", choices=["development", "extended"], default="development",
                       help="Actual Spotify app quota mode; extended is not a workaround for hidden IDs")
     scan.add_argument("--output", type=Path, default=data_root() / "backups")
@@ -348,8 +349,8 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == "scan":
-            require(re.fullmatch(r"[A-Fa-f0-9]{32}", args.client_id), "Invalid Client ID.")
-            api = audit.Spotify(args.client_id, audit.authorize(args.client_id))
+            client_id = spotify_client_id(args.client_id)
+            api = audit.Spotify(client_id, audit.authorize(client_id))
             folder = args.output / (datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(3))
             result = audit.scan(api, folder, args.api_mode)
             print("Report:", folder.resolve() / "report.html")

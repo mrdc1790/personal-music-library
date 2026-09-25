@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 
 import audit
 from storage_paths import data_root
+from spotify_config import spotify_client_id
 
 
 def utc():
@@ -340,9 +341,7 @@ def main(argv=None):
                 raise RuntimeError('Resume folder does not contain a run database.')
             client_id = None
         else:
-            client_id = args.client_id or input('Paste your Spotify app Client ID (not Client Secret): ').strip()
-            if len(client_id) != 32 or any(c not in '0123456789abcdefABCDEF' for c in client_id):
-                raise ValueError('Expected a 32-character hexadecimal Client ID.')
+            client_id = spotify_client_id(args.client_id)
             check_cooldown(client_id)
             folder = args.output.resolve() / (datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + secrets.token_hex(3))
             folder.mkdir(parents=True, exist_ok=False)

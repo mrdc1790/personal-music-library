@@ -21,6 +21,8 @@ from urllib.request import Request, urlopen
 import webbrowser
 from datetime import datetime, timezone
 
+from spotify_config import spotify_client_id
+
 API = "https://api.spotify.com/v1/"
 REDIRECT = "http://127.0.0.1:8765/callback"
 SCOPES = "user-library-read playlist-read-private playlist-read-collaborative"
@@ -370,9 +372,10 @@ def legacy_main():
     parser.add_argument("--client-id", help="Public Spotify app Client ID; never a Client Secret")
     parser.add_argument("--output", type=Path, default=data_root() / "backups")
     args = parser.parse_args()
-    client_id = args.client_id or input("Paste your Spotify app Client ID (not Client Secret): ").strip()
-    if len(client_id) != 32 or any(c not in "0123456789abcdefABCDEF" for c in client_id):
-        parser.error("Expected a 32-character hexadecimal Client ID.")
+    try:
+        client_id = spotify_client_id(args.client_id)
+    except RuntimeError as error:
+        parser.error(str(error))
     folder = args.output.resolve() / (datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(3))
     try:
         api = Spotify(client_id, authorize(client_id))

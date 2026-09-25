@@ -7,3 +7,18 @@ mappings.json
 review-plan.json
 approved-plan.json
 MusicLibraryData*
+
+# Local configuration and authentication artifacts
+.env
+.env.*
+!.env.example
+session.json
+*session*.json
+*token*.json
+*tokens*.json
+*credential*.json
+*credentials*.json
+*.sqlite
+*.sqlite3
+*.db
+secrets/

@@ -73,8 +73,7 @@ Keep source files human-readable.
 
 ## Cross-repository coordination
 
-The sibling repository at
-`..\spotify song playlist migrator` is a
+The sibling repository `..\spotify song playlist migrator` is a
 separate application with related Spotify migration and reconciliation
 workflows. Its behavior is not automatically shared with this catalog.
 

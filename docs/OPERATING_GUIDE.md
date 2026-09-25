@@ -15,10 +15,10 @@ Keep source snapshots, run status, errors, and failed coverage. They explain wha
 
 ## Scan and resume
 
-Create a Spotify Developer app, set redirect URI `http://127.0.0.1:8765/callback`, and use the public Client ID—no Client Secret is needed.
+Create a Spotify Developer app, set redirect URI `http://127.0.0.1:8765/callback`, and use the public Client ID—no Client Secret is needed. Copy `.env.example` to `.env` and replace the placeholder, or set `SPOTIFY_CLIENT_ID` in the process environment. The ignored `.env` file is read locally and only that one setting is accepted.
 
 ```powershell
-python audit.py --client-id YOUR_CLIENT_ID
+python audit.py
 ```
 
 Data defaults to `%USERPROFILE%\MusicLibraryData`; explicit `--output` or `PERSONAL_MUSIC_LIBRARY_DATA` takes precedence. Each new audit creates a dated folder. The resumable scanner commits captured rows and progress together. Ctrl+C and rate-limit pauses preserve committed pages; resume the same folder instead of creating a new audit.

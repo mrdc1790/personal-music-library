@@ -38,8 +38,10 @@ http://127.0.0.1:8765/callback
 
 Use the public **Client ID**, never the Client Secret. Spotify login and consent happen in the browser. Tokens stay in memory. Access depends on Spotify's current account/app eligibility, including the app owner's Premium requirement.
 
+Copy `.env.example` to `.env` and set `SPOTIFY_CLIENT_ID`, or provide the same name as a process environment variable. `--client-id` remains available as an explicit override.
+
 ```powershell
-python migrate.py scan --client-id YOUR_CLIENT_ID
+python migrate.py scan
 ```
 
 For an app already granted Extended Quota Mode:
@@ -112,4 +114,4 @@ Tests cover duplicate ordering, pre-existing targets, randomized sequences, larg
 
 The shared conversation's desktop slowness, wrapper UI, Symfonium integration, and union/intersection queries are separate work. No Spotify cache or local music files were changed.
 
-Official documentation reviewed September 11, 2026. Shared conversation (private source omitted).
+Official documentation reviewed September 11, 2026.

@@ -40,7 +40,9 @@ Not implemented: local audio-folder inventory/matching, canonical recording matc
 | [Historical observations](docs/HISTORICAL_OBSERVATIONS.md) | Review dated count/recovery evidence without confusing it for current coverage |
 | [Integration design](docs/INTEGRATION_DESIGN.md) | Understand the planned folder adapter and smart-collection interface |
 
-Requirements: Windows, Python 3.11+, and no third-party Python packages. A Spotify Developer app is needed only for a scan or migration. Data defaults to `%USERPROFILE%\MusicLibraryData`, outside Documents/OneDrive; use `PERSONAL_MUSIC_LIBRARY_DATA`, `audit.py --output`, or `library.py --db` to choose another location.
+Requirements: Windows, Python 3.11+, and no third-party Python packages. A Spotify Developer app is needed only for a scan or migration. Copy `.env.example` to `.env`, set the public `SPOTIFY_CLIENT_ID`, and keep `.env` uncommitted. PKCE authentication does not use a Client Secret. A `--client-id` argument or environment variable can override the file.
+
+Data defaults to `%USERPROFILE%\MusicLibraryData`, outside Documents/OneDrive; use `PERSONAL_MUSIC_LIBRARY_DATA`, `audit.py --output`, or `library.py --db` to choose another location.
 
 The earlier topic-specific notes were consolidated so operations, evidence rules, and planned work each have one current source.
 
