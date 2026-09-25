@@ -91,5 +91,9 @@ A checksum detects corruption, not authorship. Keep raw audit folders and migrat
 | Rate limit/server failure | Preserve the run and resume later; never infer empty coverage |
 | Missing source | Inspect coverage/errors; unread sources are unknown |
 | Different location required | Set `PERSONAL_MUSIC_LIBRARY_DATA`, use `--output`, or use `--db`; do not move an active database |
-| Client membership/count disagreement | Record it and take a fresh authoritative scan; see [Evidence and data model](EVIDENCE_AND_MODEL.md) |
+| Client membership/count disagreement | Record time, account, market, filters, and surface; compare fresh API observations within their scope and retain device/local unknowns; see [Evidence and data model](EVIDENCE_AND_MODEL.md) |
+
+### Interpreting Liked Songs and Local Files
+
+A displayed Liked Songs total, API saved-track rows, playlist placements, and desktop Local Files are different measurements. Check run completion and exported coverage before comparing. Do not add/subtract the Local Files count to force agreement. Local references can occur in captured playlists, but the scan does not enumerate every file on disk or confirm phone downloads. No files or Spotify caches should be deleted to investigate a count gap. See the [reconciliation protocol](HISTORICAL_OBSERVATIONS.md#reconciliation-protocol) and [planned acceptance criteria](ROADMAP.md#reconciliation-acceptance-criteria-planned).
 | Need to alter Spotify | Use the explicit [Migration](MIGRATION.md) review path |

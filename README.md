@@ -22,6 +22,8 @@ Double-click **`Try offline demo.cmd`** for a synthetic, self-contained walkthro
 
 Not implemented: local audio-folder inventory/matching, canonical recording matching across Spotify IDs, full-library scale validation, saved smart-playlist recipes, playlist publishing/splitting, player/server integration, or a universal playback/Connect replacement.
 
+**Local files and count discrepancies are core scope.** Current playlist scans preserve Spotify-returned local references, but do not inventory the desktop Local Files collection or verify phone files. Liked Songs API totals are observations of that endpoint, not a guarantee of matching desktop, web, phone, or Spotifast. The [identity taxonomy and count rules](docs/EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy) explicitly include ordinary single-versus-album duplicates with different track IDs, as well as shadow releases. Recording matching and device/file reconciliation remain planned, not delivered.
+
 ## Non-negotiable boundaries
 
 1. An occurrence is evidence: duplicate placements, order, failed coverage, local references, and snapshots are retained.
@@ -39,6 +41,7 @@ Not implemented: local audio-folder inventory/matching, canonical recording matc
 | [Roadmap](docs/ROADMAP.md) | Understand planned work and the broader app vision |
 | [Historical observations](docs/HISTORICAL_OBSERVATIONS.md) | Review dated count/recovery evidence without confusing it for current coverage |
 | [Integration design](docs/INTEGRATION_DESIGN.md) | Understand the planned folder adapter and smart-collection interface |
+| [Reference projects](docs/REFERENCE_PROJECTS.md) | Compare Spotify Dedup and Spotify Song Relinker against our identity, local-file, and preservation requirements |
 
 Requirements: Windows, Python 3.11+, and no third-party Python packages. A Spotify Developer app is needed only for a scan or migration. Copy `.env.example` to `.env`, set the public `SPOTIFY_CLIENT_ID`, and keep `.env` uncommitted. PKCE authentication does not use a Client Secret. A `--client-id` argument or environment variable can override the file.
 

@@ -119,5 +119,7 @@ The restored catalog contains both snapshots. These commands do not upload anyth
 - A local reference does not prove an MP3 exists on disk or is playable on your phone.
 - A track found in three playlists may still be absent from an inaccessible fourth playlist.
 - Two Spotify IDs with the same title are still separate identities here.
+- A single and album version with different IDs are also separate here, even when they may be the same recording; the demo is not a test of recording-level deduplication.
+- A local reference in a demo playlist does not represent a complete desktop Local Files inventory or Liked Songs/local overlap.
 - Stored dates are observed metadata; the catalog does not manufacture original artist-follow dates.
 - A synthetic test is not a successful live Spotify migration.

@@ -6,6 +6,8 @@ These are dated observations retained for investigation. They are not a claim of
 
 An API audit and one desktop tool agreed, while Spotify's desktop, phone, and web clients reported materially higher—and mutually different—Liked Songs totals. The local-files total was a separate collection and could not be subtracted to explain the gap. Equal totals can still contain different items. These gaps do not identify missing songs or justify deletion, unliking, cache clearing, deduplication, or relinking.
 
+The follow-up also reports local songs included in the desktop Liked Songs view and believed present on the current phone. Preserve these as user observations, not verified inclusion/download semantics. Earlier work/home/old-phone/replacement-phone discrepancies show that this is a recurring multi-device requirement; their old totals must not become present-day targets. No cause has been established. Client cache/sync, filters, capture timing, catalog identity/availability, and API coverage are hypotheses to test against item-level evidence, not diagnoses.
+
 An earlier partial backup had local references in multiple playlist sources and none in its Liked Songs rows. That proves only that the playlist scan captured some Spotify-returned local references. It does not count unique files, prove audio exists, establish phone playback, or explain the client disagreement. Exact personal-library counts and backup identifiers belong in private audit records, not the public repository.
 
 ## September 19, 2026: interrupted audit and recovery
@@ -22,11 +24,13 @@ For one privately recorded track identity, desktop reported expected playlist me
 
 ## Reconciliation protocol
 
-1. Complete and validate authoritative API coverage while preserving unread sources as unknown.
+1. Complete and validate endpoint-scoped API coverage while preserving unread sources as unknown; do not promote that scope into device-wide authority.
 2. Count placements, distinct observed identities, local references, and missing objects separately for every source.
 3. Inventory specifically chosen audio roots read-only: path, size, metadata, duration, errors, and optional hashes.
 4. Match references to files with exact, likely, ambiguous, unmatched, and incomplete-root outcomes.
 5. Obtain comparable client lists or file inventories where available, recording account, capture time, filters, and coverage.
 6. Show actual item differences before proposing any repair.
+
+If a client cannot expose an item list, retain its count-only observation and mark item-level reconciliation unavailable. Record the user's preferred reference device without treating its display as infallible. This protocol is a plan; automated client/device inventory and recording-level comparison are not implemented.
 
 Spotify local-file metadata, byte hashes, and audio fingerprints answer different questions. None reconstructs an undocumented client matching algorithm.

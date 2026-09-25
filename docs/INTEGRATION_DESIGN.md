@@ -26,4 +26,8 @@ Later operations—sorting, limits, artist spacing, explicit deduplication, sche
 
 ## Owned audio and DJ endpoints
 
+Local inventory is a first-class source adapter, separate from Spotify playlists, Liked Songs, and rootlist folders. It must include selected files never referenced by Spotify. Model file-on-device, Spotify local metadata reference, provider track instance, and candidate recording as separate entities. A phone inventory must carry its own capture time and coverage; a desktop match or download icon is not proof of phone file presence or playback. Keep unresolved local/cloud matches visible rather than excluding them from a music-hub view.
+
+Recipe deduplication must declare its identity level: exact URI, reviewed recording group, or file identity. Single-versus-album candidates belong to recording-level review even when neither release is a shadow and no relink field exists. Cross-playlist overlap remains intentional unless a separate reviewed recipe says otherwise.
+
 Only after files are inventoried and matched should the project generate a dry-run M3U or music-server playlist report. Verify path mapping, ordering, duplicates, and unresolved entries on a small sample before bulk output. Symfonium, Navidrome, Jellyfin, and DJ software are potential endpoints for owned audio; they do not convert Spotify metadata into audio or establish universal playback.

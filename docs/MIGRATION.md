@@ -4,6 +4,8 @@ A local Python tool for backing up Spotify library data, reviewing track replace
 
 Implemented: `scan`, `plan`, `apply`, `resume`, and `rollback`. Writes require individually approved mappings and `--execute`. Without `--execute`, apply/resume/rollback inspect local files and print a summary.
 
+Scope is reviewed Spotify instance replacement, not count reconciliation or automatic deduplication. An ordinary single-to-album mapping can be a candidate without shadow/relink evidence, but still needs the same identity and approval gates; metadata resemblance cannot bypass them. Playlists retain one replacement per original occurrence, including when the destination already exists. Liked Songs membership is tracked per URI and does not preserve repeated playlist-like positions. Local-file discovery, transfer, tagging, deletion, and local-to-cloud replacement are not implemented; affected local/missing playlist entries block this engine's execution. See the full [taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy).
+
 **Live status:** No account scan or migration has been performed. Tests use a simulated Spotify API. A real Developer app and user sign-in are required for live validation. Development Mode scans are useful backups but are blocked from execution because the API hides original IDs.
 
 ## Review of the shared proposal
