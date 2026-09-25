@@ -6,7 +6,11 @@
 
 A local catalog for your Spotify playlists, Liked Songs, and local-track references. This project began as **Spotify Shadow Track Migration**; that repair tool is now one part of the bigger music-library project.
 
-GitHub: [personal-music-library](https://github.com/mrdc1790/personal-music-library). Renamed September 17, 2026. The existing local folder is still named `spotify-shadow-track-migration`; your launchers and paths continue to work there.
+When clients disagree about Saved In or Liked Songs, record the disagreement as
+evidence and reconcile against a fresh authoritative scan; do not treat a phone
+UI absence as a removal. [Cross-client reconciliation](docs/CROSS_CLIENT_RECONCILIATION.md).
+
+GitHub: [personal-music-library](https://github.com/mrdc1790/personal-music-library). The active local project folder is `personal-music-library`.
 
 **The immediate benefit:** answer “where is this song saved?”, find overlap between playlists, keep historical copies, and export your collection into readable files. You do not need to build a streaming service or install a music server to use these features.
 

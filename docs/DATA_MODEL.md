@@ -16,6 +16,7 @@ This describes the implemented catalog, not the larger planned recording graph.
 | Local reference | Metadata describing a local track, not a file path or an audio copy |
 | Primary artist | The first artist in the returned credits |
 | All credits | Every distinct artist ID credited on the item; name-only local credits stay separate |
+| Client membership observation | A timestamped client/API claim about membership; evidence, not a replacement for a stored occurrence |
 
 ## Implemented tables
 
@@ -48,6 +49,14 @@ Every row carries `identity_basis`: `original_id_evidence`, `returned_uri_only`,
 **A returned-only key is an observation, not proof of stored identity.** Two different releases are never automatically merged by title or ISRC. A local URI is not globally unique audio identity: two files can share metadata. Unknown keys are excluded from set results and make exact sequence comparisons uncertain.
 
 Spotify documents local references and their metadata-based form in its [playlist concepts](https://developer.spotify.com/documentation/web-api/concepts/playlists). That documentation does not establish a full client fingerprint algorithm or per-device playback state.
+
+## Planned cross-client observations
+
+The current catalog stores snapshots, not client UI claims. Before using those
+claims in automation, add an append-only observation record for occurrence URI
+and position, requested/effective URI, timestamp, platform/version, market, UI
+surface, result and evidence. Client absence is conflicting/unknown evidence;
+only a fresh authoritative scan may authorize removal.
 
 ## Query behavior
 
