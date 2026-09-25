@@ -57,7 +57,7 @@ Each scan folder contains:
 - `library.sqlite`: indexed occurrences plus snapshot metadata.
 - `migration-plan.json`: audit proposals, not executable approvals.
 
-Backups are inside this OneDrive project by default and may sync under normal settings. Set `--output` to another folder if desired. Liked Songs have no snapshot token; pause edits during scanning. No API export can recover fields Spotify hides.
+Scan output defaults under `%USERPROFILE%\MusicLibraryData`, outside Documents/OneDrive. Set `--output` or `PERSONAL_MUSIC_LIBRARY_DATA` to choose another location. Liked Songs have no snapshot token; pause edits during scanning. No API export can recover fields Spotify hides.
 
 ## Review and plan
 
