@@ -56,6 +56,16 @@ The [Symfonium import/sync guide](https://docs.symfonium.app/wiki/providers/impo
 
 ## Export-plan review and remaining limits
 
+### Earlier audio-download proposal: retained concerns, separate scope
+
+The “Spotify Library Download Plan” discussion was reviewed on 2026-09-30 alongside the artist-tracker chat because the supplied Markdown displayed one URL while linking to the other. It is an older proposal, not an implemented catalog feature or authorization to acquire audio. Audio downloading remains outside current CLI scope.
+
+Retain its useful requirements for any separately scoped owned-audio acquisition/import design: distinguish initial bulk work from continuing metadata refresh; preserve source identity, match evidence, chosen version, file provenance, tags, failures, and review decisions; checkpoint batches without treating failures as absent music; and keep ambiguous remixes/live/clean/edit matches unresolved. A new like can prompt a candidate/import queue, but it must not automatically authorize acquisition or deletion of a local file when the like disappears.
+
+Codec, bitrate, source quality, and playback-device compatibility are separate choices. A higher output bitrate does not establish better source fidelity. Capacity estimates should use actual durations and selected encoding settings, include originals/derivatives and backup headroom, and be validated on a small authorized sample. File tagging, normalization, transcoding, and duplicate cleanup are separate explicit operations; retain originals and transformation provenance when such work is authorized.
+
+The chat's spotDL/yt-dlp commands, matching percentages, “only realistic approach” claim, storage totals, Docker/NAS assumptions, and broad legal conclusions were not verified and are not adopted as project requirements. Any future tool/source evaluation needs current capability, acquisition-rights, provider-term, quality, and recovery review for that specific task. Neither repository acquired audio, installed those tools, configured a scheduler, or changed Spotify by preserving this context.
+
 The “Spotify Playlist Export” discussion was reviewed on 2026-09-30. Its core is already implemented or planned here: SQLite snapshot history, occurrence CSVs, per-playlist CSVs, song-to-playlist reverse indexes, artist/source summaries, exact observed-ID set operations, separate folder evidence, reviewed recording identity, and later owned-audio output. Do not create thousands of authoritative per-song/per-artist files; generate consolidated tables and optional filtered views from the catalog.
 
 Current `playlists.csv` does not include joined folder paths; hierarchy/content export joining remains work. Recording-level algebra, audio fingerprints, reliable moved-file recovery, provider publishing, and general Spotify playlist reconstruction remain planned. Restoring a catalog ZIP restores local evidence only; it does not rebuild Spotify, restore audio, or recover original provider attribution/dates. The separate migration engine's restricted rollback is not a general playlist-restoration feature. Example counts and proposed commands in the chat are illustrations, not measured results or implemented commands.
