@@ -8,6 +8,8 @@ The grounded architecture is a local catalog that observes provider metadata and
 
 ## Current priority
 
+Retain SQLite for the local operational catalog. The [storage decision and alternatives](STORAGE_DECISION.md) explain the fit, query-performance work, optional analytics path, and criteria for reconsidering a server database. No cloud service or second database engine is currently required.
+
 Finish useful read-only coverage, import it, and make playlist size, overlap, duplicate occurrences, and local collection visibility practical. Spotify's 10,000-item playlist limit remains a service constraint. The future response is a larger local collection with reviewed, bounded provider outputs—not a claim to bypass the limit.
 
 ## Next work
