@@ -46,6 +46,18 @@ Start with complete follow snapshots and an artist report joined to existing cat
 
 These requirements preserve the useful design from the earlier “Spotify Library Tracker Design” discussion without depending on that chat remaining available. They do not change the current priority order or authorize artist-follow changes. Cross-repository scope was checked: this read-only catalog feature needs no companion change in the separate playlist migrator.
 
+### Followed-artist release inbox (planned)
+
+Preserve the useful design from the “RiffRadar Spotify investigate” discussion here so the chat can be deleted. This is a future catalog extension after the current coverage and identity work, not implemented automation.
+
+- **Collection and views:** maintain a durable Followed Artist Releases collection; New Music Friday is a weekly release-date view, with an explicit timezone and week boundary. Keep provider release date and its precision separate from first detection time. Late discoveries and backfills remain visible rather than falling out of history.
+- **Capture evidence:** a future daily read-only scan should record the followed-artist snapshot, account/market, artist and release IDs, ordered track listings, capture/detection times, and per-artist pagination, failures, and coverage. Failed or partial scans cannot establish no new releases. Initial catalog import needs an explicit baseline/backfill policy.
+- **Identity and filters:** preserve raw releases and track occurrences before applying reviewed recording groups or presentation deduplication. Single/album overlap, reuploads, deluxe editions, remixes, live versions, compilations, featured credits, and incorrect artist attribution need explicit rules and uncertain candidates. New provider IDs do not automatically mean new recordings; matching recordings must not erase release history.
+- **Separate outputs:** release detection, catalog storage, local recipe views, and Spotify publishing are separate stages. A future publisher requires explicit authorization, a preview, retry-safe addition tracking, readback verification, and a visible playlist-capacity policy. Retain the full local history even when a bounded Spotify view rotates; never silently purge existing playlist entries or deduplicate user occurrences.
+- **Validation before implementation:** recheck current endpoint capabilities, scopes, rate limits, and market/date behavior. Use synthetic cases for incomplete artist pages, failed scans, repeated detection, delayed availability, imprecise dates, reuploads, version ambiguity, and capacity exhaustion before any account-backed trial.
+
+See [release-discovery research leads](REFERENCE_PROJECTS.md#release-discovery-research-leads). Third-party playlists can be observed as sources with their own provenance and coverage; they cannot prove exhaustive release detection. Cross-repository impact was checked against the separate playlist migrator's context and safety guidance: this plan belongs to the catalog and requires no migrator edit, shared runtime, OAuth change, or migration behavior change.
+
 ## Planned interfaces
 
 - A Smarter Playlists-style local recipe UI: choose a snapshot, connect sources and set operations, preview, then save a reusable recipe. Scheduling and publishing come later.
