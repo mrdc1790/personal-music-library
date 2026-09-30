@@ -38,4 +38,4 @@ Once transferred, local songs can be interlaced with regular Spotify tracks in t
 
 ## Catalog boundary
 
-This project currently records only local references Spotify returns in scanned playlists. It does not scan the supplied folder, copy audio, configure Spotify, or verify phone transfer/playback. Record any desktop or phone result as a timestamped device observation rather than treating it as complete coverage.
+Playlist capture records only local references Spotify returns in scanned sources. The separate [local inventory workflow](LOCAL_INVENTORY.md) can scan explicitly chosen folders and report filename candidates. It does not copy audio, configure Spotify, or verify phone transfer/playback. Record any desktop or phone result as a timestamped device observation rather than treating it as complete coverage.

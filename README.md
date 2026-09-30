@@ -20,9 +20,11 @@ Double-click **`Try offline demo.cmd`** for a synthetic, self-contained walkthro
 | Preserve folders | Optional read-only Spotifast rootlist import; live validation still needed |
 | Repair shadow tracks | Guarded reviewed migration commands; offline-tested only |
 
-Not implemented: local audio-folder inventory/matching, canonical recording matching across Spotify IDs, full-library scale validation, saved smart-playlist recipes, playlist publishing/splitting, player/server integration, or a universal playback/Connect replacement.
+Read-only [local audio-folder inventory and candidate reconciliation](docs/LOCAL_INVENTORY.md) are available for explicit roots and existing catalog snapshots. Matching is limited to filename candidates and optional WAV duration evidence.
 
-**Local files and count discrepancies are core scope.** Current playlist scans preserve Spotify-returned local references, but do not inventory the desktop Local Files collection or verify phone files. Liked Songs API totals are observations of that endpoint, not a guarantee of matching desktop, web, phone, or Spotifast. The [identity taxonomy and count rules](docs/EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy) explicitly include ordinary single-versus-album duplicates with different track IDs, as well as shadow releases. Recording matching and device/file reconciliation remain planned, not delivered.
+Not implemented: confirmed local recording matching, canonical recording matching across Spotify IDs, full-library scale validation, saved smart-playlist recipes, playlist publishing/splitting, player/server integration, or a universal playback/Connect replacement.
+
+**Local files and count discrepancies are core scope.** Current playlist scans preserve Spotify-returned local references, but do not inventory the desktop Local Files collection or verify phone files. The separate local inventory scans chosen folders and retains coverage gaps. Liked Songs API totals are observations of that endpoint, not a guarantee of matching desktop, web, phone, or Spotifast. The [identity taxonomy and count rules](docs/EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy) explicitly include ordinary single-versus-album duplicates with different track IDs, as well as shadow releases. Confirmed recording matching and device reconciliation remain planned.
 
 ## Non-negotiable boundaries
 

@@ -3,6 +3,7 @@ backups/
 *.log
 data/
 exports/
+inventories/
 mappings.json
 review-plan.json
 approved-plan.json

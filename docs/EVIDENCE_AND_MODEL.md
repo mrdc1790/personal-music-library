@@ -46,7 +46,7 @@ Same ISRC, title, artist, or duration can support a candidate but cannot alone p
 
 An unreadable, partial, or unexported source is never empty. Comparisons distinguish coverage changes from membership changes. Unknown identities remain visible in occurrence browsing but cannot safely participate in set operations.
 
-Name what a count means: sources, occurrences, distinct observed identities, artist credits, local references, or files. A local reference is not a distinct audio file. For future file reconciliation, scan explicit roots read-only and report exact, likely, ambiguous, unmatched, and incomplete results separately. Metadata URI, byte hash, and audio fingerprint are different evidence.
+Name what a count means: sources, occurrences, distinct observed identities, artist credits, local references, or files. A local reference is not a distinct audio file. The [first local inventory workflow](LOCAL_INVENTORY.md) scans explicit roots read-only and reports likely filename candidates, ambiguous paths, unmatched observations, and incomplete coverage separately. It does not confirm exact reference-to-file matches. Metadata URI, byte hash, and audio fingerprint are different evidence.
 
 Playlist capture includes local references only when Spotify returns those rows. The desktop **Local Files** collection is not automatically an API playlist or a filesystem inventory. Files absent from captured playlists remain outside that capture. The `liked` source is the saved-track endpoint observation, not a guaranteed reproduction of every client's Liked Songs display. Zero API local rows means zero observed rows, not zero local songs or local likes on devices.
 
