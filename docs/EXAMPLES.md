@@ -116,6 +116,8 @@ The restored catalog contains both snapshots. These commands do not upload anyth
 
 ## What these examples deliberately do not claim
 
+For a practical, copy/paste-friendly guide to giving someone MP3s for use in Spotify playlists, see [Sharing local files](SHARE_LOCAL_FILES.md). That setup is outside this synthetic catalog example.
+
 - A local reference does not prove an MP3 exists on disk or is playable on your phone.
 - A track found in three playlists may still be absent from an inaccessible fourth playlist.
 - Two Spotify IDs with the same title are still separate identities here.

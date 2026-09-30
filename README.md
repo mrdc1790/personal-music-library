@@ -36,6 +36,7 @@ Not implemented: local audio-folder inventory/matching, canonical recording matc
 |---|---|
 | [Operating guide](docs/OPERATING_GUIDE.md) | Scan, resume, import, query, preview, export, back up, or inspect folders |
 | [Evidence and data model](docs/EVIDENCE_AND_MODEL.md) | Interpret identities, coverage, local tracks, duplicates, or client disagreement |
+| [Sharing local files](docs/SHARE_LOCAL_FILES.md) | Give a friend MP3 setup and phone-sync instructions without confusing them with catalog coverage |
 | [Examples](docs/EXAMPLES.md) | Reproduce the supported offline walkthrough |
 | [Migration](docs/MIGRATION.md) | Review or execute a shadow-track migration |
 | [Roadmap](docs/ROADMAP.md) | Understand planned work and the broader app vision |
