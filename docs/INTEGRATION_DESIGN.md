@@ -31,3 +31,35 @@ Local inventory is a first-class source adapter, separate from Spotify playlists
 Recipe deduplication must declare its identity level: exact URI, reviewed recording group, or file identity. Single-versus-album candidates belong to recording-level review even when neither release is a shadow and no relink field exists. Cross-playlist overlap remains intentional unless a separate reviewed recipe says otherwise.
 
 Only after files are inventoried and matched should the project generate a dry-run M3U or music-server playlist report. Verify path mapping, ordering, duplicates, and unresolved entries on a small sample before bulk output. Symfonium, Navidrome, Jellyfin, and DJ software are potential endpoints for owned audio; they do not convert Spotify metadata into audio or establish universal playback.
+
+## Large collections and bounded provider outputs (planned)
+
+A local collection can exceed a provider playlist's capacity. Represent the collection independently, then create separately reviewed output projections; do not claim to bypass Spotify's limit. Each projection should retain collection/recipe version, source snapshots and coverage, identity level, ordering, part boundaries, destination IDs, and a manifest mapping every output occurrence to its source. Preserve duplicate occurrences unless the user explicitly chooses a deduplicating recipe.
+
+Preview capacity and unmatched/unavailable entries before publishing. Splitting must be deterministic under a declared order, with a policy for future additions, changed part boundaries, renamed outputs, and pre-existing destination contents. Never silently drop old entries to make room or overwrite unrelated destination items. Future incremental sync needs idempotent action tracking, fresh reads, verification, and a conflict/recovery policy. Synthetic acceptance should cover boundary sizes, repeated tracks across parts, partial writes, concurrent destination edits, and reruns. No publisher or automatic collection splitting is implemented.
+
+## Symfonium transfer acceptance (planned)
+
+Keep the catalog as historical evidence and Symfonium as a possible playback client for matched owned audio. A transfer is a projection with losses, not a lossless Spotify-account migration.
+
+| Information | Required treatment |
+|---|---|
+| Track sequence and repeated occurrences | Compare the imported sequence and multiplicity against the export manifest; do not assume preservation |
+| Matched audio | Use verified local/server paths or provider media IDs; report unresolved entries separately |
+| Nested/empty folders and sibling order | Preserve the source tree locally; flattened names or tags are an explicit output mapping, not an equivalent tree |
+| Playlist names | Retain source IDs and collision-safe output names; equal names do not identify equal playlists |
+| Likes/favorites | Choose a playlist or favorite projection explicitly; it is not identical Spotify saved membership |
+| Dates, attribution, ownership, covers, descriptions | Retain source evidence locally and declare fields the destination cannot preserve |
+| Spotify URIs and raw metadata | Keep in the catalog/manifest; they are not owned-audio playback paths |
+
+The [Symfonium import/sync guide](https://docs.symfonium.app/wiki/providers/import-sync-media-providers-playlists/) reviewed on 2026-09-30 documents server sync modes and M3U/PLS import for supported file providers. Start with a small read-only import and verify actual provider/version behavior. Its “Skip duplicates” option skips playlist imports by matching playlist name; it is not a guarantee about repeated tracks inside a playlist. Online-first and offline-first modes can write or replace server playlists, so sync direction and write authorization must be explicit before using them. Catalog set queries remain the source of playlist algebra; a player's metadata filters are not automatically equivalent membership queries. No player/server was installed or connected by this review.
+
+## Export-plan review and remaining limits
+
+The “Spotify Playlist Export” discussion was reviewed on 2026-09-30. Its core is already implemented or planned here: SQLite snapshot history, occurrence CSVs, per-playlist CSVs, song-to-playlist reverse indexes, artist/source summaries, exact observed-ID set operations, separate folder evidence, reviewed recording identity, and later owned-audio output. Do not create thousands of authoritative per-song/per-artist files; generate consolidated tables and optional filtered views from the catalog.
+
+Current `playlists.csv` does not include joined folder paths; hierarchy/content export joining remains work. Recording-level algebra, audio fingerprints, reliable moved-file recovery, provider publishing, and general Spotify playlist reconstruction remain planned. Restoring a catalog ZIP restores local evidence only; it does not rebuild Spotify, restore audio, or recover original provider attribution/dates. The separate migration engine's restricted rollback is not a general playlist-restoration feature. Example counts and proposed commands in the chat are illustrations, not measured results or implemented commands.
+
+[Exportify](https://github.com/watsonbox/exportify) and [Spotify's account-data archive](https://support.spotify.com/us/article/understanding-your-data/) are optional archival research leads, not required replacements for the scanner. Any future import must validate actual fields, identities, ordering, account, capture time, and completeness; retain missing fields as unknown and compare source data paths before claiming independent confirmation. Soundiiz and Set Operations for Spotify remain third-party transfer/algebra leads requiring current capability and safety review before use; this review did not validate or authorize their account writes.
+
+The chat explicitly did not read its six linked shared discussions. Their redundancy and unique requirements remain unreviewed; reviewing this parent chat does not establish that those other chats can be deleted. The parent chat's project-relevant design is now preserved here. Cross-repository scope was checked: exports, virtual collections, and owned-audio playback belong to the catalog; the browser migrator's selected-ID repair boundary needs no companion edit. No recurring backup or account-changing automation was configured.
