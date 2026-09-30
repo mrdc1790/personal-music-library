@@ -29,7 +29,10 @@ class AuditTests(unittest.TestCase):
     def test_long_rate_limit_stops_without_another_request(self):
         api = Spotify('example', {'access_token': 'test', 'expires_in': 3600})
         error = HTTPError('https://api.spotify.com/v1/me/tracks', 429, 'Limited', {'Retry-After': '24000'}, None)
-        with patch('audit.urlopen', side_effect=error) as request, patch('audit.time.sleep') as sleep:
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.dict('os.environ', {'PERSONAL_MUSIC_LIBRARY_DATA': directory}), \
+                patch('audit.urlopen', side_effect=error) as request, \
+                patch('audit.time.sleep') as sleep:
             with self.assertRaises(SpotifyRateLimit):
                 api.get('me/tracks')
             self.assertEqual(request.call_count, 1)
