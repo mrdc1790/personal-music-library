@@ -59,8 +59,7 @@ There is no automatic replacement, cleanup, or deletion workflow.
 
 ## Folder counts versus Local Files versus playlist counts
 
-The pasted folder-audit discussion from [this shared chat](https://chatgpt.com/share/6abf2b9e-166c-83ea-aca7-ee1c577ec61c)
-was reviewed on 2026-10-02. Its three-stage direction belongs to this project:
+The three-stage folder-audit workflow belongs to this project:
 audit selected folders, reconcile separately captured Spotify observations, and
 retain the evidence in the library workflow. Personal paths, playlist names,
 and exact historical totals stay in private evidence rather than public docs.
