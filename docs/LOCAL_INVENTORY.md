@@ -56,3 +56,64 @@ scan is partial. Export flags, snapshot status, source counts, inventory times,
 and snapshot time remain explicit. A complete endpoint capture does not prove
 desktop Local Files, phone, saved local songs, transfer, or playback coverage.
 There is no automatic replacement, cleanup, or deletion workflow.
+
+## Folder counts versus Local Files versus playlist counts
+
+The pasted folder-audit discussion from [this shared chat](https://chatgpt.com/share/6abf2b9e-166c-83ea-aca7-ee1c577ec61c)
+was reviewed on 2026-10-02. Its three-stage direction belongs to this project:
+audit selected folders, reconcile separately captured Spotify observations, and
+retain the evidence in the library workflow. Personal paths, playlist names,
+and exact historical totals stay in private evidence rather than public docs.
+
+Windows folder properties count all files, including artwork and sidecars;
+an extension-selected inventory counts candidate audio paths; Spotify Desktop
+Local Files counts that client's discovered entries; a playlist count measures
+occurrences and may include repeated or cloud items. A difference between those
+totals is a numerical gap, not proof of a specific number of missing recordings.
+Equal totals also do not establish equal membership. Do not bulk-add the Local
+Files view to a playlist merely to equalize its count.
+
+The current scanner implements selected-root traversal, per-file errors, SHA-256
+byte groups, optional WAV duration, and weak filename candidates against captured
+local playlist references. It does not yet count every non-audio file or produce
+an all-file extension histogram, validate audio decoding, read tags/codec/bitrate/
+sample rate across formats, or capture the desktop Local Files collection.
+An extension is not evidence of Spotify format support. A successful byte read
+is not proof of valid or playable audio. No real-folder audit was run by this
+documentation review.
+
+Planned acceptance work:
+
+- Produce an all-file extension histogram with an explicit no-extension bucket,
+  candidate-audio counts, and traversal coverage. Report repeated root observations
+  separately from distinct paths and retain unreadable/skipped entries.
+- Retain root-relative paths and folder labels alongside absolute paths and scan
+  provenance. Treat folder-derived artist, album, genre, source, or download-batch
+  labels as attributed candidates, not authoritative tags or identity. Existing
+  folders need no automatic reorganization; genres can be multiple user metadata
+  labels without requiring multiple physical copies.
+- Capture comparable item-level desktop Local Files and playlist observations
+  through a validated export or adapter, retaining account/device, time, filters,
+  ordering, duplicates, local/cloud distinction, and completion evidence. A Web
+  API playlist scan does not supply the missing desktop collection. Report
+  A-only/B-only/shared/unknown under a declared identity basis only when both
+  sources support that comparison; count-only observations remain unresolved.
+- Add source-dated tag and audio properties, reviewed file-to-recording links,
+  provider/source URLs, and path history through backward-compatible SQLite
+  schema work. Keep physical files, byte identity, recordings, releases, provider
+  instances, and playlist occurrences separate. Metadata equality is candidate
+  evidence, not canonical recording identity; playlist relationships must retain
+  repeated occurrences. The chat's illustrative tables and SQL are not the
+  implemented schema or a working missing-song query.
+
+Whole-file SHA-256 establishes byte equality, not audio equivalence. Retagging
+can change the hash without changing the audio; transcoding also changes bytes.
+Audio fingerprints or decoded-audio comparisons are separate future evidence
+with their own limits. Artist/title/album/duration alone cannot establish the
+same recording. Preserve genuine versions and ambiguous matches for review.
+
+Owned files supply the audio bytes; the catalog retains captured facts, history,
+and reviewed organization; Spotify and possible players consume separately
+validated projections. None is an infallible measurement of another device.
+The browser migrator's companion guidance retains this boundary: these count
+gaps do not authorize Spotify migration, playlist deduplication, or file cleanup.

@@ -16,7 +16,7 @@ Finish useful read-only coverage, import it, and make playlist size, overlap, du
 
 1. Validate a real resumable scan and catalog import at useful coverage.
 2. Improve full-library ingestion, browsing, playlist-size views, overlap, and duplicate review.
-3. Inventory user-chosen local-audio roots, including files never placed in Spotify playlists, and reconcile desktop/phone inventories with Spotify local references. Retain missing roots, read errors, and unknown phone coverage.
+3. Extend the implemented read-only local inventory and filename-candidate reports with richer file evidence, including files never placed in Spotify playlists, and reconcile desktop/phone inventories with Spotify local references. Retain missing roots, read errors, and unknown phone coverage.
 4. Validate one small live Spotifast folder-tree import.
 5. Add [artist history and enrichment](#artist-history-and-enrichment-planned): followed-artist snapshots, source-dated genre evidence, and manual overrides without inventing history.
 6. Build recording/source relationships for ordinary single/album/deluxe/compilation duplicates as well as shadow releases, market relinks, and local/cloud candidates. Keep genuine versions distinct. Apply the same taxonomy to playlists and Liked Songs before expanding automatic resolution.
