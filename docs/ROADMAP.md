@@ -12,6 +12,16 @@ Retain SQLite for the local operational catalog. The [storage decision and alter
 
 Finish useful read-only coverage, import it, and make playlist size, overlap, duplicate occurrences, and local collection visibility practical. Spotify's 10,000-item playlist limit remains a service constraint. The future response is a larger local collection with reviewed, bounded provider outputs—not a claim to bypass the limit.
 
+## Catalog and browser migrator coordination
+
+Follow the [authoritative integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for
+cross-repository ordering and acceptance criteria. Documentation alignment comes
+first, then a manual workflow trial before a versioned file bridge. The catalog
+owns discovery/history/evidence; the browser is the preferred future reviewed
+execution interface. Existing Python execution remains available under its own
+restrictions. A bridge and executor retirement are not implemented or assumed.
+This integration track preserves the coverage and browsing priorities below.
+
 ## Next work
 
 1. Validate a real resumable scan and catalog import at useful coverage.

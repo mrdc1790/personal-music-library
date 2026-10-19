@@ -55,3 +55,10 @@ The earlier topic-specific notes were consolidated so operations, evidence rules
 ## Related project
 
 [Spotify Playlist Migrator](https://github.com/mrdc1790/spotify-shadow-release-migrator) is a separate browser application for reviewed, explicit playlist and Liked Songs migrations. It shares the same safety principles but has its own codebase, OAuth flow, release cycle, and Git upstream. This repository is the long-lived catalog and evidence layer; neither repository imports code or data from the other at runtime.
+
+The [shared integration roadmap](docs/CATALOG_MIGRATOR_ROADMAP.md) owns the ordered
+cross-project work: documentation, manual trial, a versioned proposal file,
+read-only browser import, then outcome history. The catalog owns discovery and
+evidence; the browser is the preferred future execution interface. No bridge is
+implemented. Existing Python migration commands retain their current restrictions;
+retirement is a later decision after the replacement workflow is proven.

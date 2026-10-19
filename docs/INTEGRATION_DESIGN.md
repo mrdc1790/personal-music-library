@@ -2,6 +2,13 @@
 
 Both areas are planned extensions to the local catalog. They must preserve provenance and remain useful even when Spotify, local audio, or a future provider cannot support the requested output.
 
+## Browser migrator coordination
+
+The separate [catalog/migrator roadmap](CATALOG_MIGRATOR_ROADMAP.md) is authoritative
+for that integration's responsibilities, ordered steps, and acceptance criteria.
+It starts with documentation and a manual trial before a versioned file handoff.
+No catalog-to-browser bridge is implemented by this design.
+
 ## Folder structure adapter
 
 Spotify's Web API capture preserves playlist contents but not folder nodes, nesting, empty folders, or desktop sibling order. API playlist-list order must not be described as a folder tree.

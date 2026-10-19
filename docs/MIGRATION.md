@@ -8,6 +8,16 @@ Scope is reviewed Spotify instance replacement, not count reconciliation or auto
 
 **Live status:** No account scan or migration has been performed. Tests use a simulated Spotify API. A real Developer app and user sign-in are required for live validation. Development Mode scans are useful backups but are blocked from execution because the API hides original IDs.
 
+## Relationship to the browser migrator
+
+The [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) assigns discovery,
+provenance, and history to the catalog and prefers the separate browser migrator
+as the future reviewed execution interface. No bridge is implemented, and this
+Python engine is not being removed by that plan. Its commands, execution
+restrictions, approval requirements, and recovery limits below still apply.
+Compare capability and durable recovery coverage before any retirement decision;
+do not switch engines to bypass a blocked execution.
+
 ## Review of the shared proposal
 
 The snapshot, reverse occurrence index, reviewed mappings, and add-before-remove workflow are sound. Four details need correcting:
