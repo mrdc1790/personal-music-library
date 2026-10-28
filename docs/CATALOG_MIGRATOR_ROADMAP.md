@@ -1,7 +1,27 @@
 # Catalog and browser migrator integration roadmap
 
-Updated: 2026-10-19. This is the authoritative cross-repository integration sequence.
+Updated: 2026-10-27. This is the authoritative cross-repository integration sequence.
 It is a design, not an implemented bridge or authorization to change Spotify.
+
+## Implementation checkpoint — October 27, 2026
+
+The browser now implements IndexedDB preview checkpoints, account-scoped resume,
+stop controls, progress counters, and bounded rereads of changing playlists.
+This recovery works independently of the catalog and is covered by 65 offline
+tests. It is not a catalog bridge, recording resolver, or durable mutation journal.
+The catalog runtime/schema were unchanged; its 11 catalog tests pass.
+Authenticated acceptance and useful real capture/import coverage remain pending.
+
+The ordered phases below remain the shared integration sequence. Measure local
+exact-instance queries during the manual trial, before implementing the contract.
+The [discovery envelope requirements](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned)
+refine the proposed file interface; they do not implement it or move optimization
+ahead of a validated manual workflow. Initial import retains fresh browser
+discovery. Reuse of imported observations requires the later coverage-aware
+validation phase; the browser's existing cache reuse is independently implemented.
+Outcome export/import remains a separate planned phase, not browser rollback.
+
+See [work status](WORK_STATUS.md) for this preservation pass and next actions.
 
 ## Decision and ownership
 
@@ -102,8 +122,9 @@ The [catalog roadmap](ROADMAP.md) owns the broader catalog, resolver, local-file
 and music-hub priorities. This integration track does not move those features
 ahead of useful coverage and browsing.
 
-The browser's [October 2 performance/design note](https://github.com/mrdc1790/spotify-shadow-release-migrator/blob/main/UPDATED_PLAN.md)
-retains its benchmark corrections and technical research. Its implementation
-sequence is superseded by this roadmap; historical links are not live validation.
+The browser's [current recovery plan and historical performance/design note](https://github.com/mrdc1790/spotify-shadow-release-migrator/blob/main/UPDATED_PLAN.md)
+retains its benchmark corrections and technical research. Use this roadmap for
+shared phase ordering and that plan for browser acceptance details; historical
+links are not live validation.
 The [Python migration guide](MIGRATION.md) remains authoritative for that engine's
 current commands and restrictions.

@@ -73,7 +73,7 @@ retirement is a later decision after the replacement workflow is proven.
 
 The October 22 recovery work changed the **browser migrator**: persistent
 IndexedDB checkpoints, resume/stop controls, visible progress/storage fallback,
-and account-scoped recovery are implemented in its local working tree. Those
+and account-scoped recovery are preserved in its Git history. Those
 features do not require this database to be finished. They are not a catalog
 import, canonical recording resolver, or durable migration journal.
 
@@ -89,5 +89,5 @@ Next: validate useful capture/import coverage, measure and improve exact-instanc
 queries, then implement an explicit versioned discovery export/import. See the
 [delivery sequence](docs/ROADMAP.md#next-work) and
 [handoff requirements](docs/INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned).
-Current implementation statements refer to the local checkouts, not a verified
-published release.
+See [work status](docs/WORK_STATUS.md) for preserved work, validation, and next
+actions. Committed source does not establish a deployed or account-tested release.
