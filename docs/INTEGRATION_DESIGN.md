@@ -1,6 +1,64 @@
-# Integration design: folders and smart collections
+# Integration design: migrator discovery, folders, and smart collections
 
-Both areas are planned extensions to the local catalog. They must preserve provenance and remain useful even when Spotify, local audio, or a future provider cannot support the requested output.
+These areas are planned extensions to the local catalog. They must preserve provenance and remain useful even when Spotify, local audio, or a future provider cannot support the requested output.
+
+The planned personal database stores rich track, release, artist, membership, and enrichment evidence. Recipes and later profiles/recommendations read that committed local data without provider calls; acquisition and enrichment refresh are separate jobs. Missing fields produce visible unknowns or local enrichment needs rather than an implicit live lookup. See the [database query architecture](LIBRARY_INTELLIGENCE.md#the-personal-database-is-the-query-engine).
+
+## Catalog-to-migrator discovery handoff (planned)
+
+Reviewed against both local checkouts on October 27, 2026. The browser migrator
+now has persistent IndexedDB preview checkpoints and can resume without this
+catalog. It still has no catalog importer, shared SQLite connection, shared OAuth,
+or durable mutation journal. This specification describes future work, not an
+implemented JSON format or CLI command.
+
+Keep the catalog as the durable historical evidence/query engine. Start with an
+explicit versioned file export/import, so either application remains usable on
+its own. Export from a selected committed historical catalog snapshot; do not open
+an operational capture database as though it were the historical catalog. Record
+the originating capture's coverage and timing separately from catalog import time.
+
+The proposed discovery envelope must carry:
+
+| Evidence | Required treatment |
+|---|---|
+| Format and producer | Schema version, producer/version, export time, and selected catalog snapshot identity |
+| Account and capture | Verified account identity, available app/API capability and market evidence, and source capture times; missing fields stay unknown |
+| Discovery coverage | Playlist-list completion/errors and every observed source, including complete negatives and unreadable/partial sources; an absent record is not an empty playlist |
+| Playlist versions | Stable source ID, observed snapshot/version, capture status, expected/fetched/exported counts, and failure evidence |
+| Occurrences | Ordered positions, duplicate multiplicity, requested/original/returned identity evidence where exposed, local/missing markers, and identity basis |
+| Selected mapping evidence | Exact source and destination instance IDs, all observed source occurrences, and pre-existing destination occurrences; similarity never approves a mapping |
+| Liked Songs | Timestamped saved-membership/capture evidence and its own coverage; no invented playlist snapshot token |
+
+Export only the data required for discovery and review; never include credentials,
+refresh tokens, or audio. A compact representation must retain per-source
+completeness and occurrence counts. Exporting positive locations alone cannot
+support an account-wide absence claim. If the current schema/raw evidence cannot
+establish a required field, mark it unknown rather than reconstructing certainty.
+
+The importer must validate the supported schema, account, counts, identities,
+positions, and coverage before accepting evidence. Retain imported source
+provenance and show **historical observations** with their dates. Merely importing
+a file must make no provider call, grant no execution permission, and leave failed
+or incomplete sources unresolved.
+
+For a separately requested **current preview**, freshly enumerate playlists and
+revalidate versions for historical positive and negative results. Read every
+new, changed, unresolved, or unusable source; refresh selected Liked Songs
+membership and release metadata. An unchanged complete playlist may reuse its
+ordered cached observations after version validation. Only a complete fresh
+discovery may make a current absence claim within that endpoint's scope. Confirmed
+migration must retain the browser's fresh target preflight/readback checks and
+add-and-verify-before-remove order.
+
+Delivery order: useful capture/import validation, measured exact-instance query
+improvements, catalog export, explicit browser import, then end-to-end current
+discovery tests. Acceptance must cover wrong accounts/versions, malformed exports,
+partial and failed sources, duplicate/order preservation, existing destinations,
+a changed formerly negative playlist, new playlists, stale Liked Songs, and an
+import that performs zero network calls. Measure requests and local query cost;
+do not promise an instant preview or quota bypass. Recording equivalence and
+browser mutation journaling remain separate work.
 
 ## Browser migrator coordination
 
@@ -30,6 +88,8 @@ The current CLI supports local union, intersection, and difference. A future rec
 The expected synthetic examples are `Chill AND Festival → Moonrise` and `Chill NOT Festival → Harbor`. A recipe run must not mutate its sources. It must preserve snapshot ID, recipe version, parameters, coverage, output-order rule, and any shuffle seed so the result can be explained and reproduced.
 
 Later operations—sorting, limits, artist spacing, explicit deduplication, scheduling, refresh against a newer snapshot, and Spotify publishing—need their own visible rules and review boundaries. Mathematical set operations do not define listening order. A large local result may later be projected to bounded service playlists, but splitting or publishing is not implemented.
+
+The [library intelligence design](LIBRARY_INTELLIGENCE.md) extends this interface to one-source exploration, N-way membership explanations, at-least-N rules, and artist/album placement queries. It also separates continuing capture from cached offline queries and outlines permitted genre/BPM/key enrichment, musical profiles, and track-level DJ candidates. Field coverage, source permission, identity mode, user overrides, and derivation versions must accompany those results. A recommendation remains a local review item until a separately authorized publishing workflow exists.
 
 ## Owned audio and DJ endpoints
 

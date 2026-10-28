@@ -6,6 +6,8 @@ The longer-term vision is a personal-use-first music hub for power users and pla
 
 The grounded architecture is a local catalog that observes provider metadata and owned-audio sources. A wrapper can link to provider content where APIs allow, but licensing, playback, social features, provider capabilities, and commercialization require separate current validation.
 
+The personal database is the engine for later exploration: build durable metadata and relationships for tracks/recordings, releases, artists, ordered memberships, owned audio, and personal decisions; enrich them through selected independent sources. Playlist algebra, musical profiles, DJ suggestions, and artist/album placement questions then query saved local evidence with zero provider calls. Collection and enrichment refresh run separately, and results show their evidence dates and coverage. Rich metadata is a planned extension of the working catalog, not merely a temporary Spotify response cache.
+
 ## Current priority
 
 Retain SQLite for the local operational catalog. The [storage decision and alternatives](STORAGE_DECISION.md) explain the fit, query-performance work, optional analytics path, and criteria for reconsidering a server database. No cloud service or second database engine is currently required.
@@ -24,12 +26,39 @@ This integration track preserves the coverage and browsing priorities below.
 
 ## Next work
 
-1. Validate a real resumable scan and catalog import at useful coverage.
-2. Improve full-library ingestion, browsing, playlist-size views, overlap, and duplicate review.
-3. Extend the implemented read-only local inventory and filename-candidate reports with richer file evidence, including files never placed in Spotify playlists, and reconcile desktop/phone inventories with Spotify local references. Retain missing roots, read errors, and unknown phone coverage.
-4. Validate one small live Spotifast folder-tree import.
-5. Add [artist history and enrichment](#artist-history-and-enrichment-planned): followed-artist snapshots, source-dated genre evidence, and manual overrides without inventing history.
-6. Build recording/source relationships for ordinary single/album/deluxe/compilation duplicates as well as shadow releases, market relinks, and local/cloud candidates. Keep genuine versions distinct. Apply the same taxonomy to playlists and Liked Songs before expanding automatic resolution.
+1. Validate a real resumable scan and historical catalog import at useful coverage. Retain per-source failures, capture times, counts, and resume evidence; a bounded preview is not full-library validation.
+2. Measure capture/import cost, exact-instance lookup latency, and query memory. `lookup`, set operations, and comparisons still load snapshot rows in Python; implement focused indexed SQL queries where measurements justify them, preserving coverage gates, order, and duplicate occurrences.
+3. Implement the [versioned catalog-to-migrator discovery handoff](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned): catalog export first, explicit browser import second, then fresh-discovery validation. Exact selected-ID discovery does not require a canonical recording resolver or completed enrichment system.
+4. Improve full-library ingestion, browsing, playlist-size views, overlap, and duplicate review using the same committed local evidence.
+5. Extend the implemented read-only local inventory and filename-candidate reports with richer file evidence, including files never placed in Spotify playlists, and reconcile desktop/phone inventories with Spotify local references. Retain missing roots, read errors, and unknown phone coverage.
+6. Validate one small live Spotifast folder-tree import.
+7. Add [artist history and enrichment](#artist-history-and-enrichment-planned): followed-artist snapshots, source-dated genre evidence, and manual overrides without inventing history.
+8. Build recording/source relationships for ordinary single/album/deluxe/compilation duplicates as well as shadow releases, market relinks, and local/cloud candidates. Keep genuine versions distinct. Apply the same taxonomy to playlists and Liked Songs before expanding automatic resolution.
+9. Develop [library intelligence](LIBRARY_INTELLIGENCE.md) in stages: continuing read-only refresh and health reporting, richer multi-playlist/artist/album queries, permitted metadata enrichment, musical profiles and DJ transition candidates, then album/future-release placement suggestions. Coverage and identity work remain prerequisites; Spotify-derived analysis has a separate provider-permission constraint.
+
+### Delivery status and dependencies — October 27, 2026
+
+| Area | Current status | Next acceptance evidence |
+|---|---|---|
+| Catalog capture, history, queries, and backups | Existing Python/SQLite implementation; no new database runtime/schema work in the October 22 recovery pass or this docs refresh | Useful real capture resumed, exported, imported, and queried with explicit coverage |
+| Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | Authenticated read-only preview for the selected pair; record actual read counts, failures, and retained progress |
+| Query performance | Exact-instance index exists; general lookup/set/compare paths still materialize snapshot rows | Reproducible measurements and focused SQL-query regression tests before claiming scale gains |
+| Catalog discovery bridge | Planned; neither exporter nor browser importer is implemented | Versioned evidence export/import, account validation, corrupt/partial-data rejection, and fresh discovery |
+| Recording resolver and rich library intelligence | Planned extensions | Reviewed identities and permitted metadata with provenance; no silent provider calls during ordinary queries |
+
+The migrator's recovery work can be used and validated independently of catalog
+completion. Continue catalog coverage/query work in parallel; avoid building a
+second hidden full-library scanner. Persistent browser recovery does not complete
+the bridge, reset Spotify quota, create a mutation journal, or establish real
+playlist membership. The October 27 checks passed 11 catalog tests and 65 migrator
+tests; the October 22 browser close/reopen test was synthetic. These are local
+working-tree results, not an authenticated migration or a release announcement.
+
+### Library intelligence and continuing maintenance (planned)
+
+The October 6, 2026 ideas are retained in the [library intelligence design and feasibility review](LIBRARY_INTELLIGENCE.md). Existing N-way CLI set queries, scan comparisons, and artist/source summaries are foundations, not an implemented self-updating recommendation system. Continuing refresh must discover new playlists, keep failed observations out of removal comparisons, revalidate playlist versions, and handle Liked Songs without assuming a version token. Profiles must expose genre/BPM/key coverage; artist/album suggestions need literal placement and complete release evidence first.
+
+The design includes source-dated MusicBrainz/Last.fm tag research and owned-audio/DJ metadata paths. Spotify currently deprecates artist genres and restricts affected apps' Audio Features/Analysis access. Its policy also constrains content analysis and AI ingestion, so Spotify-backed profiling is conditional on validating permission; local computation alone does not settle that. This is planned catalog work, with no scheduler, service connection, dependency installation, or account write configured by this documentation update.
 
 ### Reconciliation acceptance criteria (planned)
 
@@ -77,6 +106,8 @@ These requirements preserve the useful design from the earlier “Spotify Librar
 ### Recording resolver and release-family discovery (planned)
 
 The “Clarify Spotify Duplicates” discussion has largely already been incorporated into [the identity taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy), [reference-tool research](REFERENCE_PROJECTS.md), and [migration guidance](MIGRATION.md). Its remaining discovery requirement belongs here: begin with one confusing saved track and recover candidate old releases, sibling releases, neighboring tracks, and their captured playlist/Liked Songs placements. These are planned capabilities, not a working `resolve-track` command.
+
+The [October 6, 2026 navigation observation](HISTORICAL_OBSERVATIONS.md#october-6-2026-oldshadow-album-navigation-appears-restored) reports that View album now reaches the old/shadow album without an Android app update. Old-release discovery must cover both reachable and unreadable old albums; restored client navigation does not establish API readability, merged identities, or transferred membership. Capture the opened release identity separately from the stored track identity and keep migration optional.
 
 1. Start with a captured provider ID/URI and historical raw metadata. Report its observed release, artists, ISRC, duration, version markers, original/returned identity evidence, snapshot, and coverage. If the old release is unavailable now, keep the historical observations; do not reconstruct missing neighbors from the current album's positions alone.
 2. Produce read-only candidate reports from ISRC with artist/duration/version checks, then release-family comparisons, then weaker title/artist/duration candidates. Add external recording IDs and owned-audio fingerprints later. Preserve supporting and contradictory evidence, missing fields, and ambiguous or unmatched tracks. Heuristic labels are not calibrated probability percentages.

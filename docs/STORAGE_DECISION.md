@@ -28,6 +28,29 @@ SQLite's [deployment guidance](https://www.sqlite.org/whentouse.html) supports d
 
 [DuckDB's documentation](https://duckdb.org/docs/stable/connect/concurrency) describes an analytical concurrency model; do not simplify that into “it cannot do transactions.” [PostgreSQL's concurrency documentation](https://www.postgresql.org/docs/current/mvcc.html) is a starting point for a server evaluation. No alternative service or package was installed or configured by this review.
 
+## Cross-project storage status — October 27, 2026
+
+The October 22 browser recovery implementation did not extend or populate this
+Python database, change its schema, or optimize its query paths. The October 27
+refresh updates plans/docs only. Keep these stores and their guarantees distinct:
+
+| Store | Implemented role | Boundary |
+|---|---|---|
+| Per-run capture SQLite | Committed source rows and resumable capture state | Operational run format; not interchangeable with the historical catalog |
+| Historical catalog SQLite | Imported immutable snapshot history and local queries | Existing schema/query implementation; useful real coverage and scale validation remain work |
+| Browser IndexedDB | Persisted ordered URI/version/page checkpoints and selected-input draft | Recoverable preview cache; site data can be evicted or cleared; never execution authority |
+| Browser session storage / memory | Explicit fallback when IndexedDB is unavailable | Weaker recovery, reported in the UI; not a durable backup |
+| Browser local storage | Client-scoped cooldown state and existing browser auth configuration | Separate from preview contents and from Python storage; changing origin does not transfer it |
+| Migration journals | Existing guarded Python executor journal | Browser equivalent and catalog journal interchange are not implemented |
+
+The next database work is useful capture/import validation and measured
+exact-instance queries, followed by the
+[versioned discovery handoff](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned).
+The current lookup/set/compare paths materialize snapshot rows despite the
+existing exact-instance index. A browser cache cannot be counted as completing
+that query work or the rich track/album/artist evidence model. No second database
+engine, shared filesystem path, or shared OAuth is required by the handoff plan.
+
 ## Work before changing engines
 
 - Benchmark synthetic histories with repeated placements, many snapshots, incomplete coverage, and realistic artist credits. Measure query/report latency and peak memory. `lookup`, set queries, and snapshot comparisons currently load rows into Python; SQLite's presence does not mean every operation is an indexed SQL query. Push filtering/joins into SQL and add justified indexes before attributing slowness to SQLite. Evaluate pagination and optional full-text search only against a demonstrated need.
@@ -35,4 +58,4 @@ SQLite's [deployment guidance](https://www.sqlite.org/whentouse.html) supports d
 - Add schema migrations only when needed, with version checks, a verified backup, preservation of older evidence, and synthetic upgrade/restore tests. A PostgreSQL move would need explicit type, constraint, SQL, ID, transaction, and backup conversion checks; it is not an automatic file conversion.
 - Keep active databases on supported local storage through `storage_paths.py`. Use consistent verified archives for transfer/backup, not simultaneous edits to a cloud-synced or network-shared live file. [WAL](https://www.sqlite.org/wal.html) may improve reader/writer coexistence but still has one writer and extra files/checkpoint considerations; it is not enabled by this decision or a multi-machine sync mechanism.
 
-The browser migrator was checked: its preview checkpoints and cooldown storage are session/recovery state, not a historical catalog. It does not need SQLite added merely for symmetry. A future durable mutation journal or catalog interface needs a separate design and tests; neither app opens the other's database. The chat can be deleted without losing these choices or reconsideration criteria.
+The browser migrator was checked: its preview checkpoints and cooldown storage are recovery state, not a historical catalog. Its October 22, 2026 update adds IndexedDB preview persistence, with explicit session/memory fallback and fresh version checks on resume. This does not require this catalog to be complete or add SQLite to the browser. A future durable mutation journal or versioned catalog interface still needs a separate design and tests; neither app opens the other's database. The chat can be deleted without losing these choices or reconsideration criteria.

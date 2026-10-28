@@ -6,7 +6,20 @@ Implemented: `scan`, `plan`, `apply`, `resume`, and `rollback`. Writes require i
 
 Scope is reviewed Spotify instance replacement, not count reconciliation or automatic deduplication. An ordinary single-to-album mapping can be a candidate without shadow/relink evidence, but still needs the same identity and approval gates; metadata resemblance cannot bypass them. Playlists retain one replacement per original occurrence, including when the destination already exists. Liked Songs membership is tracked per URI and does not preserve repeated playlist-like positions. Local-file discovery, transfer, tagging, deletion, and local-to-cloud replacement are not implemented; affected local/missing playlist entries block this engine's execution. See the full [taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy).
 
-**Live status:** No account scan or migration has been performed. Tests use a simulated Spotify API. A real Developer app and user sign-in are required for live validation. Development Mode scans are useful backups but are blocked from execution because the API hides original IDs.
+**Validation status reviewed October 27, 2026:** this Python executor remains
+offline-tested; tests use a simulated Spotify API. The October 22 browser
+migrator recovery work did not validate or modify this executor, import a
+personal capture, or run a migration. A real Developer app and user sign-in are
+required for account-backed validation. Development Mode scans are useful backups
+but are blocked from this engine's execution because the API hides original IDs.
+
+The browser migrator is a separate execution path with its own safety gates,
+OAuth, and storage. Its IndexedDB preview cache is not this engine's durable
+journal, and its selected-ID workflow does not grant this engine Extended Quota
+Mode or lift the restrictions below. The
+[planned discovery handoff](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned)
+transfers read-only evidence; it does not authorize either executor or provide
+automatic rollback across applications.
 
 ## Relationship to the browser migrator
 

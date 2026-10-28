@@ -24,6 +24,10 @@ Read-only [local audio-folder inventory and candidate reconciliation](docs/LOCAL
 
 Not implemented: confirmed local recording matching, canonical recording matching across Spotify IDs, full-library scale validation, saved smart-playlist recipes, playlist publishing/splitting, player/server integration, or a universal playback/Connect replacement.
 
+Planned [library intelligence](docs/LIBRARY_INTELLIGENCE.md) builds on that catalog: continuing change tracking, one-to-many playlist exploration, genre/BPM/key profiles, DJ transition candidates, and artist/album/future-release placement suggestions. The plan separates working queries from future features, metadata coverage, and provider-permission constraints.
+
+The intended engine is your richly enriched personal database: capture and refresh metadata separately, then answer questions from stored tracks, albums, artists, memberships, and features. Those queries use local evidence with zero provider calls and show when it was last refreshed.
+
 **Local files and count discrepancies are core scope.** Current playlist scans preserve Spotify-returned local references, but do not inventory the desktop Local Files collection or verify phone files. The separate local inventory scans chosen folders and retains coverage gaps. Liked Songs API totals are observations of that endpoint, not a guarantee of matching desktop, web, phone, or Spotifast. The [identity taxonomy and count rules](docs/EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy) explicitly include ordinary single-versus-album duplicates with different track IDs, as well as shadow releases. Confirmed recording matching and device reconciliation remain planned.
 
 ## Non-negotiable boundaries
@@ -42,8 +46,10 @@ Not implemented: confirmed local recording matching, canonical recording matchin
 | [Examples](docs/EXAMPLES.md) | Reproduce the supported offline walkthrough |
 | [Migration](docs/MIGRATION.md) | Review or execute a shadow-track migration |
 | [Roadmap](docs/ROADMAP.md) | Understand planned work and the broader app vision |
+| [Library intelligence](docs/LIBRARY_INTELLIGENCE.md) | Assess continuing refresh, multi-playlist queries, enrichment, DJ suggestions, and artist/album placement |
 | [Historical observations](docs/HISTORICAL_OBSERVATIONS.md) | Review dated count/recovery evidence without confusing it for current coverage |
-| [Integration design](docs/INTEGRATION_DESIGN.md) | Understand the planned folder adapter and smart-collection interface |
+| [Integration design](docs/INTEGRATION_DESIGN.md) | Plan the migrator discovery handoff, folder adapter, and smart collections |
+| [Storage decision](docs/STORAGE_DECISION.md) | Distinguish capture SQLite, historical catalog SQLite, browser recovery data, and future query optimization |
 | [Reference projects](docs/REFERENCE_PROJECTS.md) | Compare Spotify Dedup and Spotify Song Relinker against our identity, local-file, and preservation requirements |
 
 Requirements: Windows, Python 3.11+, and no third-party Python packages. A Spotify Developer app is needed only for a scan or migration. Copy `.env.example` to `.env`, set the public `SPOTIFY_CLIENT_ID`, and keep `.env` uncommitted. PKCE authentication does not use a Client Secret. A `--client-id` argument or environment variable can override the file.
@@ -62,3 +68,26 @@ read-only browser import, then outcome history. The catalog owns discovery and
 evidence; the browser is the preferred future execution interface. No bridge is
 implemented. Existing Python migration commands retain their current restrictions;
 retirement is a later decision after the replacement workflow is proven.
+
+### Implementation status reviewed October 27, 2026
+
+The October 22 recovery work changed the **browser migrator**: persistent
+IndexedDB checkpoints, resume/stop controls, visible progress/storage fallback,
+and account-scoped recovery are implemented in its local working tree. Those
+features do not require this database to be finished. They are not a catalog
+import, canonical recording resolver, or durable migration journal.
+
+This library's Python code and SQLite schema were unchanged by that work and by
+the October 27 documentation refresh. No new personal scan, catalog import,
+enrichment, or database population was performed. Its existing capture/import,
+history, and offline queries remain the starting point. Eleven catalog tests and
+65 migrator tests passed on October 27; the October 22 browser recovery smoke test
+used synthetic data. Authenticated validation of the supplied track pair remains
+pending; these checks do not establish real account membership or a migration.
+
+Next: validate useful capture/import coverage, measure and improve exact-instance
+queries, then implement an explicit versioned discovery export/import. See the
+[delivery sequence](docs/ROADMAP.md#next-work) and
+[handoff requirements](docs/INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned).
+Current implementation statements refer to the local checkouts, not a verified
+published release.

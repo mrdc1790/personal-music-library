@@ -56,6 +56,21 @@ Maintain separate totals for endpoint-reported total, fetched rows, exported/imp
 
 Counts alone cannot identify a difference set. Do not subtract the entire Local Files count from Liked Songs: overlap and inclusion semantics are unverified. Even equal counts can hide different membership. The home computer is the user's preferred reference for intended state, while each device remains a separate observation.
 
+## Browser recovery and future imported discovery
+
+The separate browser migrator's persistent preview checkpoints are current-run
+recovery data: compact ordered URIs and progress, scoped to app/account/source,
+with fresh playlist-version checks. They are not this catalog's historical
+snapshots, raw capture evidence, recording relationships, or mutation journals.
+The October 22 cache work did not change the catalog schema or add an importer.
+
+The [planned discovery handoff](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned)
+must retain account, capture dates, source versions, coverage, identity basis, and
+every duplicate/position. Imported historical locations cannot establish fresh
+account-wide absence; unchanged negatives and newly discovered sources matter as
+much as positive matches. Null, missing, local, failed, and partial evidence must
+retain their existing meanings across the boundary.
+
 ## Client disagreement
 
 Phone, desktop, and web clients can show incompatible membership state even when playback succeeds. Record stored occurrence URI/position, requested/effective URI when known, time, platform/app version, market, UI surface, result (`present`, `absent`, `unknown`), and raw evidence.

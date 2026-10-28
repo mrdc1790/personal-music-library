@@ -13,6 +13,23 @@
 
 Keep source snapshots, run status, errors, and failed coverage. They explain what the data does and does not cover.
 
+### Browser migrator versus this database
+
+The separate browser migrator's IndexedDB recovery does not populate or open
+this catalog. Continue using the capture/export/import commands below for local
+history; there is no implemented catalog-to-browser export/import command yet.
+Browser preview recovery can be used independently. The
+[integration plan](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned)
+defines the future handoff, and the [roadmap](ROADMAP.md#next-work) records pending
+capture/scale validation. The October 22 recovery pass and October 27 docs update
+did not perform a new personal capture or catalog import.
+
+For the browser tool, use its own README for localhost ports and OAuth. Its
+default is 5173; a Windows port reservation prevented that bind on October 22,
+when 18080 worked as an alternative. That dated observation does not change this
+Python application's `http://127.0.0.1:8765/callback` redirect or establish today's
+port availability. Neither application's recovery data is an audio backup.
+
 ## Scan and resume
 
 Create a Spotify Developer app, set redirect URI `http://127.0.0.1:8765/callback`, and use the public Client ID—no Client Secret is needed. Copy `.env.example` to `.env` and replace the placeholder, or set `SPOTIFY_CLIENT_ID` in the process environment. The ignored `.env` file is read locally and only that one setting is accepted.
