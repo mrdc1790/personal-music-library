@@ -172,6 +172,13 @@ out of AI models under the policy described below.
 
 ## Musical profiles, similarity, and DJ transitions
 
+The user's October 27, 2026 goal is a deeply organized, tagged DJ library,
+probably delivered through rekordbox. The [DJ library workflow](DJ_LIBRARY_WORKFLOW.md)
+turns this into a planned per-track analysis/review process, reusable musical
+filters, portable personal tags, and a small exchange/preservation pilot. It also
+separates energy from favorites and readiness, and permits a selected local-audio
+pilot without waiting for complete Spotify coverage or the migrator bridge.
+
 On appropriately permitted evidence, a playlist profile can report genre/tag
 distribution, BPM median and ranges, key/mode distribution, duration, and optional
 user-defined mood or energy. Show usable, missing, conflicted, and unmatched
@@ -311,6 +318,8 @@ costs before selecting cadence or claiming speed or recommendation quality.
 
 Cross-repository impact was checked against the sibling browser migrator's
 current source, preview-cache behavior, Liked Songs handling, and safety docs.
-These planned read-only catalog views require no migrator edit. Keep the projects
-independently runnable with separate storage and OAuth; any later plan handoff
+These planned read-only catalog views require no migrator runtime change. Its
+companion planning docs link to the shared DJ goal and retain Spotify-only
+execution responsibilities. Keep the projects independently runnable with
+separate storage and OAuth; any later plan handoff
 must use an explicitly versioned interface with fresh migration validation.

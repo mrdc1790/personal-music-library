@@ -118,6 +118,13 @@ first bridge. There is currently no proposal/result exchange between them.
 
 ## Related plans
 
+The [DJ library workflow](DJ_LIBRARY_WORKFLOW.md) records the shared long-term
+goal of a deeply organized, tagged library, with rekordbox as the leading target.
+Local-audio tagging and preparation can be piloted independently of this bridge.
+Spotify instance replacements do not move audio, prove equivalent edits, or
+authorize changing file tags, cues, grids, or rekordbox state. Obsidian remains
+an optional documentation/notes surface, not another integration dependency.
+
 The [catalog roadmap](ROADMAP.md) owns the broader catalog, resolver, local-file,
 and music-hub priorities. This integration track does not move those features
 ahead of useful coverage and browsing.

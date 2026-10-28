@@ -4,6 +4,12 @@
 
 The longer-term vision is a personal-use-first music hub for power users and playlist creators: fast organization, larger local collections, overlap and duplicate awareness, owned audio, richer metadata, cross-provider references, DJ workflows, discovery, and eventually sharing or AI-assisted filters. It is valuable even if it never becomes a distributed streaming service.
 
+The user clarified on October 27, 2026 that an ultimate goal across these tools
+is DJing with a deeply organized, tagged library, probably in rekordbox. Use the
+[DJ library workflow](DJ_LIBRARY_WORKFLOW.md) to guide version identity, useful
+tagging, saved musical filters, and preservation of preparation work. Rekordbox
+is the leading delivery target; keep the underlying catalog portable.
+
 The grounded architecture is a local catalog that observes provider metadata and owned-audio sources. A wrapper can link to provider content where APIs allow, but licensing, playback, social features, provider capabilities, and commercialization require separate current validation.
 
 The personal database is the engine for later exploration: build durable metadata and relationships for tracks/recordings, releases, artists, ordered memberships, owned audio, and personal decisions; enrich them through selected independent sources. Playlist algebra, musical profiles, DJ suggestions, and artist/album placement questions then query saved local evidence with zero provider calls. Collection and enrichment refresh run separately, and results show their evidence dates and coverage. Rich metadata is a planned extension of the working catalog, not merely a temporary Spotify response cache.
@@ -35,6 +41,13 @@ This integration track preserves the coverage and browsing priorities below.
 7. Add [artist history and enrichment](#artist-history-and-enrichment-planned): followed-artist snapshots, source-dated genre evidence, and manual overrides without inventing history.
 8. Build recording/source relationships for ordinary single/album/deluxe/compilation duplicates as well as shadow releases, market relinks, and local/cloud candidates. Keep genuine versions distinct. Apply the same taxonomy to playlists and Liked Songs before expanding automatic resolution.
 9. Develop [library intelligence](LIBRARY_INTELLIGENCE.md) in stages: continuing read-only refresh and health reporting, richer multi-playlist/artist/album queries, permitted metadata enrichment, musical profiles and DJ transition candidates, then album/future-release placement suggestions. Coverage and identity work remain prerequisites; Spotify-derived analysis has a separate provider-permission constraint.
+
+A small authorized local-audio/DJ pilot can progress independently of complete
+Spotify coverage or the migration bridge: agree on a useful tag vocabulary,
+inspect a chosen rekordbox export, then implement one read-only import and a
+reviewable dry-run crate. The [pilot acceptance sequence](DJ_LIBRARY_WORKFLOW.md#small-delivery-sequence-and-acceptance)
+requires field mapping, correction preservation, round-trip checks, and a chosen
+application/device profile before broader writes or playback claims.
 
 ### Delivery status and dependencies — October 27, 2026
 

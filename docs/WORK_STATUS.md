@@ -1,5 +1,27 @@
 # Work status — October 27, 2026
 
+## DJ goal alignment and publication
+
+The [DJ library workflow](DJ_LIBRARY_WORKFLOW.md) now records the shared goal:
+a deeply organized, tagged library for DJing, probably through rekordbox.
+README, roadmap, library-intelligence, integration, and shared coordination docs
+link to its tagging, exact-version identity, preparation-preservation, and pilot
+acceptance requirements. The sibling migrator's README, plan, context, and work
+status retain its separate Spotify execution role and link to this design.
+
+A small authorized local-audio pilot can progress independently of full Spotify
+coverage or the bridge. Rekordbox adapters, analysis, tag writing, musical
+recipes, and readiness tracking remain planned. Optional Obsidian use edits the
+same Markdown or keeps private research separately; both repositories ignore
+local `.obsidian/` settings. No vault or plugin was installed.
+
+This follow-up changes documentation and ignore rules only. Publishing it does
+not populate a database, import into rekordbox, or change Spotify. The earlier
+preservation record below remains historical context.
+
+Publication checks: 11 catalog tests and 65 sibling migrator tests passed;
+added local/cross-repository links and anchors and Git whitespace checks passed.
+
 ## Preserved work
 
 The local changes were uncommitted while main was one commit behind origin/main.

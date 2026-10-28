@@ -28,6 +28,12 @@ Planned [library intelligence](docs/LIBRARY_INTELLIGENCE.md) builds on that cata
 
 The intended engine is your richly enriched personal database: capture and refresh metadata separately, then answer questions from stored tracks, albums, artists, memberships, and features. Those queries use local evidence with zero provider calls and show when it was last refreshed.
 
+The shared long-term goal is a deeply organized, tagged library for DJing,
+probably through rekordbox. The [DJ library workflow](docs/DJ_LIBRARY_WORKFLOW.md)
+defines planned tagging, version identity, protection of cues and grids, and a
+small import/export pilot. Obsidian is an optional Markdown workspace described
+there; the catalog and DJ workflows do not depend on it.
+
 **Local files and count discrepancies are core scope.** Current playlist scans preserve Spotify-returned local references, but do not inventory the desktop Local Files collection or verify phone files. The separate local inventory scans chosen folders and retains coverage gaps. Liked Songs API totals are observations of that endpoint, not a guarantee of matching desktop, web, phone, or Spotifast. The [identity taxonomy and count rules](docs/EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy) explicitly include ordinary single-versus-album duplicates with different track IDs, as well as shadow releases. Confirmed recording matching and device reconciliation remain planned.
 
 ## Non-negotiable boundaries
@@ -47,6 +53,7 @@ The intended engine is your richly enriched personal database: capture and refre
 | [Migration](docs/MIGRATION.md) | Review or execute a shadow-track migration |
 | [Roadmap](docs/ROADMAP.md) | Understand planned work and the broader app vision |
 | [Library intelligence](docs/LIBRARY_INTELLIGENCE.md) | Assess continuing refresh, multi-playlist queries, enrichment, DJ suggestions, and artist/album placement |
+| [DJ library workflow](docs/DJ_LIBRARY_WORKFLOW.md) | Plan tagging, rekordbox delivery, preparation preservation, and optional Obsidian use |
 | [Historical observations](docs/HISTORICAL_OBSERVATIONS.md) | Review dated count/recovery evidence without confusing it for current coverage |
 | [Integration design](docs/INTEGRATION_DESIGN.md) | Plan the migrator discovery handoff, folder adapter, and smart collections |
 | [Storage decision](docs/STORAGE_DECISION.md) | Distinguish capture SQLite, historical catalog SQLite, browser recovery data, and future query optimization |

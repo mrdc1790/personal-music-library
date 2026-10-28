@@ -93,6 +93,13 @@ The [library intelligence design](LIBRARY_INTELLIGENCE.md) extends this interfac
 
 ## Owned audio and DJ endpoints
 
+The leading DJ target is now rekordbox, following the user's October 27, 2026
+goal clarification. The [DJ library workflow](DJ_LIBRARY_WORKFLOW.md) owns its
+planned field mapping, exact-version/file identities, correction and cue/grid
+preservation, round-trip acceptance, and optional Obsidian role. This is a
+separate local-audio adapter from the Spotify discovery/migration handoff; neither
+bridge implements the other. Start with a small read-only exchange pilot.
+
 Local inventory is a first-class source adapter, separate from Spotify playlists, Liked Songs, and rootlist folders. It must include selected files never referenced by Spotify. Model file-on-device, Spotify local metadata reference, provider track instance, and candidate recording as separate entities. A phone inventory must carry its own capture time and coverage; a desktop match or download icon is not proof of phone file presence or playback. Keep unresolved local/cloud matches visible rather than excluding them from a music-hub view.
 
 Recipe deduplication must declare its identity level: exact URI, reviewed recording group, or file identity. Single-versus-album candidates belong to recording-level review even when neither release is a shadow and no relink field exists. Cross-playlist overlap remains intentional unless a separate reviewed recipe says otherwise.

@@ -23,3 +23,6 @@ session.json
 *.sqlite3
 *.db
 secrets/
+
+# Optional local Obsidian vault settings, including docs-only vaults
+.obsidian/
