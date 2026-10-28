@@ -22,6 +22,28 @@ The initial preview used a small subset of completed playlists and placements fr
 
 For one privately recorded track identity, desktop reported expected playlist membership while phone reported neither playlist nor Liked Songs membership after playback from a known playlist. The long migrator **Build preview** was read-only discovery: it showed affected locations but did not add, remove, like, or unlike anything. The cause remains unresolved.
 
+## October 6, 2026: old/shadow album navigation appears restored
+
+The user reports that **View album** on an old/shadow track now opens the
+old/shadow album. Previously it opened a newer release whose tracks appeared
+unliked and absent from playlists, effectively orphaning access to the old album
+from that track. They report no Android app update. The navigation symptom
+appears improved; the cause, scope, and persistence remain unknown.
+
+This is a client observation, not verified API or account state. It does not
+establish merged old/new identities, transferred track memberships, saved-album
+status, or recovery of every affected release. No specific prior pair was
+reverified. Preserve the earlier observation and record actual album/track IDs,
+navigation route, client/version, time, and per-instance membership if captured.
+Improved navigation alone supplies no reason to migrate a release the user wants
+to keep.
+
+Both repositories were inspected. The browser migrator's `context.md` already
+described the exact earlier symptom; this catalog retained the related planned
+old-release discovery requirement. Both now retain the updated observation.
+The migrator accepts explicit album IDs, so this report requires no runtime
+change. No Spotify account scan or mutation was performed for this update.
+
 ## Reconciliation protocol
 
 1. Complete and validate endpoint-scoped API coverage while preserving unread sources as unknown; do not promote that scope into device-wide authority.

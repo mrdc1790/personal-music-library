@@ -2,6 +2,10 @@
 
 ## Project purpose and safety
 
+For user-specific music-library context retained across project chats, read
+`data/user-context.md` when present. This private, Git-ignored note contains
+dated user reports, not verified device state; keep its contents out of commits.
+
 This is a local, evidence-preserving catalog for Spotify playlist metadata and
 related audit/migration workflows. Treat source snapshots, scan status, failed
 coverage, duplicate occurrences, and historical records as evidence: do not
