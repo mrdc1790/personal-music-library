@@ -1,5 +1,17 @@
 # Work status
 
+## November 6, 2026 — duplicate counts in snapshot comparisons
+
+Offline snapshot comparisons show the remaining count for each observed track
+key that lost placements. The catalog reports these counts for sources with
+complete coverage and identified rows in both captures. The reference review
+records the Spotify Dedup behavior observed in the hosted build and how it
+differs from the public source. [Operating guide](OPERATING_GUIDE.md#catalog-queries-and-exports) · [Spotify Dedup review](REFERENCE_PROJECTS.md#spotify-dedup)
+
+Validation covered 77 offline tests, including retained playlist copies,
+removed Liked Songs membership, and unknown coverage. A synthetic CLI run
+also verified the count reported by `library.py compare`.
+
 ## November 5, 2026 — playlist curation and catalog priorities
 
 An initial owner-reported check found native folder shuffle working on mobile

@@ -57,12 +57,22 @@ class CatalogTests(unittest.TestCase):
         change = next(r for r in lib.compare(self.db, self.a, b) if r["source"] == "Chill")
         self.assertEqual(change["status"], "coverage_changed_or_unknown")
         self.assertNotIn("removed_occurrences", change)
+        self.assertNotIn("remaining_occurrences_for_removed_keys", change)
 
     def test_compare_counts_duplicate_removal(self):
-        b = lib.import_snapshot(self.db, self.after, "second")
-        change = next(r for r in lib.compare(self.db, self.a, b) if r["source"] == "Chill")
-        self.assertEqual(change["removed_occurrences"], {"spotify:track:" + "A" * 22: 1})
-        self.assertTrue(change["sequence_changed"])
+        snapshot = deepcopy(self.after)
+        snapshot["occurrences"] = [
+            r for r in snapshot["occurrences"] if (r["source"], r["position"]) != ("liked", 1)
+        ]
+        b = lib.import_snapshot(self.db, snapshot, "second")
+        changes = {r["source"]: r for r in lib.compare(self.db, self.a, b)}
+        duplicate = "spotify:track:" + "A" * 22
+        unliked = "spotify:track:" + "B" * 22
+        self.assertEqual(changes["Chill"]["removed_occurrences"], {duplicate: 1})
+        self.assertEqual(changes["Chill"]["remaining_occurrences_for_removed_keys"], {duplicate: 1})
+        self.assertTrue(changes["Chill"]["sequence_changed"])
+        self.assertEqual(changes["liked"]["removed_occurrences"], {unliked: 1})
+        self.assertEqual(changes["liked"]["remaining_occurrences_for_removed_keys"], {unliked: 0})
 
     def test_bad_positions_roll_back_import(self):
         snapshot = deepcopy(self.after)

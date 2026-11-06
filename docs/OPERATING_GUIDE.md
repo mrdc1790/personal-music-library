@@ -75,6 +75,17 @@ python view_catalog.py
 
 Use `liked` for Liked Songs. Search returns every observed placement; set operations use distinct available observed identities and do not make playback order. Unavailable coverage stops a query rather than appearing empty. Export destinations must be new; consult `manifest.json` before interpreting an empty CSV. The static viewer is read-only and can take longer with large histories.
 
+For a before-and-after cleanup review, import both captures and run
+`python library.py compare BEFORE_ID AFTER_ID`. For each comparable source,
+`removed_occurrences` shows how many placements were lost per observed track
+key. Look up that key in `remaining_occurrences_for_removed_keys` for the
+count after the change. If a playlist went from three copies to one, the maps
+show two removed and one remaining. A remaining count of zero means that the
+key disappeared from that source, even if it remains elsewhere. Both maps
+require complete coverage and identified rows in both captures. The counts
+describe the change between captures. Identifying a specific surviving row
+or attributing the change to a cleanup requires additional evidence.
+
 ## Preview and folders
 
 The preview reads completed audit rows directly and is intentionally bounded; it is a useful trial, not a full-account claim.

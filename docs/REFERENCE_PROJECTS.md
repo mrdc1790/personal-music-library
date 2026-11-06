@@ -1,14 +1,33 @@
 # Reference projects: identity, coverage, and release discovery
 
-Reviewed on 2026-09-25. This is a source review, not an account-backed compatibility test. The linked branches and deployed site can differ and can change. Neither tool was run against the account.
+Public source and deployed assets were inspected without a Spotify account session. The tools' behavior can change between builds.
 
 ## Spotify Dedup
 
-The [current site](https://spotify-dedup.com/) describes playlist and Liked Songs duplicate review using IDs and title/artist/duration similarity, configurable matching, oldest/newest retention, and cross-playlist review. The older [repository README](https://github.com/JMPerez/spotify-dedup) emphasizes identical URIs, so that description alone is incomplete.
+The hosted build inspected on November 5, 2026 defaults to keeping the oldest
+addition in each within-source group. It compares Spotify `added_at` timestamps
+and uses position when the timestamps tie or either is missing. It groups matching IDs
+first, then compares the survivors by case-insensitive title and first artist.
+Adjacent durations within two seconds can form a group, so a chain can span
+more than two seconds. Strict ID matching, tolerance, and keep-newest settings
+are configurable. Different release IDs can match even without relink evidence.
+The separate Across Playlists mode lets users choose where to retain a song,
+including Liked Songs as a source.
+[Site FAQ](https://spotify-dedup.com/) · [Deployed matcher](https://spotify-dedup.com/_next/static/chunks/06j28pnnypgk8.js) · [Deployed defaults](https://spotify-dedup.com/_next/static/chunks/35oj_1u_uq8g5.js)
 
-The inspected [deduplicator source](https://github.com/JMPerez/spotify-dedup/blob/master/dedup/deduplicator.ts) checks identical IDs or case-insensitive title plus first artist with duration difference below 2,000 ms. It skips null tracks and null IDs, including typical local objects. Both playlist and saved-track paths exist. Thus ordinary single/album IDs can be candidates without relink evidence; this is heuristic matching, not proof of identical recordings. The inspected source is not proof that every deployed advanced option uses that exact algorithm.
+The [public repository matcher](https://github.com/JMPerez/spotify-dedup/blob/5742217f733f9f0191c0be6f3cdc80bec57ae0de/dedup/deduplicator.ts)
+keeps the first match it encounters and skips null IDs. The deployed matcher
+uses timestamps and skips missing track objects. In its within-source path,
+ID-less rows also fail to enter fuzzy matching. These rules provide candidate
+groups, with possible false matches and incomplete local/device coverage.
 
-It removes duplicates rather than lifting every source occurrence to a preferred ID. Its API view and skipped objects cannot inventory local files or resolve desktop/phone count discrepancies. Similarity can confuse versions; a no-duplicates result does not prove complete coverage or a shadow-free library.
+The deployed scan filters to owned, nonempty playlists, reuses its first
+Liked Songs page, and fetches up to five additional pages concurrently per
+source. It matches locally and batches playlist removals by position and likes
+by ID. The public repository's snapshot cache for clean playlists is an older
+implementation detail. A playlist fetch failure can advance the deployed scan's
+progress, so a completed progress bar alone does not establish coverage.
+[Deployed scan](https://spotify-dedup.com/_next/static/chunks/2y8dhnmqi11di.js) · [Deployed pager and deletion](https://spotify-dedup.com/_next/static/chunks/06j28pnnypgk8.js) · [Public snapshot cache](https://github.com/JMPerez/spotify-dedup/blob/5742217f733f9f0191c0be6f3cdc80bec57ae0de/dedup/playlistCache.ts)
 
 ## Spotify Song Relinker
 

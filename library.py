@@ -198,8 +198,11 @@ def compare(db, before, after):
             result.append(dict(source=source, status="unidentified_items", note="Exact identity comparison unavailable."))
             continue
         old, new = [r["track_key"] for r in a[source]], [r["track_key"] for r in b[source]]
+        old_counts, new_counts = Counter(old), Counter(new)
+        removed = old_counts - new_counts
         result.append(dict(source=source, status="changed" if old != new or left[source]["name"] != right[source]["name"] else "unchanged",
-            added_occurrences=dict(Counter(new) - Counter(old)), removed_occurrences=dict(Counter(old) - Counter(new)),
+            added_occurrences=dict(new_counts - old_counts), removed_occurrences=dict(removed),
+            remaining_occurrences_for_removed_keys={key: new_counts[key] for key in removed},
             sequence_changed=old != new, name_before=left[source]["name"], name_after=right[source]["name"]))
     return result
 
