@@ -43,17 +43,20 @@ refresh updates plans/docs only. Keep these stores and their guarantees distinct
 | Browser local storage | Client-scoped cooldown state and existing browser auth configuration | Separate from preview contents and from Python storage; changing origin does not transfer it |
 | Migration journals | Existing guarded Python executor journal | Browser equivalent and catalog journal interchange are not implemented |
 
-The next database work is useful capture/import validation and measured
-exact-instance queries, followed by the
-[versioned discovery handoff](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned).
-The current lookup/set/compare paths materialize snapshot rows despite the
-existing exact-instance index. A browser cache cannot be counted as completing
-that query work or the rich track/album/artist evidence model. No second database
-engine, shared filesystem path, or shared OAuth is required by the handoff plan.
+The [catalog delivery order](ROADMAP.md#next-work) starts with saved evidence,
+historical import, and playlist capacity reporting. Measure report and
+exact-instance query cost before expanding browsing. The current
+lookup/set/compare paths materialize snapshot rows despite the existing
+exact-instance index. Use the historical catalog for these queries and keep
+browser recovery and any later repair handoff separate.
 
 ## Work before changing engines
 
-- Benchmark synthetic histories with repeated placements, many snapshots, incomplete coverage, and realistic artist credits. Measure query/report latency and peak memory. `lookup`, set queries, and snapshot comparisons currently load rows into Python; SQLite's presence does not mean every operation is an indexed SQL query. Push filtering/joins into SQL and add justified indexes before attributing slowness to SQLite. Evaluate pagination and optional full-text search only against a demonstrated need.
+- Benchmark synthetic histories with at least 100,000 observed identities,
+  more placements than identities, local references, repeated snapshots, and
+  incomplete coverage. Measure import cost, query/report latency, and peak
+  memory. Push filtering/joins into SQL and measure the results before
+  considering a change of database engine.
 - Keep the evidence model explicit: recordings, releases, provider instances, owned files, occurrences, and candidate/review decisions remain separate. A relationship graph can be represented with relational tables; the term “graph” does not itself require a graph database. Changing engines cannot fix identity or incomplete-coverage mistakes.
 - Add schema migrations only when needed, with version checks, a verified backup, preservation of older evidence, and synthetic upgrade/restore tests. A PostgreSQL move would need explicit type, constraint, SQL, ID, transaction, and backup conversion checks; it is not an automatic file conversion.
 - Keep active databases on supported local storage through `storage_paths.py`. Use consistent verified archives for transfer/backup, not simultaneous edits to a cloud-synced or network-shared live file. [WAL](https://www.sqlite.org/wal.html) may improve reader/writer coexistence but still has one writer and extra files/checkpoint considerations; it is not enabled by this decision or a multi-machine sync mechanism.

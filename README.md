@@ -8,6 +8,11 @@ It is not a Spotify replacement or audio archive. Spotify metadata does not incl
 
 Double-click **`Try offline demo.cmd`** for a synthetic, self-contained walkthrough. For completed real data, double-click **`Preview saved music.cmd`** for a read-only, bounded explorer. Neither changes Spotify.
 
+The next database milestone is a capacity report from saved playlist evidence.
+For manual New Music Friday curation, use Spotify folders to play across
+numbered playlist volumes. See the [curation guide](docs/PLAYLIST_CURATION.md)
+for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery order.
+
 ## What works today
 
 | Need | Current behavior |
@@ -47,6 +52,7 @@ there; the catalog and DJ workflows do not depend on it.
 | Read this | When you need it |
 |---|---|
 | [Operating guide](docs/OPERATING_GUIDE.md) | Scan, resume, import, query, preview, export, back up, or inspect folders |
+| [Playlist curation](docs/PLAYLIST_CURATION.md) | Keep New Music Friday going with playlist volumes and test folder playback |
 | [Evidence and data model](docs/EVIDENCE_AND_MODEL.md) | Interpret identities, coverage, local tracks, duplicates, or client disagreement |
 | [Sharing local files](docs/SHARE_LOCAL_FILES.md) | Give a friend MP3 setup and phone-sync instructions without confusing them with catalog coverage |
 | [Examples](docs/EXAMPLES.md) | Reproduce the supported offline walkthrough |
@@ -70,11 +76,10 @@ The earlier topic-specific notes were consolidated so operations, evidence rules
 [Spotify Playlist Migrator](https://github.com/mrdc1790/spotify-shadow-release-migrator) is a separate browser application for reviewed, explicit playlist and Liked Songs migrations. It shares the same safety principles but has its own codebase, OAuth flow, release cycle, and Git upstream. This repository is the long-lived catalog and evidence layer; neither repository imports code or data from the other at runtime.
 
 The [shared integration roadmap](docs/CATALOG_MIGRATOR_ROADMAP.md) owns the ordered
-cross-project work: documentation, manual trial, a versioned proposal file,
-read-only browser import, then outcome history. The catalog owns discovery and
-evidence; the browser is the preferred future execution interface. No bridge is
-implemented. Existing Python migration commands retain their current restrictions;
-retirement is a later decision after the replacement workflow is proven.
+repair work. The catalog owns discovery and evidence. The browser is the preferred
+future interface for reviewed Spotify repairs. A manual repair trial and measured
+benefit are prerequisites for the planned file bridge. Existing Python migration
+commands retain their current restrictions.
 
 ### Implementation status reviewed October 27, 2026
 
@@ -92,9 +97,6 @@ history, and offline queries remain the starting point. Eleven catalog tests and
 used synthetic data. Authenticated validation of the supplied track pair remains
 pending; these checks do not establish real account membership or a migration.
 
-Next: validate useful capture/import coverage, measure and improve exact-instance
-queries, then implement an explicit versioned discovery export/import. See the
-[delivery sequence](docs/ROADMAP.md#next-work) and
-[handoff requirements](docs/INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned).
-See [work status](docs/WORK_STATUS.md) for preserved work, validation, and next
-actions. Committed source does not establish a deployed or account-tested release.
+See the [current work status](docs/WORK_STATUS.md#continue-here) for the next
+catalog milestone and the [handoff requirements](docs/INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned)
+for the deferred repair integration.

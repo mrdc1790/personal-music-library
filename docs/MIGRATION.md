@@ -113,6 +113,12 @@ python migrate.py apply --plan approved-plan.json --journal backups/run-1.json -
 
 This sign-in requests library/playlist modification scopes. Preflight checks the same account/app, playable exact replacement IDs, full playlist sequences and snapshots, and saved membership for every old/new URI. Each mutation is journaled before sending and verified afterward. Playlists are processed before Liked Songs. New likes are saved and verified before old likes are removed; already-saved replacements remain saved.
 
+Playlist replacements need temporary room for each new occurrence while the
+originals are still present. Before execution, review current counts against
+the 10,000-song limit and leave room for all planned additions. Automated
+capacity preflight is [planned](CATALOG_MIGRATOR_ROADMAP.md#invariants).
+[Spotify save-limit FAQ](https://community.spotify.com/forum/en/kb/articles/792-is-there-a-save-limit-on-spotify).
+
 The journal is flushed to disk before requests and includes its plan and verified history. A lock prevents simultaneous use of the same journal. Other journals and Spotify clients are not locked, so do not run them concurrently. Keep journals private; add account files outside `backups/` to ignore rules before committing.
 
 ## Interruptions and rollback

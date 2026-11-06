@@ -11,12 +11,15 @@ Examples below are proposed questions, not findings about the user's music.
 durable preview recovery in the separate browser migrator. It did not populate
 this catalog, change its schema/query implementation, or deliver enrichment,
 continuing refresh, recording matching, DJ profiles, or recommendations. The
-database-first architecture below remains the plan. Next validate useful real
-capture/import coverage and measured queries; the
-[discovery handoff](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned)
-can then reuse exact-instance evidence without waiting for richer musical
-metadata. The [roadmap](ROADMAP.md#next-work) tracks this sequence. This alignment
-does not refresh the external-provider research dated above.
+database-first architecture below remains the plan.
+
+**Priority update — November 5, 2026.** Start with saved capture/import
+coverage, playlist capacity reporting, and measured queries. A first useful
+view can show where a manually curated category is growing and which volume
+has room, using dated local evidence. The [catalog roadmap](ROADMAP.md#next-work)
+owns that sequence. Native folder playback supports the
+[manual curation workflow](PLAYLIST_CURATION.md) while richer views and the
+separate repair handoff remain future work.
 
 ## The personal database is the query engine
 
@@ -293,8 +296,9 @@ and keep personal data and credentials out of Git.
 
 Delivery order after useful real capture/import validation:
 
-1. Continuing read-only refresh, reliable per-source comparisons, and health
-   reporting; retain all existing identity/coverage gates.
+1. Capacity, coverage, and growth views from saved evidence, then continuing
+   read-only refresh and reliable per-source comparisons. Retain identity
+   and coverage gates.
 2. Source selection, N-way membership views, explicit album/artist queries, and
    saved query recipes. These need no acoustic metadata.
 3. Reviewed entity matching and one small permitted enrichment/import pilot,

@@ -51,6 +51,11 @@ python audit.py --resume 'C:\path\to\run' --status
 python audit.py --resume 'C:\path\to\completed-run' --export-json
 ```
 
+For an interrupted run, use the offline preview below to inspect completed
+sources. On an unfinished run, `--resume --export-json` attempts an authenticated
+resume before export. Offline export of checkpoint evidence from an unfinished
+run is [planned](ROADMAP.md#next-work).
+
 On resume, unchanged completed playlists reuse captured rows; an unchanged interrupted playlist continues from its committed offset; a changed playlist is recaptured by itself. Liked Songs has no equivalent playlist snapshot token, so its saved prefix is revalidated using identity, URI, `added_at`, local flag, and total. A mismatch resets Liked Songs only. Do not edit checkpoint files: the run database is authoritative. A process lock and persisted per-client-ID cooldown prevent conflicting resumes; nothing wakes or continues automatically after the scanner exits.
 
 ## Catalog, queries, and exports
@@ -76,16 +81,27 @@ The preview reads completed audit rows directly and is intentionally bounded; it
 
 ```powershell
 python preview_audit.py --run 'C:\path\to\run' --open
-python preview_audit.py --run 'C:\path\to\run' --playlist PLAYLIST_A --playlist PLAYLIST_B --open
+python preview_audit.py --run 'C:\path\to\run' --playlist PLAYLIST_A --playlist PLAYLIST_B --max-rows 16000 --open
 ```
 
-Defaults select up to eight complete sources and 10,000 placements, preferring nonempty playlists between 50 and 1,500 placements. No selected source is truncated and called complete. Explicit overrides allow at most 50 sources and 50,000 placements. Set membership is the observed Spotify ID or local URI—not a recording-level equivalence.
+The default budget covers up to eight complete sources and 10,000 placements in
+total, with automatic selection favoring playlists of 50 to 1,500 placements.
+Each occurrence counts, so two 8,000-item playlists need the 16,000-row budget
+shown above. Override the preview budget with `--max-rows` (up to 50,000) and
+`--max-playlists` (up to 50 sources). The preview rejects selections outside its
+budget and sources with incomplete or inconsistent counts. These settings govern
+only the local HTML preview. Set membership uses the observed Spotify ID or local
+URI. See the [capacity and playback guide](PLAYLIST_CURATION.md#how-the-limits-apply)
+for the independent Spotify limits and catalog scale goals.
 
 Spotify's Web API does not provide its folder tree. The optional read-only Spotifast rootlist adapter preserves nesting, empty folders, ordering, and provenance when available, but needs small live validation:
 
 ```powershell
 python folder_tree.py --run 'C:\path\to\run'
 ```
+
+Use the Spotify client for [playing and shuffling native folders](PLAYLIST_CURATION.md).
+The catalog's folder view displays saved organization evidence.
 
 ## Backup and recovery
 

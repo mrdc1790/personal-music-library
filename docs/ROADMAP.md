@@ -18,29 +18,54 @@ The personal database is the engine for later exploration: build durable metadat
 
 Retain SQLite for the local operational catalog. The [storage decision and alternatives](STORAGE_DECISION.md) explain the fit, query-performance work, optional analytics path, and criteria for reconsidering a server database. No cloud service or second database engine is currently required.
 
-Finish useful read-only coverage, import it, and make playlist size, overlap, duplicate occurrences, and local collection visibility practical. Spotify's 10,000-item playlist limit remains a service constraint. The future response is a larger local collection with reviewed, bounded provider outputs—not a claim to bypass the limit.
+Build out the personal SQLite catalog first. Start with saved evidence and
+make playlist capacity, coverage, overlap, duplicate occurrences, and local
+collection visibility practical. Continue manual New Music Friday curation
+with Spotify folder playback across numbered playlist volumes. Each volume
+has Spotify's 10,000-song limit. The catalog can preserve the larger logical
+collection and its history. [Playlist curation guide](PLAYLIST_CURATION.md).
 
 ## Catalog and browser migrator coordination
 
 Follow the [authoritative integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for
-cross-repository ordering and acceptance criteria. Documentation alignment comes
-first, then a manual workflow trial before a versioned file bridge. The catalog
-owns discovery/history/evidence; the browser is the preferred future reviewed
-execution interface. Existing Python execution remains available under its own
-restrictions. A bridge and executor retirement are not implemented or assumed.
-This integration track preserves the coverage and browsing priorities below.
+the separate repair track. The catalog owns discovery, history, and evidence.
+The browser remains the preferred future interface for reviewed Spotify repairs.
+Resume the planned bridge when a concrete repair case demonstrates value in a
+manual trial. Folder curation and catalog delivery can proceed independently.
 
 ## Next work
 
-1. Validate a real resumable scan and historical catalog import at useful coverage. Retain per-source failures, capture times, counts, and resume evidence; a bounded preview is not full-library validation.
-2. Measure capture/import cost, exact-instance lookup latency, and query memory. `lookup`, set operations, and comparisons still load snapshot rows in Python; implement focused indexed SQL queries where measurements justify them, preserving coverage gates, order, and duplicate occurrences.
-3. Implement the [versioned catalog-to-migrator discovery handoff](INTEGRATION_DESIGN.md#catalog-to-migrator-discovery-handoff-planned): catalog export first, explicit browser import second, then fresh-discovery validation. Exact selected-ID discovery does not require a canonical recording resolver or completed enrichment system.
-4. Improve full-library ingestion, browsing, playlist-size views, overlap, and duplicate review using the same committed local evidence.
-5. Extend the implemented read-only local inventory and filename-candidate reports with richer file evidence, including files never placed in Spotify playlists, and reconcile desktop/phone inventories with Spotify local references. Retain missing roots, read errors, and unknown phone coverage.
-6. Validate one small live Spotifast folder-tree import.
-7. Add [artist history and enrichment](#artist-history-and-enrichment-planned): followed-artist snapshots, source-dated genre evidence, and manual overrides without inventing history.
-8. Build recording/source relationships for ordinary single/album/deluxe/compilation duplicates as well as shadow releases, market relinks, and local/cloud candidates. Keep genuine versions distinct. Apply the same taxonomy to playlists and Liked Songs before expanding automatic resolution.
-9. Develop [library intelligence](LIBRARY_INTELLIGENCE.md) in stages: continuing read-only refresh and health reporting, richer multi-playlist/artist/album queries, permitted metadata enrichment, musical profiles and DJ transition candidates, then album/future-release placement suggestions. Coverage and identity work remain prerequisites; Spotify-derived analysis has a separate provider-permission constraint.
+1. **Establish a catalog baseline from saved evidence.** Verify a supported
+   snapshot import or build an offline export of saved checkpoint evidence if
+   the available captures are interrupted. Keep incomplete sources, source
+   times, and errors visible. Use the current [offline preview](OPERATING_GUIDE.md#preview-and-folders)
+   to inspect completed sources now. Resume a live capture separately when
+   additional coverage is needed and any cooldown has elapsed.
+2. **Deliver a read-only capacity report.** Show each ordinary playlist's
+   captured placements, observed provider total where available, evidence
+   date, coverage, and estimated remaining slots where the counts agree.
+   Include duplicate, local, and unavailable placements in the count. Label
+   unknown headroom and distinguish Liked Songs from ordinary playlists.
+   Compare dated, complete captures of the same playlist to show net growth.
+3. **Scale the local queries.** Measure capture/import cost, report and
+   exact-instance lookup latency, and memory with at least 100,000 observed
+   identities, repeated placements, local references, and multiple snapshots.
+   Measure larger occurrence sets separately. `lookup`, set operations, and
+   comparisons still materialize snapshot rows in Python. Add focused indexed
+   SQL and paged browsing where measurements justify them.
+4. **Organize category volumes.** Record ordered playlist IDs and the active
+   volume for each logical collection. Use the report to preview rollover and
+   start with manual Spotify folder management. Pilot the [folder-tree adapter](INTEGRATION_DESIGN.md#folder-structure-adapter)
+   separately from playback. Review automatic splitting or publishing only
+   after measuring the effort of manual rollover.
+5. **Expand library coverage and intelligence.** Extend local file inventory
+   and device reconciliation, then develop [artist history](#artist-history-and-enrichment-planned),
+   reviewed recording relationships, and [library intelligence](LIBRARY_INTELLIGENCE.md)
+   in stages. Retain raw occurrences and separate genuine versions. Use
+   permitted, source-dated enrichment for musical and DJ views.
+
+The [versioned migrator handoff](CATALOG_MIGRATOR_ROADMAP.md) is a later repair
+project. Near-capacity repairs need a fresh headroom check before additions.
 
 A small authorized local-audio/DJ pilot can progress independently of complete
 Spotify coverage or the migration bridge: agree on a useful tag vocabulary,
@@ -49,23 +74,20 @@ reviewable dry-run crate. The [pilot acceptance sequence](DJ_LIBRARY_WORKFLOW.md
 requires field mapping, correction preservation, round-trip checks, and a chosen
 application/device profile before broader writes or playback claims.
 
-### Delivery status and dependencies — October 27, 2026
+### Delivery status and dependencies
 
 | Area | Current status | Next acceptance evidence |
 |---|---|---|
-| Catalog capture, history, queries, and backups | Existing Python/SQLite implementation; no new database runtime/schema work in the October 22 recovery pass or this docs refresh | Useful real capture resumed, exported, imported, and queried with explicit coverage |
-| Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | Authenticated read-only preview for the selected pair; record actual read counts, failures, and retained progress |
+| Catalog capture, history, queries, and backups | Existing Python/SQLite implementation | Validate a saved snapshot import or export of saved checkpoint evidence with explicit coverage |
+| Playlist capacity and rollover | Capacity report and volume mapping are planned. Native folder playback is available in Spotify clients | Inspect a saved baseline and test one category with direct sibling playlists on both devices |
+| Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | When a repair is needed, measure an authorized read-only preview with retained coverage and progress |
 | Query performance | Exact-instance index exists; general lookup/set/compare paths still materialize snapshot rows | Reproducible measurements and focused SQL-query regression tests before claiming scale gains |
-| Catalog discovery bridge | Planned; neither exporter nor browser importer is implemented | Versioned evidence export/import, account validation, corrupt/partial-data rejection, and fresh discovery |
+| Catalog discovery bridge | Deferred behind useful catalog coverage and a manual repair trial | Measured value, then versioned evidence export/import, account validation, and fresh discovery |
 | Recording resolver and rich library intelligence | Planned extensions | Reviewed identities and permitted metadata with provenance; no silent provider calls during ordinary queries |
 
-The migrator's recovery work can be used and validated independently of catalog
-completion. Continue catalog coverage/query work in parallel; avoid building a
-second hidden full-library scanner. Persistent browser recovery does not complete
-the bridge, reset Spotify quota, create a mutation journal, or establish real
-playlist membership. The October 27 checks passed 11 catalog tests and 65 migrator
-tests; the October 22 browser close/reopen test was synthetic. These are local
-working-tree results, not an authenticated migration or a release announcement.
+The migrator's existing recovery can be used independently for repairs. See
+[work status](WORK_STATUS.md) for dated checks and [integration acceptance](CATALOG_MIGRATOR_ROADMAP.md#ordered-work-and-acceptance)
+for the deferred bridge.
 
 ### Library intelligence and continuing maintenance (planned)
 
@@ -138,7 +160,11 @@ The linked Google Doc's “Spotify catalog identity and reconciliation — curre
 
 Preserve the useful design from the “RiffRadar Spotify investigate” discussion here so the chat can be deleted. This is a future catalog extension after the current coverage and identity work, not implemented automation.
 
-- **Collection and views:** maintain a durable Followed Artist Releases collection; New Music Friday is a weekly release-date view, with an explicit timezone and week boundary. Keep provider release date and its precision separate from first detection time. Late discoveries and backfills remain visible rather than falling out of history.
+The future release inbox can supply candidates for the curator. The current
+weekly New Music Friday workflow uses manual selection and native folder
+playback across playlist volumes. [Playlist curation guide](PLAYLIST_CURATION.md).
+
+- **Collection and views:** maintain a durable Followed Artist Releases collection and offer a weekly candidate view for New Music Friday with an explicit timezone and week boundary. Keep provider release date and its precision separate from first detection time. Late discoveries and backfills remain visible rather than falling out of history.
 - **Capture evidence:** a future daily read-only scan should record the followed-artist snapshot, account/market, artist and release IDs, ordered track listings, capture/detection times, and per-artist pagination, failures, and coverage. Failed or partial scans cannot establish no new releases. Initial catalog import needs an explicit baseline/backfill policy.
 - **Identity and filters:** preserve raw releases and track occurrences before applying reviewed recording groups or presentation deduplication. Single/album overlap, reuploads, deluxe editions, remixes, live versions, compilations, featured credits, and incorrect artist attribution need explicit rules and uncertain candidates. New provider IDs do not automatically mean new recordings; matching recordings must not erase release history.
 - **Separate outputs:** release detection, catalog storage, local recipe views, and Spotify publishing are separate stages. A future publisher requires explicit authorization, a preview, retry-safe addition tracking, readback verification, and a visible playlist-capacity policy. Retain the full local history even when a bounded Spotify view rotates; never silently purge existing playlist entries or deduplicate user occurrences.

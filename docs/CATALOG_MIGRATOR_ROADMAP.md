@@ -1,7 +1,15 @@
 # Catalog and browser migrator integration roadmap
 
-Updated: 2026-10-27. This is the authoritative cross-repository integration sequence.
-It is a design, not an implemented bridge or authorization to change Spotify.
+Updated November 5, 2026. This is the proposed sequence for the deferred
+repair integration. The [catalog roadmap](ROADMAP.md#next-work) owns the first
+delivery milestone, a capacity report backed by saved playlist evidence.
+
+## Current priority
+
+Continue manual New Music Friday curation with
+[Spotify folder playback and playlist volumes](PLAYLIST_CURATION.md). The
+separate migrator remains useful for reviewed track and release repairs.
+Resume integration when a concrete repair case establishes a need for it.
 
 ## Implementation checkpoint — October 27, 2026
 
@@ -25,8 +33,8 @@ See [work status](WORK_STATUS.md) for this preservation pass and next actions.
 
 ## Decision and ownership
 
-Align documentation first, validate the manual workflow next, and build a small
-file-based bridge only when the trial demonstrates useful savings.
+When repair integration resumes, validate a manual workflow and measure the
+benefit before building a small file-based bridge.
 
 - **Personal Music Library:** discovery, capture provenance, coverage, historical
   snapshots, reviewed identity evidence, and long-term outcome history.
@@ -47,16 +55,15 @@ first bridge. There is currently no proposal/result exchange between them.
 1. **Align documentation — completed by this documentation update.**
    Both READMEs link here and distinguish current behavior from intended
    ownership. The catalog's existing migration commands remain documented.
-2. **Validate a manual end-to-end workflow — next, not yet completed.**
-   Obtain useful resumable capture coverage and import a supported snapshot into
-   the historical catalog; operational scan and historical catalog databases are
-   different formats. Respect cooldowns and retain partial coverage as unknown.
+2. **Validate a manual repair workflow when needed.**
+   Start with useful saved coverage from the catalog's capacity milestone.
+   Respect cooldowns and retain partial coverage as unknown.
    Identify a candidate from saved evidence, manually enter source/destination
    into the browser, review the preview, and retain the outcome.
    Start with synthetic/offline checks. Any live mutation requires explicit
-   authorization, initially on a disposable playlist. Record manual friction,
-   coverage, request counts, pages, retries, cooldown time, lookup latency,
-   imported rows, and memory. Do not promise full-library speed from a small demo.
+   authorization, initially on a disposable playlist with verified capacity.
+   Record manual friction, coverage, request counts, pages, retries, cooldown
+   time, lookup latency, imported rows, and memory.
 3. **Specify a versioned proposal contract — planned.**
    Document a synthetic file and validation rules before implementation:
    schema version, proposal ID, account reference, capture/snapshot ID and time,
@@ -105,6 +112,10 @@ first bridge. There is currently no proposal/result exchange between them.
   a removal signal, or permission to proceed.
 - Imported captures cannot bypass current coverage, identity, confirmation,
   add-before-remove, or verification gates. Each engine retains its own rules.
+- A future capacity preflight should check fresh total items plus every temporary
+  addition in each target before starting any writes. If room is unknown or
+  insufficient, stop with the source occurrences intact. Preserve the
+  add-and-verify-before-remove order. [Spotify save-limit FAQ](https://community.spotify.com/forum/en/kb/articles/792-is-there-a-save-limit-on-spotify).
 - Metadata similarity and album positions do not prove identical recordings.
   Keep remixes, live versions, clean/explicit editions, edits, and remasters
   distinct unless deliberately reviewed as substitutions.

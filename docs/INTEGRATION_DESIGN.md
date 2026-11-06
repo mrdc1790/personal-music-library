@@ -51,21 +51,21 @@ discovery may make a current absence claim within that endpoint's scope. Confirm
 migration must retain the browser's fresh target preflight/readback checks and
 add-and-verify-before-remove order.
 
-Delivery order: useful capture/import validation, measured exact-instance query
-improvements, catalog export, explicit browser import, then end-to-end current
-discovery tests. Acceptance must cover wrong accounts/versions, malformed exports,
-partial and failed sources, duplicate/order preservation, existing destinations,
-a changed formerly negative playlist, new playlists, stale Liked Songs, and an
-import that performs zero network calls. Measure requests and local query cost;
-do not promise an instant preview or quota bypass. Recording equivalence and
-browser mutation journaling remain separate work.
+Start the repair integration after useful catalog coverage and a measured manual
+repair trial. Build catalog export first, then explicit browser import and
+end-to-end current discovery tests. Acceptance must cover wrong accounts and
+versions, malformed exports, partial and failed sources, duplicate/order
+preservation, existing destinations, a changed formerly negative playlist, new
+playlists, stale Liked Songs, and an import that performs zero network calls.
+Measure requests and local query cost during the trial. Recording equivalence
+and browser mutation journaling remain separate work.
 
 ## Browser migrator coordination
 
 The separate [catalog/migrator roadmap](CATALOG_MIGRATOR_ROADMAP.md) is authoritative
 for that integration's responsibilities, ordered steps, and acceptance criteria.
-It starts with documentation and a manual trial before a versioned file handoff.
-No catalog-to-browser bridge is implemented by this design.
+The versioned file handoff is deferred behind catalog capacity reporting and
+a demonstrated repair need.
 
 ## Folder structure adapter
 
@@ -74,6 +74,10 @@ Spotify's Web API capture preserves playlist contents but not folder nodes, nest
 `folder_tree.py` is an offline-tested, read-only adapter for an account-scoped Spotifast rootlist cache. It can retain raw hierarchy payload, nested and empty folders, stable IDs where supplied, parent relationships, sibling order, and separate hierarchy snapshots. It joins playlist structure to audit data by Spotify playlist ID—not display name. The current limitation is important: no live account tree or direct rootlist fetch has yet been validated.
 
 Keep structure coverage separate from playlist-content coverage. A rootlist playlist with unreadable contents remains visible in its folder with contents marked unknown. Malformed or incomplete rootlist structure must retain raw ordered evidence and a warning rather than being silently repaired into a trustworthy tree. Rootlist support does not expose hidden original IDs, bypass rate limits, remove the 10,000-item limit, or establish local-file playback.
+
+Spotify clients own folder setup and playback. Record which volumes play on
+each tested client separately from the captured folder tree. See the
+[curation and playback pilot](PLAYLIST_CURATION.md#one-category-playback-pilot).
 
 ## Smart collections and recipes
 
@@ -108,9 +112,23 @@ Only after files are inventoried and matched should the project generate a dry-r
 
 ## Large collections and bounded provider outputs (planned)
 
-A local collection can exceed a provider playlist's capacity. Represent the collection independently, then create separately reviewed output projections; do not claim to bypass Spotify's limit. Each projection should retain collection/recipe version, source snapshots and coverage, identity level, ordering, part boundaries, destination IDs, and a manifest mapping every output occurrence to its source. Preserve duplicate occurrences unless the user explicitly chooses a deduplicating recipe.
+A local collection can span several Spotify volumes. Model the collection
+with its own stable ID, ordered volume playlist IDs, and an active volume.
+Start with a manually reviewed mapping and a read-only capacity and rollover
+report. Retain existing playlist IDs, order, and occurrences when opening a
+new volume. Store folder paths separately with their source and observation time.
+Use the native client for folder placement and local-file additions. [Curation guide](PLAYLIST_CURATION.md).
 
-Preview capacity and unmatched/unavailable entries before publishing. Splitting must be deterministic under a declared order, with a policy for future additions, changed part boundaries, renamed outputs, and pre-existing destination contents. Never silently drop old entries to make room or overwrite unrelated destination items. Future incremental sync needs idempotent action tracking, fresh reads, verification, and a conflict/recovery policy. Synthetic acceptance should cover boundary sizes, repeated tracks across parts, partial writes, concurrent destination edits, and reruns. No publisher or automatic collection splitting is implemented.
+Consider a separately authorized publisher if manual rollover becomes costly.
+Each projection should retain collection/recipe version, source snapshots and
+coverage, identity level, ordering, part boundaries, destination IDs, and a
+manifest mapping each output occurrence to its source. Preserve repeated
+placements by default. Before a write, preview fresh capacity, the planned
+destinations, and unmatched or unavailable entries. Use deterministic splits,
+retry-safe action tracking, and readback verification. Retain old entries and
+unrelated destination items. Define how rollover, changed boundaries, and
+renamed volumes affect the projection. Test cap boundaries, repeated tracks
+across parts, partial writes, concurrent edits, and reruns.
 
 ## Symfonium transfer acceptance (planned)
 

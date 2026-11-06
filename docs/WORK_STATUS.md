@@ -1,6 +1,32 @@
-# Work status — October 27, 2026
+# Work status
 
-## DJ goal alignment and publication
+## November 5, 2026 — playlist curation and catalog priorities
+
+An initial owner-reported check found native folder shuffle working on mobile
+and desktop. The [curation guide](PLAYLIST_CURATION.md) records the numbered
+volume workflow and a pilot for nesting, local tracks, and larger collections.
+Playback across deep trees and very large folders still needs device testing.
+
+The personal SQLite catalog is the primary development track. The first milestone
+is a capacity report grounded in saved evidence. The browser migrator stays
+available for specific repairs, with the file bridge and automatic publishing
+lower in the delivery order. This is a documentation update in both repositories.
+
+Validation passed 77 catalog tests, 65 migrator tests, and a synthetic SQLite
+import and reopen at [190,000 placements](PLAYLIST_CURATION.md#how-the-limits-apply).
+
+## Continue here
+
+1. Use the [offline preview](OPERATING_GUIDE.md#preview-and-folders) to select
+   completed sources from a saved run and check coverage. Verify a supported
+   export/import or add an offline export path for interrupted captures.
+2. Deliver the [capacity baseline](ROADMAP.md#next-work) from the historical
+   catalog, then measure query cost and expand coverage.
+3. Try one category with two direct sibling volumes in Spotify while the
+   database work proceeds. When there is a concrete repair case, use the
+   [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for that work.
+
+## October 27, 2026 — DJ goal alignment and publication
 
 The [DJ library workflow](DJ_LIBRARY_WORKFLOW.md) now records the shared goal:
 a deeply organized, tagged library for DJing, probably through rekordbox.
@@ -48,17 +74,3 @@ browser smoke test was synthetic and was not rerun in this preservation pass.
 
 Both repositories were reviewed. The migrator recovery is independent of catalog
 completion; no catalog runtime/schema change or shared runtime is required.
-
-## Continue here
-
-1. Validate useful authorized capture/export/import coverage, retaining failures.
-2. Measure query latency/memory and add focused indexed SQL only where justified.
-3. Follow the [shared roadmap](CATALOG_MIGRATOR_ROADMAP.md): manual trial,
-   versioned proposal contract, explicit read-only export/import, outcome history,
-   then coverage-aware imported-evidence optimization.
-4. Develop [library intelligence](LIBRARY_INTELLIGENCE.md) in stages after useful
-   evidence exists. Ordinary queries read local evidence without provider calls.
-
-The bridge, recording resolver, enrichment, and browser mutation journal remain
-planned. Git publication preserves source and plans; it does not validate real
-account membership or migrate music.
