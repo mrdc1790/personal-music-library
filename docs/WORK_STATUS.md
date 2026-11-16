@@ -1,5 +1,27 @@
 # Work status
 
+## November 16, 2026 — handoff for the next session
+
+**Next task:** Use `Preview saved music.cmd` to check coverage in an existing
+capture. The deliverable is a dated playlist capacity report from saved
+evidence. If the existing capture is interrupted and cannot be imported, build
+an offline checkpoint export first. The report should show playlist size,
+coverage, and remaining slots where the recorded counts support an estimate.
+This can start with the data already on disk.
+[Implementation sequence and acceptance criteria](ROADMAP.md#next-work).
+
+| Question | Current state |
+|---|---|
+| What happens at a rate limit? | The audit pauses and keeps committed pages in SQLite. The cooldown is saved. Resume the same run after it expires. The program requires a manual resume. |
+| Does resume restart the scan? | Unchanged playlists reuse saved rows and continue at the last committed offset where applicable. Changed playlists are recaptured individually. Liked Songs requires rereading and validating the saved prefix, which uses requests. A mismatch restarts Liked Songs. Use a new audit for a separate dated capture. |
+| Where do errors and progress go? | `RUN STATUS.txt` shows source progress, the latest failure, cooldown expiry, and resume instructions. `run.log.jsonl` keeps timestamped request, retry, failure, and checkpoint events. See the [operating guide](OPERATING_GUIDE.md#scan-and-resume). |
+| Is there a diff between runs? | Import two captures and run `library.py compare` with their snapshot IDs. It reports placement and order changes, including how many copies remain when a track loses placements. Unread sources remain unknown. Comparison is a separate offline step. See the [comparison guide](OPERATING_GUIDE.md#catalog-queries-and-exports). |
+| How do we investigate Liked Songs discrepancies? | Compare actual entries across the API, desktop, web, and phone where lists are available. Keep count-only evidence and device-specific gaps explicit. Use the read-only audio inventory for selected local folders. See [historical observations](HISTORICAL_OBSERVATIONS.md) and [local inventory](LOCAL_INVENTORY.md). |
+| What can I visualize? | The read-only viewer supports search and playlist/snapshot selection. The bounded preview can browse completed sources from a saved run. Full-scale import and browsing, capacity, broader overlap views, and duplicate review remain work items. See [preview and folders](OPERATING_GUIDE.md#preview-and-folders). |
+| How does Smarter Playlists fit? | Union, intersection, and difference work for covered sources. Saved recipes and a visual rule editor are planned. See [integration design](INTEGRATION_DESIGN.md). |
+| How does this help with DJing or a central hub? | The catalog retains duration and supplied source metadata. Local filename and optional WAV duration can help surface file candidates. Verified recording matches, BPM/key analysis, cues, rekordbox exports, and player integration are roadmap work. See the [DJ workflow](DJ_LIBRARY_WORKFLOW.md). |
+| What can we do about Spotify's 10k limit? | Keep the larger collection in the catalog and curate numbered Spotify playlists within a folder. The per-playlist limit still applies. Automatic splitting and publishing are planned. See [playlist curation](PLAYLIST_CURATION.md). |
+
 ## November 6, 2026 — duplicate counts in snapshot comparisons
 
 Offline snapshot comparisons show the remaining count for each observed track
