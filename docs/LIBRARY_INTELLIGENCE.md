@@ -21,6 +21,13 @@ owns that sequence. Native folder playback supports the
 [manual curation workflow](PLAYLIST_CURATION.md) while richer views and the
 separate repair handoff remain future work.
 
+**Implemented — November 16, 2026.** [Song stats](OPERATING_GUIDE.md#song-stats)
+uses the catalog for playlist reach, folder breadth, personal listening, and
+date-stamped worldwide stream counts. These measures support distinct questions
+about collection placement, listening habits, and external reach. Future
+recommendations can reference them as independent inputs alongside verified
+genre, version, and audio features.
+
 ## The personal database is the query engine
 
 The user's clarification is central: build a durable, richly enriched personal
@@ -84,6 +91,7 @@ to analyze a provider's data; see the provider constraints below.
 |---|---|---|
 | Union, intersection, and differences across playlists and likes | `library.py:set_query` accepts two or more distinct, exported sources in one saved snapshot | One-source exploration, richer membership/occurrence views, symmetric difference, at-least-N rules, saved recipes, and a convenient UI |
 | Notice additions, removals, and edits | Durable scan checkpoints, immutable catalog imports, and `library.py:compare` already retain occurrence-count and sequence differences | Continuing refresh across runs, fresh discovery, event history, scheduling, and a data-quality dashboard |
+| Rank songs by playlist reach or streams | `library.py song-stats` uses distinct playlists, known folder categories, and imported stream evidence | Fresh captures and source totals for a current baseline. Period filters, richer provider adapters, recording groups, and recommendations remain future work |
 | Find where an artist or album appears | Reverse lookup, artist/source CSV summaries, and raw album/artist IDs are retained | Indexed album/artist queries, complete release track lists, reviewed identity mappings, and placement recommendations |
 | Describe a Future Bass playlist's genre, BPM, and key | Captured memberships can be joined to future enrichment | Track metadata, source permissions, missing-data reporting, and reproducible playlist profiles |
 | Find similar playlists and candidate DJ transitions | Exact membership comparisons provide a starting point | Permitted musical metadata, similarity rules, track-level transition candidates, and manual DJ review |

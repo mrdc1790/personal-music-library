@@ -56,6 +56,37 @@ Maintain separate totals for endpoint-reported total, fetched rows, exported/imp
 
 Counts alone cannot identify a difference set. Do not subtract the entire Local Files count from Liked Songs: overlap and inclusion semantics are unverified. Even equal counts can hide different membership. The home computer is the user's preferred reference for intended state, while each device remains a separate observation.
 
+## Evidence behind song stats
+
+[Song stats](OPERATING_GUIDE.md#song-stats) groups by the observed track key.
+Playlist snapshots retain every occurrence. The derived score counts each
+fully exported playlist once and adds one point per distinct folder category
+verified by playlist ID in the latest cached hierarchy for that account.
+Missing, root-level, and conflicting folder assignments add no folder points.
+A liked-only track can have zero observed playlists even when other sources
+have unknown coverage.
+
+Personal and worldwide figures use separate inputs and units:
+
+| Evidence | Identity and date | Count semantics |
+|---|---|---|
+| Personal listening event | Spotify URI or a reviewed cross-service match, service, event identity, UTC end time | Positive evidence of listening on that service; the report counts events with at least 30 seconds played and also shows total events and duration |
+| Worldwide observation | Reviewed track URI, service, as-of date, source | Imported all-time count for that recording on that service; the report selects the latest value per service before summing |
+
+Providers may publish different stream definitions and the observations may
+have different dates. A sum covers the services with imported matching data.
+Blank fields represent missing matching observations. A numeric zero represents
+a measured or imported zero within the available evidence. Observed event date
+ranges describe the data on disk. They cannot establish continuous coverage
+or lifetime absence.
+
+Applying `--snapshot` changes the membership evidence. The hierarchy comes from
+a separate import, listening events span the available history, and worldwide
+observations are dated per service. Read those dates separately when comparing
+reports. Artist credits, titles and ISRC remain candidate evidence for matching
+recordings. The report joins on exact Spotify track URIs, with other services
+associated only through reviewed import rows.
+
 ## Browser recovery and future imported discovery
 
 The separate browser migrator's persistent preview checkpoints are current-run

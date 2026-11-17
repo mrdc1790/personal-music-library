@@ -23,7 +23,16 @@ for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery o
 | Find and compare | Search every occurrence; local union, intersection, difference, duplicate, and scan comparison |
 | Inspect and protect | CSV exports, static catalog view, checksummed catalog ZIP, and restore verification |
 | Preserve folders | Optional read-only Spotifast rootlist import; live validation still needed |
+| Rank songs | [Playlist reach, personal plays, and worldwide streams](docs/OPERATING_GUIDE.md#song-stats) |
 | Repair shadow tracks | Guarded reviewed migration commands; offline-tested only |
+
+Run `python library.py song-stats` after importing a playlist snapshot. The
+ranking gives one point per distinct playlist plus one per known folder
+category. Personal plays and worldwide stream totals have independent Spotify
+and cross-service fields. Add an account-matched folder capture and import
+listening history or dated service totals as they become available. The
+[worked example](docs/EXAMPLES.md#rank-songs-and-import-stream-counts) shows
+what each measure answers.
 
 Read-only [local audio-folder inventory and candidate reconciliation](docs/LOCAL_INVENTORY.md) are available for explicit roots and existing catalog snapshots. Matching is limited to filename candidates and optional WAV duration evidence.
 

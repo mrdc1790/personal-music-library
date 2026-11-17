@@ -10,6 +10,22 @@ The current workload is one account's local historical metadata: snapshots, sour
 
 SQLite's [deployment guidance](https://www.sqlite.org/whentouse.html) supports device-local application storage and notes one writer per database at a time. Remote clients can still use an application API with SQLite local to that server. Multiple jobs can serialize short writes; mobile access, hosting, or multiple users alone do not mandate an engine change. They do require explicit authentication, isolation, availability, and sync design, which this project does not currently implement.
 
+## Song stats storage — November 16, 2026
+
+Existing version 1 catalogs remain readable. The [stream import commands](OPERATING_GUIDE.md#song-stats)
+create optional `listening_events` and `worldwide_streams` tables when first
+used. Imports commit atomically and retain earlier observations. Personal
+events are keyed by service and event identity. Worldwide counts are keyed by
+service, observed track key, and as-of date. Reimporting identical observations
+is idempotent. A conflicting CSV event or same-date total rolls back its import.
+
+The report calculates scores and sums on demand. The track list comes from a
+membership snapshot, and the separate hierarchy database contributes the
+account-matched category evidence. Keep hierarchy backups alongside the catalog
+archive. The archive includes the optional stream tables. Spotify export ZIPs,
+IP addresses, and other unused personal fields are outside these tables.
+Generated JSON reports are private outputs.
+
 ## Alternatives and their place
 
 | Approach | Decision for this project | Revisit when |

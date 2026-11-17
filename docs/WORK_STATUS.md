@@ -1,5 +1,20 @@
 # Work status
 
+## November 16, 2026 — song scores and stream totals
+
+[Song stats](OPERATING_GUIDE.md#song-stats) ranks observed songs by distinct
+playlists and folder categories. It reports personal plays and dated worldwide
+streams for Spotify and across imported services. The [worked example](EXAMPLES.md#rank-songs-and-import-stream-counts)
+shows the scoring and stream fields. The [evidence model](EVIDENCE_AND_MODEL.md#evidence-behind-song-stats)
+explains source coverage and the dates behind the join.
+
+Validation covered 81 offline tests and a synthetic CLI run through the stream
+importers, backup, restore, and reporting. A local report verified playlist
+scoring against a saved partial audit. The implementation is complete. Refresh
+the playlist and folder capture, import Extended Streaming History and available
+dated worldwide totals, then check coverage on a small sample for a current
+report. The capacity report remains a separate catalog milestone.
+
 ## November 16, 2026 — handoff for the next session
 
 **Next task:** Use `Preview saved music.cmd` to check coverage in an existing

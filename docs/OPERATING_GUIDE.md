@@ -86,6 +86,85 @@ require complete coverage and identified rows in both captures. The counts
 describe the change between captures. Identifying a specific surviving row
 or attributing the change to a cleanup requires additional evidence.
 
+## Song stats
+
+For an initial report, import an audit snapshot using the commands above.
+For a current baseline, make a new read-only scan and import it under a new
+label. Keep older imports for comparison. Refresh the [folder capture](#preview-and-folders)
+from the same account near the scan date, then import any listening history and
+worldwide totals you have. You can run the ranking after the snapshot import
+while the other inputs are still pending.
+
+```powershell
+python library.py song-stats --term 'song or artist text'
+python library.py song-stats --folder-depth 2 --limit 100
+python library.py import-spotify-history 'C:\path\to\extended-spotify-history.zip'
+python library.py import-personal-plays 'C:\path\to\other-service-plays.csv'
+python library.py import-worldwide-streams 'C:\path\to\worldwide-streams.csv'
+python library.py song-stats --sort personal-spotify --output 'C:\private\song-stats.json'
+```
+
+- **Playlist score** adds one point per distinct playlist in the selected
+  catalog snapshot plus one per distinct known folder category. Three playlists
+  under Electronic score 4. Three playlists across three known categories
+  score 6. The default category is the outermost folder. Set `--folder-depth 2`
+  to distinguish Electronic / House and Electronic / Bass. Repeat copies in a
+  playlist count once. Liked Songs can supply a song to the report and adds
+  no points. The report names the snapshot and coverage. If a playlist is at
+  the root, lacks a folder match, or has conflicting category assignments, it
+  contributes its base point. Folder assignments come from the latest imported
+  tree for the snapshot's account, which can have a different date.
+- **Personal plays** use your Spotify [Extended Streaming History](https://support.spotify.com/us/article/understanding-your-data/)
+  audio-track events and optional reviewed events from other services. The
+  report shows personal Spotify plays and the sum across imported services.
+  Both count events with at least 30 seconds played. Per-service details also
+  show event counts, listening milliseconds, and dates. `null` means no
+  matching data. Zero means an observed count of zero. The standard Spotify
+  account export lacks Spotify track URIs, so use the Extended Streaming History
+  ZIP from the same account as the catalog. Spotify rows are matched by exact
+  track URI. Reimport merges overlapping events using their timestamp, track,
+  duration, platform, offline timestamp, and occurrence count within the ZIP.
+- **Worldwide streams** use the latest dated, imported totals for each service.
+  The worldwide Spotify field comes from the Spotify row. The total across
+  imported services may span different reporting dates and definitions. Check
+  the per-service detail for counts, dates, and sources. Spotify’s [Web API track data](https://developer.spotify.com/documentation/web-api/reference/get-track)
+  lacks raw stream totals. Use a source that provides worldwide all-time
+  track totals, such as an authorized [Spotify for Artists export](https://support.spotify.com/us/artists/article/exporting-data/)
+  or a distributor report for the same recording. Supply one row per service
+  and track per date. Exclude combined platforms, chart ranks, popularity
+  scores, views, release totals, and date-limited figures.
+
+Use `--snapshot ID` to choose the membership capture (the latest import is the
+default). The report uses the latest matching folder import, the full locally
+imported listening history, and the latest dated count per track and service.
+Each input therefore has its own date. Save a dated JSON report with `--output`
+when you want to keep the exact combination of inputs. The parent directory must exist.
+
+Sort by `playlist`, `personal-spotify`, `personal`, `worldwide-spotify`, or
+`worldwide`. The two cross-service sorts use the totals from imported services.
+Tracks with missing counts for the selected sort follow tracks with known
+counts. The default limit is 50 and `matching_songs` is the count before that
+limit. Reports cover identified music tracks and local references observed in
+exported sources from the selected snapshot. A song that appears only in an
+imported listening file needs an observed catalog placement to appear here.
+
+Non-Spotify personal events CSV uses
+`service,event_id,track_key,ended_at,played_ms`. Use the playback service slug
+(e.g. `apple-music`), a stable event ID from that service's history, the
+reviewed Spotify track URI of the same recording, a timestamp with its time zone,
+and the actual time played in milliseconds. Use one event feed per playback
+service to avoid counting a play twice.
+
+Worldwide streams CSV uses `service,track_key,as_of,streams,source`. Use an
+exact Spotify track URI, a `YYYY-MM-DD` date, the integer count, and a source
+description. Both CSV imports require a reviewed recording match. Same-title
+tracks and different versions retain their own rows.
+
+All imports are offline. Listening events and dated stream totals are stored in
+the catalog and included in its backups. The Spotify archive itself and fields
+such as IP address are excluded. Store the database, reports, and backups in
+private storage.
+
 ## Preview and folders
 
 The preview reads completed audit rows directly and is intentionally bounded; it is a useful trial, not a full-account claim.
@@ -124,7 +203,11 @@ python library.py restore backups/catalog-2026-09-25.zip data/restored-catalog.s
 python library.py --db data/restored-catalog.sqlite snapshots
 ```
 
-The ZIP contains a consistent SQLite copy and checksum. It is not encrypted and contains music metadata, but not audio or migration journals. Restore refuses overwrites; verify a restored copy before relying on a backup. No cloud upload or scheduler is configured.
+The ZIP contains an unencrypted, checksummed copy of the catalog SQLite file,
+including imported listening events and stream totals. Keep hierarchy snapshots
+privately alongside it as a separate database. Spotify audio, music files, and
+migration journals have separate storage. Restore refuses overwrites. Verify a
+restored copy before relying on a backup.
 
 A checksum detects corruption, not authorship. Keep raw audit folders and migration journals alongside versioned catalog archives, and use a private destination only after validating a restore under a new filename. Synchronizing a live SQLite file can propagate mistakes; a closed, verified archive is the safer first online-backup unit. A catalog restore never reverts Spotify.
 

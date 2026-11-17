@@ -16,6 +16,9 @@ import sqlite3
 import tempfile
 import zipfile
 
+import song_stats
+import stream_counts
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS catalog_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS snapshots (
@@ -307,7 +310,8 @@ def backup(db, destination):
                 raise ValueError("Backup integrity check failed.")
         content = copy.read_bytes()
         manifest = dict(format=1, created_at=datetime.now(timezone.utc).isoformat(),
-                        sha256=hashlib.sha256(content).hexdigest(), includes="Catalog, raw imported snapshots; no audio files or credentials")
+                        sha256=hashlib.sha256(content).hexdigest(),
+                        includes="Catalog, raw imported snapshots, and any imported listening events and stream totals")
         with zipfile.ZipFile(destination, "x", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("catalog.sqlite", content)
             archive.writestr("manifest.json", json.dumps(manifest, indent=2))
@@ -341,7 +345,7 @@ def main():
     imp.add_argument("snapshot", type=Path)
     imp.add_argument("--label", default="Imported audit")
     sub.add_parser("snapshots")
-    for command in ("playlists", "find", "query", "export"):
+    for command in ("playlists", "find", "query", "export", "song-stats"):
         p = sub.add_parser(command)
         p.add_argument("--snapshot", type=int)
         if command == "find":
@@ -351,6 +355,20 @@ def main():
             p.add_argument("sources", nargs="+")
         elif command == "export":
             p.add_argument("output", type=Path)
+        elif command == "song-stats":
+            p.add_argument("--hierarchy", type=Path, default=data_root() / "hierarchy.sqlite")
+            p.add_argument("--folder-depth", type=int, default=1)
+            p.add_argument("--term", default="", help="Filter by song, artist, or exact track key")
+            p.add_argument("--sort", choices=song_stats.SORT_FIELDS, default="playlist")
+            p.add_argument("--limit", type=int, default=50)
+            p.add_argument("--output", type=Path, help="Save a private JSON report to a new file")
+    stream_imports = {
+        "import-spotify-history": (stream_counts.import_spotify_history, "Import a Spotify Extended Streaming History ZIP"),
+        "import-personal-plays": (stream_counts.import_personal_plays, "Import a reviewed non-Spotify personal plays CSV"),
+        "import-worldwide-streams": (stream_counts.import_worldwide_streams, "Import dated, worldwide all-time stream totals from CSV"),
+    }
+    for command, (_, help_text) in stream_imports.items():
+        sub.add_parser(command, help=help_text).add_argument("input", type=Path)
     diff = sub.add_parser("compare")
     diff.add_argument("before", type=int)
     diff.add_argument("after", type=int)
@@ -365,9 +383,12 @@ def main():
             restore(args.archive, args.output)
             print("Restored catalog to", args.output)
             return 0
-        with closing(connect(args.db, write=args.command == "import")) as db:
+        with closing(connect(args.db, write=args.command == "import" or args.command in stream_imports)) as db:
             if args.command == "import":
                 result = dict(snapshot_id=import_snapshot(db, json.loads(args.snapshot.read_text(encoding="utf-8-sig")), args.label))
+            elif args.command in stream_imports:
+                importer, _ = stream_imports[args.command]
+                result = importer(db, args.input)
             elif args.command == "snapshots":
                 result = [dict(r) for r in db.execute("SELECT id,label,created_at,status FROM snapshots ORDER BY id")]
             elif args.command == "compare":
@@ -376,6 +397,8 @@ def main():
                 backup(db, args.output)
                 result = dict(backup=str(args.output), uploaded=False)
             else:
+                if args.command == "song-stats":
+                    db.execute("BEGIN")
                 sid = snapshot_id(db, args.snapshot)
                 if args.command == "playlists":
                     result = sources(db, sid)
@@ -384,12 +407,18 @@ def main():
                     result = [{k: r[k] for k in ("source", "playlist_name", "position", "track_key", "title", "artists", "identity_basis")} for r in result]
                 elif args.command == "query":
                     result = set_query(db, sid, args.operation, args.sources)
+                elif args.command == "song-stats":
+                    result = song_stats.report(db, sid, args.hierarchy, args.folder_depth, args.term, args.sort, args.limit)
+                    if args.output:
+                        with args.output.open("x", encoding="utf-8") as stream:
+                            json.dump(result, stream, ensure_ascii=False, indent=2)
+                        result = dict(report=str(args.output), songs=len(result["songs"]))
                 else:
                     export(db, sid, args.output)
                     result = dict(export=str(args.output))
             print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
-    except (OSError, ValueError, KeyError, sqlite3.Error, zipfile.BadZipFile) as error:
+    except (OSError, ValueError, KeyError, sqlite3.Error, csv.Error, zipfile.BadZipFile) as error:
         print("Stopped:", error)
         return 1
 
