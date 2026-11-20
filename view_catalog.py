@@ -5,6 +5,8 @@ from contextlib import closing
 import html
 import json
 from pathlib import Path
+import re
+import sqlite3
 import webbrowser
 
 import library
@@ -33,7 +35,11 @@ def create_view(catalog, output):
     if not snapshots:
         raise ValueError('This catalog has no snapshots.')
     data = json.dumps(snapshots, ensure_ascii=True).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
-    page = TEMPLATE.replace('__DATA__', data).replace('__PATH__', html.escape(str(Path(catalog).resolve())))
+    replacements = {
+        '__DATA__': data,
+        '__PATH__': html.escape(str(Path(catalog).resolve())),
+    }
+    page = re.sub(r'__DATA__|__PATH__', lambda match: replacements[match.group()], TEMPLATE)
     Path(output).write_text(page, encoding='utf-8')
     return Path(output).resolve()
 
@@ -83,7 +89,12 @@ def main():
     path = args.catalog or default_catalog()
     if path is None:
         parser.error('No catalog found. Run Try offline demo.cmd first, or provide a catalog.sqlite path.')
-    output = create_view(path, path.with_name('catalog-view.html'))
+    if not path.is_file():
+        parser.error(f'Catalog file not found: {path}')
+    try:
+        output = create_view(path, path.with_name('catalog-view.html'))
+    except (OSError, ValueError, sqlite3.Error) as error:
+        parser.error(f'Could not create the catalog view: {error}')
     print('Read-only catalog view:', output)
     if not args.no_open:
         webbrowser.open(output.as_uri())
