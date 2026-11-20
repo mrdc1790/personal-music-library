@@ -16,6 +16,11 @@ The personal database is the engine for later exploration: build durable metadat
 
 ## Current priority
 
+The offline checkpoint export and capacity report passed local checks.
+Publication to `main` is pending. The first two milestones below describe
+the release requirements. The published song-stats commands have a separate
+data refresh task. [Current milestone status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status).
+
 Retain SQLite for the local operational catalog. The [storage decision and alternatives](STORAGE_DECISION.md) explain the fit, query-performance work, optional analytics path, and criteria for reconsidering a server database. No cloud service or second database engine is currently required.
 
 Build out the personal SQLite catalog first. Start with saved evidence and
@@ -78,8 +83,8 @@ application/device profile before broader writes or playback claims.
 
 | Area | Current status | Next acceptance evidence |
 |---|---|---|
-| Catalog capture, history, queries, and backups | Existing Python/SQLite implementation | Validate a saved snapshot import or export of saved checkpoint evidence with explicit coverage |
-| Playlist capacity and rollover | Capacity report and volume mapping are planned. Native folder playback is available in Spotify clients | Inspect a saved baseline and test one category with direct sibling playlists on both devices |
+| Catalog capture, history, queries, and backups | Python/SQLite catalog on `main`. Interrupted checkpoint export passed local checks | Reconcile and publish the checkpoint export with coverage checks |
+| Playlist capacity and rollover | The capacity report passed local checks and awaits publication. Volume mapping is planned | Publish the capacity report, then test one category with direct sibling volumes on both devices |
 | Song stats | Offline playlist and folder scoring, personal play imports, and dated worldwide totals | Refresh the membership and folder captures. Import a current Extended Streaming History ZIP and available service totals. Check field coverage on a small real sample |
 | Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | When a repair is needed, measure an authorized read-only preview with retained coverage and progress |
 | Query performance | Exact-instance index exists; general lookup/set/compare paths still materialize snapshot rows | Reproducible measurements and focused SQL-query regression tests before claiming scale gains |

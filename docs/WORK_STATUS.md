@@ -13,11 +13,11 @@ importers, backup, restore, and reporting. A local report verified playlist
 scoring against a saved partial audit. The implementation is complete. Refresh
 the playlist and folder capture, import Extended Streaming History and available
 dated worldwide totals, then check coverage on a small sample for a current
-report. The capacity report remains a separate catalog milestone.
+report. The capacity report has a separate publication step.
 
-## November 16, 2026 — handoff for the next session
+## November 16, 2026 — original capacity handoff
 
-**Next task:** Use `Preview saved music.cmd` to check coverage in an existing
+**Initial task.** Use `Preview saved music.cmd` to check coverage in an existing
 capture. The deliverable is a dated playlist capacity report from saved
 evidence. If the existing capture is interrupted and cannot be imported, build
 an offline checkpoint export first. The report should show playlist size,
@@ -74,6 +74,15 @@ import and reopen at [190,000 placements](PLAYLIST_CURATION.md#how-the-limits-ap
 3. Try one category with two direct sibling volumes in Spotify while the
    database work proceeds. When there is a concrete repair case, use the
    [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for that work.
+
+## Current publication status
+
+Reviewed November 19, 2026.
+
+The offline checkpoint export and capacity report were verified locally.
+Reconcile that work with `main` before publishing the commands. Refreshing
+the inputs for the published [song-stats report](OPERATING_GUIDE.md#song-stats)
+is a separate task. [Current milestone status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status).
 
 ## October 27, 2026 — DJ goal alignment and publication
 

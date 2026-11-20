@@ -8,7 +8,10 @@ It is not a Spotify replacement or audio archive. Spotify metadata does not incl
 
 Double-click **`Try offline demo.cmd`** for a synthetic, self-contained walkthrough. For completed real data, double-click **`Preview saved music.cmd`** for a read-only, bounded explorer. Neither changes Spotify.
 
-The next database milestone is a capacity report from saved playlist evidence.
+The offline checkpoint export and playlist capacity report passed local
+checks. Publication is the next step. The song-stats commands are on `main`,
+with a separate task to refresh the underlying data.
+[Current handoff](docs/WORK_STATUS.md#current-publication-status).
 For manual New Music Friday curation, use Spotify folders to play across
 numbered playlist volumes. See the [curation guide](docs/PLAYLIST_CURATION.md)
 for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery order.

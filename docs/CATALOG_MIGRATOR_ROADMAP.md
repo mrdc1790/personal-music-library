@@ -1,8 +1,16 @@
 # Catalog and browser migrator integration roadmap
 
-Updated November 5, 2026. This is the proposed sequence for the deferred
-repair integration. The [catalog roadmap](ROADMAP.md#next-work) owns the first
-delivery milestone, a capacity report backed by saved playlist evidence.
+Updated November 19, 2026. This is the proposed sequence for the deferred
+repair integration. The [catalog roadmap](ROADMAP.md#next-work) owns the offline
+checkpoint export and the capacity report backed by saved playlist evidence.
+
+## Catalog delivery status
+
+The checkpoint export and capacity report were verified locally on November 16.
+They are awaiting publication to `main`. The published catalog supports saved
+previews, snapshot imports, and [song stats](OPERATING_GUIDE.md#song-stats).
+Refreshing song stats with current coverage is a separate data task. The
+migrator's live capacity preflight and the file bridge remain planned.
 
 ## Current priority
 
