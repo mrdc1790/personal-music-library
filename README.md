@@ -1,6 +1,14 @@
 # Personal Music Library
 
-A local, evidence-preserving catalog for Spotify playlists, Liked Songs, and local-track references. It answers practical questions—where a song appears, where playlists overlap, what changed between captures, and which duplicate occurrences need review—without changing Spotify by default.
+Find every playlist a Spotify track appears in, see where playlists overlap, and compare what changed between captures. Personal Music Library turns playlist and Liked Songs metadata into a local catalog you can query offline.
+
+- **Working today** — Resume interrupted Spotify captures, search track placements, compare snapshots, and export CSVs or a verifiable backup.
+- **How it works** — Python and SQLite separate resumable capture from historical queries. The catalog preserves playlist order, duplicate placements, and which sources could be read, so incomplete data stays visible.
+- **Try it offline** — Run `python library_demo.py` to compare two fictional snapshots and restore a backup. No Spotify login required.
+
+[Technical case study](docs/PROJECT_OVERVIEW.md) · [Worked demo](docs/EXAMPLES.md) · [Setup and operations](docs/OPERATING_GUIDE.md)
+
+![Read-only catalog viewer showing fictional playlist placements, snapshot and playlist filters, and a song search field](docs/images/catalog-demo.png)
 
 It is not a Spotify replacement or audio archive. Spotify metadata does not include Spotify audio, and a local-track reference does not prove that a file exists or plays on a device. The longer-term direction is a personal music hub that bridges streaming metadata, owned audio, organization, and DJ-oriented enrichment; that work remains separate from the working catalog.
 
