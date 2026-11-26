@@ -79,6 +79,17 @@ python library.py --db data/example.sqlite query difference Chill Festival --sna
 
 One result: Harbor. Reversing the inputs returns Night Drive.
 
+### Compare two playlists with a local track
+
+```powershell
+python library.py --db data/example.sqlite query union Chill AllLeaks --snapshot 1
+python library.py --db data/example.sqlite query difference AllLeaks Chill --snapshot 1
+```
+
+The union contains Moonrise, Harbor, and the local track Warehouse Edit.
+The difference contains just Warehouse Edit. The catalog uses the local URI
+as its identity and preserves the playlist positions in the snapshot.
+
 ### What changed?
 
 ```powershell

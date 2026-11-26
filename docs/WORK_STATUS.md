@@ -1,5 +1,17 @@
 # Work status
 
+## November 26, 2026 — local file paths in playlist comparisons
+
+Save dated filesystem inventories in a separate SQLite store and use a saved
+scan to show candidate paths in the offline playlist comparison. Older audits
+and inventory JSON remain usable. The preview shows incomplete folder coverage
+and preserves all playlist placements. Basic MP3 tags can identify a candidate
+whose filename differs from the title, and explicit file reviews carry across
+scans by SHA-256. See the
+[local inventory guide](LOCAL_INVENTORY.md#show-file-locations-in-a-saved-playlist-comparison).
+The offline suite covers SQLite scan history, tag conflicts, confirmation
+after a file move, and previews generated from saved evidence.
+
 ## November 26, 2026 — selected playlist capture and comparison
 
 Pass a link, URI, or ID per `--playlist` to capture those playlists in a

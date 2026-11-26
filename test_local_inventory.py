@@ -143,6 +143,112 @@ class LocalInventoryTests(unittest.TestCase):
         with patch('sys.stderr'), self.assertRaises(SystemExit):
             local.main([str(self.root), '--snapshot', '1'])
 
+    def test_sqlite_inventory_preserves_scan_history_and_refuses_catalog(self):
+        path = self.audio()
+        store = self.base / 'inventory.sqlite'
+        output = self.base / 'scan.json'
+        with patch('builtins.print'):
+            self.assertEqual(local.main([str(self.root), '--inventory-db', str(store),
+                                         '--output', str(output)]), 0)
+        path.unlink()
+        second = local.inventory([self.root, self.base / 'missing'])
+        self.assertEqual(local.save_inventory(store, second), 2)
+        first = local.load_inventory(store, 1)
+        self.assertEqual(first['entries'][0]['path'], str(path))
+        self.assertEqual(first['status'], 'complete')
+        latest = local.load_inventory(store)
+        self.assertEqual(latest['scan_id'], 2)
+        self.assertEqual(latest['status'], 'incomplete')
+        self.assertTrue(latest['roots'][1]['errors'])
+        with self.assertRaisesRegex(ValueError, 'not found'):
+            local.load_inventory(store, 3)
+        self.snapshot()
+        before = self.db_path.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'separate SQLite'):
+            local.save_inventory(self.db_path, second)
+        self.assertEqual(before, self.db_path.read_bytes())
+
+    def tagged_mp3(self, name, title='Song', artist='Synthetic artist', album='Album'):
+        frames = []
+        for code, value in [(b'TIT2', title), (b'TPE1', artist), (b'TALB', album)]:
+            payload = b'\x01' + value.encode('utf-16') + b'\0\0'
+            frames.append(code + len(payload).to_bytes(4, 'big') + b'\0\0' + payload)
+        data = b''.join(frames)
+        size = bytes((len(data) >> shift) & 127 for shift in (21, 14, 7, 0))
+        path = self.root / name
+        path.write_bytes(b'ID3\x03\0\0' + size + data + b'synthetic fixture')
+        return path
+
+    def test_audio_tags_find_numbered_file_and_surface_metadata_conflicts(self):
+        match = self.tagged_mp3('01 - Song.mp3')
+        artist_conflict = self.tagged_mp3('02 - Song.mp3', artist='Other artist')
+        album_conflict = self.tagged_mp3('03 - Song.mp3', album='Other album')
+        title_conflict = self.tagged_mp3('Song.mp3', title='Other song')
+        report = self.compare(local.inventory([self.root]))
+        first = report['references'][0]
+        self.assertEqual([(c['path'], c['evidence']) for c in first['candidates']],
+                         [(str(match), 'audio_tags')])
+        self.assertEqual({(c['path'], c['reason']) for c in first['contradictions']},
+                         {(str(artist_conflict), 'tag_artist_differs'),
+                          (str(album_conflict), 'tag_album_differs'),
+                          (str(title_conflict), 'tag_title_differs')})
+
+    def test_malformed_mp3_tags_preserve_hash_and_filename_candidate(self):
+        path = self.root / 'Song.mp3'
+        path.write_bytes(b'ID3\x04\0\0\0\0\0\x40partial')
+        scan = local.inventory([self.root])
+        self.assertEqual(scan['entries'][0]['metadata_error'], 'Truncated ID3 tag')
+        self.assertTrue(scan['entries'][0]['sha256'])
+        row = self.compare(scan)['references'][0]
+        self.assertEqual(row['candidates'][0]['evidence'], 'filename_title')
+
+    def test_id3v1_and_v24_text_sizes(self):
+        old = self.root / 'legacy.mp3'
+        old.write_bytes(b'fixture' + b'TAG' + b'Song'.ljust(30, b'\0') + bytes(95))
+        modern = self.root / 'modern.mp3'
+        long_title = 'é' * 70
+        payload = b'\x03' + long_title.encode('utf-8')
+        def size(length):
+            return bytes((length >> shift) & 127 for shift in (21, 14, 7, 0))
+
+        frame = b'TIT2' + size(len(payload)) + b'\0\0' + payload
+        modern.write_bytes(b'ID3\x04\0\0' + size(len(frame)) + frame)
+        tags = {Path(e['path']).name: e['tags'] for e in local.inventory([self.root])['entries']}
+        self.assertEqual(tags, {'legacy.mp3': {'title': 'Song'}, 'modern.mp3': {'title': long_title}})
+
+    def test_review_carries_to_moved_bytes_and_can_be_cleared(self):
+        uri = 'spotify:local:Artist:Album:Song:1'
+        path = self.tagged_mp3('01 - Song.mp3')
+        store = self.base / 'review.sqlite'
+        scan_id = local.save_inventory(store, local.inventory([self.root]))
+        original = path.read_bytes()
+        path.write_bytes(b'different')
+        with self.assertRaisesRegex(ValueError, 'bytes changed'):
+            local.review_file(store, uri, path, scan_id)
+        path.write_bytes(original)
+        with patch('builtins.print'):
+            self.assertEqual(local.main(['--inventory-db', str(store), '--confirm', uri, str(path),
+                                         '--inventory-scan', str(scan_id)]), 0)
+        renamed_root = self.base / 'archive'
+        renamed_root.mkdir()
+        moved = path.rename(renamed_root / 'renamed.mp3')
+        missing_scan = local.inventory([self.root, self.base / 'unavailable'])
+        local.save_inventory(store, missing_scan)
+        sid = self.snapshot()
+        with closing(library.connect(self.db_path)) as db:
+            saved = local.load_inventory(store)
+            row = local.reconcile(db, sid, saved, saved['confirmations'])['references'][0]
+            self.assertEqual(row['status'], 'incomplete')
+            self.assertEqual(row['confirmation']['paths'], [])
+            local.save_inventory(store, local.inventory([renamed_root]))
+            saved = local.load_inventory(store)
+            row = local.reconcile(db, sid, saved, saved['confirmations'])['references'][0]
+            self.assertEqual(row['status'], 'confirmed')
+            self.assertEqual(row['confirmation']['paths'], [str(moved)])
+            self.assertEqual(row['confirmation']['path'], str(path))
+            local.review_file(store, uri)
+            self.assertEqual(local.load_inventory(store)['confirmations'], {})
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,6 +7,7 @@ import unittest
 
 import folder_tree
 import preview_audit
+import local_inventory
 
 P = 'A' * 22
 Q = 'B' * 22
@@ -98,11 +99,47 @@ class PreviewTests(unittest.TestCase):
         self.assertIn('<option value="difference">In A, absent from B</option>', html)
         self.assertIn('<option value="reverse-difference">In B, absent from A</option>', html)
 
+    def test_preview_exposes_song_and_artist_sort_buttons(self):
+        out = preview_audit.render(preview_audit.load_trial(self.path), Path(self.tmp.name) / 'trial.html')
+        html = out.read_text(encoding='utf-8')
+        for field, label in [('title', 'Song'), ('artists', 'Artist')]:
+            with self.subTest(field=field):
+                self.assertIn(f'<th scope="col" id="{field}-heading">', html)
+                self.assertIn(f'id="sort-{field}">{label} ', html)
+
     def test_bad_coverage_rejected(self):
         with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('DELETE FROM occurrences WHERE source=? AND position=1', (P,))
         with self.assertRaises(ValueError):
             preview_audit.load_trial(self.path)
+
+    def test_local_placements_get_saved_candidates_even_when_roots_are_partial(self):
+        with closing(sqlite3.connect(self.path)) as db, db:
+            row = dict(source=P, is_local=True, returned_uri='spotify:local:Artist:Album:Song:1',
+                       title='Song', duration_ms=1000, artists=['Synthetic artist'])
+            for position in (0, 1):
+                db.execute('UPDATE occurrences SET data=? WHERE source=? AND position=?',
+                           (json.dumps(dict(row, position=position)), P, position))
+        folder = self.path.parent / 'audio'
+        folder.mkdir()
+        song = folder / 'Song.mp3'
+        song.write_bytes(b'synthetic audio fixture')
+        scan = local_inventory.inventory([folder, folder, self.path.parent / 'missing'])
+        store = self.path.parent / 'inventory.sqlite'
+        local_inventory.save_inventory(store, scan)
+        local_inventory.review_file(store, row['returned_uri'], song)
+        song.unlink()
+        plain = preview_audit.load_trial(self.path)
+        self.assertNotIn('local_files', plain['items'][0])
+        data = preview_audit.load_trial(self.path, inventory=local_inventory.load_inventory(store))
+        self.assertFalse(data['inventory']['complete'])
+        self.assertEqual(data['inventory']['scan_id'], 1)
+        self.assertEqual([item['position'] for item in data['items']], [1, 2])
+        for item in data['items']:
+            self.assertEqual([c['path'] for c in item['local_files']['candidates']], [str(song)])
+            self.assertEqual(item['local_files']['confirmation']['paths'], [str(song)])
+        html = preview_audit.render(data, self.path.parent / 'trial.html').read_text(encoding='utf-8')
+        self.assertIn(json.dumps(str(song)), html)
 
 
 if __name__ == '__main__':

@@ -1,9 +1,9 @@
 # Local file inventory and reconciliation
 
 This offline workflow reads explicitly selected audio folders and optionally an
-existing catalog snapshot. It writes a separate JSON report; it does not modify
-audio, the catalog, Spotify, or device settings. No network or dependencies are
-required.
+existing catalog snapshot. It writes a separate JSON report and can also save
+scan history in a dedicated SQLite database. It does not modify audio, the
+catalog, Spotify, or device settings. No network or dependencies are required.
 
 ```powershell
 python local_inventory.py "C:\Music"
@@ -17,13 +17,56 @@ Use `--output` for an explicit JSON destination. Existing destinations are never
 overwritten. Reports contain private paths and captured metadata; keep them out
 of commits.
 
+## Show file locations in a saved playlist comparison
+
+Spotify's `spotify:local:` reference contains song metadata. The filesystem
+path comes from a separate inventory of the folders you choose. To keep that
+evidence in SQLite and show it in a comparison, use:
+
+```powershell
+$inventoryDb = Join-Path $env:USERPROFILE 'MusicLibraryData\inventories\local-files.sqlite'
+python local_inventory.py 'C:\Music' --inventory-db $inventoryDb
+python preview_audit.py --run 'C:\path\to\saved-run' --inventory-db $inventoryDb --open
+```
+
+The preview command generates a new offline preview from the saved audit.
+Click a local track to see the dated candidate paths and coverage. Use
+`--inventory-scan ID` to pick an earlier SQLite scan, or `--inventory PATH`
+to use an existing JSON report. With no inventory selected, the details show
+that file locations were not checked. The SQLite store keeps each scan
+separately, including incomplete scans and paths that may have since moved.
+Only paths relevant to local references in the preview are included in its
+HTML. Treat the SQLite store, JSON and enriched HTML as private.
+
+## Confirm a file and recognize it after a move
+
+After checking a candidate yourself, copy the full `spotify:local:` URI from
+the preview and give the inventory the exact file path.
+
+```powershell
+$uri = 'spotify:local:Example+Artist:Example+Album:Example+Song:203'
+python local_inventory.py --inventory-db $inventoryDb --confirm $uri 'C:\Music\01 - Example Song.mp3'
+```
+
+Confirmation checks the file's current SHA-256 against the saved scan. Use
+`--inventory-scan ID` if you reviewed an older scan. Regenerate the preview
+with the same database to see the confirmation. Future scans show every path
+with those exact bytes, even after a rename or move. When the bytes are absent
+from the selected scan, the preview still shows that a prior review exists.
+Changing tags, transcoding, or otherwise changing the bytes requires review
+again. A new explicit confirmation replaces the active link for that exact URI.
+Use `--clear-confirmation $uri` with the same database to withdraw it. The store
+keeps the review history and the scan and path used at confirmation time.
+
 The extension filter includes MP3, M4A, AAC, WAV, FLAC, OGG, Opus, AIFF, and WMA.
 This is an inventory filter, not a claim that Spotify supports these formats or
 that their contents are valid audio. Each entry keeps its absolute path, root
 index, size, modification time, SHA-256 of readable bytes, and filename stem.
-WAV duration is read where supported. Tag parsing and audio fingerprints are
-not implemented. A WAV metadata parsing error is explicit and does not erase
-the readable file's byte evidence.
+The scanner reads basic MP3 title, artist, and album tags from ID3v1 and
+untransformed ID3v2.3/v2.4 text frames. It reads WAV duration where supported.
+Other formats can still match by filename. Unsupported or malformed metadata
+leaves the readable file's hash intact. Audio fingerprints are future work.
+Run a new inventory to collect tags for files in older scans.
 
 Roots and their errors remain in the report, including missing roots and failed
 directory/file reads. Links and Windows reparse points are skipped and make
@@ -35,13 +78,14 @@ observations of one path are not additional physical file copies.
 
 Reconciliation retains every Spotify local occurrence, source, zero-based
 position, URI, title, artist text, and duration. Repeated references remain
-separate rows. URI equality never proves file equality. Candidates use only
-case-insensitive equality of the filename stem and observed title, with a
-two-second duration tolerance when both durations are available. Artist and
-album tags are not read or inferred. Filename evidence is weak and may produce
-false candidates; artist text is retained for review.
+separate rows. A candidate needs an exact title after Unicode and case
+normalization, from either a title tag or the filename stem. A numbered filename
+can match via its title tag. Conflicting title, artist, album, or duration evidence
+is shown separately. Artist and album are compared when present on both sides,
+and duration has a two-second tolerance when available on both sides.
 
-- `likely`: one filename candidate; it is not confirmed recording identity.
+- `confirmed`: the scan observed bytes that you explicitly linked to this URI.
+- `likely`: one tag or filename candidate that needs review.
 - `ambiguous`: multiple distinct candidate paths, even if their bytes match.
 - `unmatched`: no candidate within completely scanned roots and an exported
   reference source; it is not a claim that audio is absent elsewhere.
@@ -49,7 +93,7 @@ false candidates; artist text is retained for review.
   to interpret the lack of a candidate.
 
 Positive candidates remain visible during partial coverage, with
-`comparison_complete` and `source_exported` recorded separately. Duration
+`comparison_complete` and `source_exported` recorded separately. Metadata
 conflicts retain their path and reason. Files without observed candidates are
 reported separately, with incomplete status when the catalog snapshot or root
 scan is partial. Export flags, snapshot status, source counts, inventory times,
@@ -73,8 +117,8 @@ Equal totals also do not establish equal membership. Do not bulk-add the Local
 Files view to a playlist merely to equalize its count.
 
 The current scanner implements selected-root traversal, per-file errors, SHA-256
-byte groups, optional WAV duration, and weak filename candidates against captured
-local playlist references. It does not yet count every non-audio file or produce
+byte groups, basic MP3 tags, optional WAV duration, and tag or filename candidates
+against captured local playlist references. It does not yet count every non-audio file or produce
 an all-file extension histogram, validate audio decoding, read tags/codec/bitrate/
 sample rate across formats, or capture the desktop Local Files collection.
 An extension is not evidence of Spotify format support. A successful byte read
@@ -97,7 +141,7 @@ Planned acceptance work:
   API playlist scan does not supply the missing desktop collection. Report
   A-only/B-only/shared/unknown under a declared identity basis only when both
   sources support that comparison; count-only observations remain unresolved.
-- Add source-dated tag and audio properties, reviewed file-to-recording links,
+- Extend source-dated tag and audio properties and add reviewed file-to-recording links,
   provider/source URLs, and path history through backward-compatible SQLite
   schema work. Keep physical files, byte identity, recordings, releases, provider
   instances, and playlist occurrences separate. Metadata equality is candidate

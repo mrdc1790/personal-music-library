@@ -71,6 +71,10 @@ On resume, unchanged completed playlists reuse captured rows; an unchanged inter
 
 ### Capture just the playlists you choose
 
+For a two-playlist comparison you can try without signing in, see the
+[worked examples](EXAMPLES.md#what-is-shared-by-two-playlists), including
+[a union with a local track](EXAMPLES.md#compare-two-playlists-with-a-local-track).
+
 Pass a playlist link, `spotify:playlist:` URI, or playlist ID with each
 `--playlist`. Sign in with the catalog's Spotify app as usual. The audit reads
 the selected playlists directly and skips playlist discovery and Liked Songs.

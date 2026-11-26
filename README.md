@@ -48,7 +48,7 @@ listening history or dated service totals as they become available. The
 [worked example](docs/EXAMPLES.md#rank-songs-and-import-stream-counts) shows
 what each measure answers.
 
-Read-only [local audio-folder inventory and candidate reconciliation](docs/LOCAL_INVENTORY.md) are available for explicit roots and existing catalog snapshots. Matching is limited to filename candidates and optional WAV duration evidence.
+The [local audio-folder inventory](docs/LOCAL_INVENTORY.md) uses MP3 tags, filenames, and available WAV duration to find candidates for saved Spotify local references. Explicit file confirmations carry across scans by byte hash.
 
 Not implemented: confirmed local recording matching, canonical recording matching across Spotify IDs, full-library scale validation, saved smart-playlist recipes, playlist publishing/splitting, player/server integration, or a universal playback/Connect replacement.
 
