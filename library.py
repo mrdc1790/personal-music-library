@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS items (
  PRIMARY KEY(snapshot_id,source,position),
  FOREIGN KEY(snapshot_id,source) REFERENCES playlists(snapshot_id,source));
 CREATE INDEX IF NOT EXISTS item_lookup ON items(snapshot_id,track_key);
+CREATE TABLE IF NOT EXISTS song_ratings (
+ track_key TEXT PRIMARY KEY, rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5));
 CREATE VIEW IF NOT EXISTS membership AS
  SELECT snapshot_id,track_key,source,COUNT(*) AS occurrence_count
  FROM items WHERE missing=0 GROUP BY snapshot_id,track_key,source;
@@ -156,6 +158,50 @@ def sources(db, sid):
 
 def rows(db, sid):
     return [dict(r) for r in db.execute("SELECT * FROM items WHERE snapshot_id=? ORDER BY source,position", (sid,))]
+
+
+def song_ratings(db):
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='song_ratings'").fetchone():
+        return {}
+    return dict(db.execute("SELECT track_key,rating FROM song_ratings"))
+
+
+def import_ratings(db, document):
+    if (not isinstance(document, dict) or document.get("format") != "personal-music-library-ratings-1"
+            or not isinstance(document.get("account"), str)
+            or not isinstance(document.get("changes"), list) or not document["changes"]):
+        raise ValueError("Expected a downloaded catalog rating changes file.")
+    keys = set()
+    with db:
+        db.execute("BEGIN IMMEDIATE")
+        if {r[0] for r in db.execute("SELECT DISTINCT account_id FROM snapshots")} != {document.get("account")}:
+            raise ValueError("Rating changes belong to a different catalog account.")
+        ratings = song_ratings(db)
+        updated = 0
+        for change in document["changes"]:
+            if not isinstance(change, dict) or set(change) != {"track_key", "before", "rating"}:
+                raise ValueError("Invalid rating change.")
+            key, before, rating = change["track_key"], change["before"], change["rating"]
+            if not isinstance(key, str) or key in keys or any(
+                    value is not None and (type(value) is not int or not 1 <= value <= 5)
+                    for value in (before, rating)):
+                raise ValueError("Invalid or duplicate rating change.")
+            keys.add(key)
+            if not db.execute("SELECT 1 FROM items WHERE snapshot_id IN (SELECT id FROM snapshots) "
+                              "AND track_key=? AND identity_basis!='unidentified' LIMIT 1", (key,)).fetchone():
+                raise ValueError("A rating refers to an unobserved or unidentified track.")
+            current = ratings.get(key)
+            if current == rating:
+                continue
+            if current != before:
+                raise ValueError("A saved rating changed since this view was generated. Reload the catalog and retry.")
+            if rating is None:
+                db.execute("DELETE FROM song_ratings WHERE track_key=?", (key,))
+            else:
+                db.execute("INSERT INTO song_ratings VALUES (?,?) "
+                           "ON CONFLICT(track_key) DO UPDATE SET rating=excluded.rating", (key, rating))
+            updated += 1
+    return dict(updated_ratings=updated)
 
 
 def lookup(db, sid, term):
@@ -315,7 +361,7 @@ def backup(db, destination):
         content = copy.read_bytes()
         manifest = dict(format=1, created_at=datetime.now(timezone.utc).isoformat(),
                         sha256=hashlib.sha256(content).hexdigest(),
-                        includes="Catalog, raw imported snapshots, and any imported listening events and stream totals")
+                        includes="Catalog, raw snapshots, song ratings, and imported listening events and stream totals")
         with zipfile.ZipFile(destination, "x", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("catalog.sqlite", content)
             archive.writestr("manifest.json", json.dumps(manifest, indent=2))
@@ -387,6 +433,7 @@ def main():
     }
     for command, (_, help_text) in stream_imports.items():
         sub.add_parser(command, help=help_text).add_argument("input", type=Path)
+    sub.add_parser("import-ratings", help="Apply changes downloaded from the catalog view").add_argument("input", type=Path)
     diff = sub.add_parser("compare")
     diff.add_argument("before", type=int)
     diff.add_argument("after", type=int)
@@ -407,9 +454,14 @@ def main():
             restore(args.archive, args.output)
             print("Restored catalog to", args.output)
             return 0
-        with closing(connect(args.db, write=args.command == "import" or args.command in stream_imports)) as db:
+        if args.command == "import-ratings" and not args.db.is_file():
+            raise ValueError("Import an audit snapshot before applying rating changes.")
+        write = args.command in ("import", "import-ratings") or args.command in stream_imports
+        with closing(connect(args.db, write=write)) as db:
             if args.command == "import":
                 result = dict(snapshot_id=import_snapshot(db, json.loads(args.snapshot.read_text(encoding="utf-8-sig")), args.label))
+            elif args.command == "import-ratings":
+                result = import_ratings(db, json.loads(args.input.read_text(encoding="utf-8-sig")))
             elif args.command in stream_imports:
                 importer, _ = stream_imports[args.command]
                 result = importer(db, args.input)

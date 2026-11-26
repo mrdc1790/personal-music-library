@@ -84,16 +84,13 @@ reviewable dry-run crate. The [pilot acceptance sequence](DJ_LIBRARY_WORKFLOW.md
 requires field mapping, correction preservation, round-trip checks, and a chosen
 application/device profile before broader writes or playback claims.
 
-### Manual song ratings (planned)
+### Manual song ratings
 
-Add a local 1–5 rating that can be entered, edited, or cleared from a song's
-details. Keep unrated songs distinct. Show the rating in the catalog table,
-support sorting in both directions, and filter for an exact rating such as
-5/5 or for unrated songs. Store one rating per saved track identity so every
-placement of that identity shares it across snapshots and regenerated views.
-Include ratings in catalog backups and test a restore. Different identities,
-including local and Spotify copies, can share a rating later through a
-reviewed recording link.
+The [catalog explorer](OPERATING_GUIDE.md#rate-songs) can enter, edit, clear,
+filter, and sort 1–5 ratings. Download the changes and apply them to the local
+catalog. One rating per observed identity follows its placements across
+snapshots, regenerated views, and catalog backups. Sharing a rating across
+different identities remains a follow-up to reviewed recording links.
 
 ### Logical playlists for split collections (planned)
 

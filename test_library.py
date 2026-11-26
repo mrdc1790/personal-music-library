@@ -56,6 +56,51 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(lib.rows(self.db, self.a)), 8)
         self.assertEqual(len(lib.rows(self.db, b)), 7)
 
+    def test_ratings_apply_edit_clear_and_restore_by_exact_identity(self):
+        key = 'spotify:track:' + 'A' * 22
+        catalog = self.folder / 'catalog.sqlite'
+        changes = dict(format='personal-music-library-ratings-1', account=self.before['account_id'],
+                       changes=[dict(track_key=key, before=None, rating=5)])
+        payload = self.folder / 'ratings.json'
+        payload.write_text(json.dumps(changes), encoding='utf-8')
+        with patch('sys.argv', ['library.py', '--db', str(catalog), 'import-ratings', str(payload)]):
+            self.assertEqual(lib.main(), 0)
+        self.assertEqual(lib.import_ratings(self.db, changes), {'updated_ratings': 0})
+        lib.import_snapshot(self.db, self.after, 'second')
+        page = view_catalog.create_view(catalog, self.folder / 'view.html').read_text(encoding='utf-8')
+        embedded = re.search(r'<script type="application/json" id="ratings">(.*?)</script>', page)
+        self.assertEqual(dict(json.loads(embedded.group(1))), {key: 5})
+        changes['changes'][0].update(before=5, rating=3)
+        lib.import_ratings(self.db, changes)
+        archive = self.folder / 'backup.zip'
+        lib.backup(self.db, archive)
+        restored = self.folder / 'restored.sqlite'
+        lib.restore(archive, restored)
+        with closing(lib.connect(restored)) as db:
+            self.assertEqual(lib.song_ratings(db), {key: 3})
+        changes['changes'][0].update(before=3, rating=None)
+        lib.import_ratings(self.db, changes)
+        self.assertEqual(lib.song_ratings(self.db), {})
+
+    def test_rating_batch_rolls_back_on_stale_or_unknown_evidence(self):
+        first, second = ('spotify:track:' + letter * 22 for letter in 'AB')
+        changes = dict(format='personal-music-library-ratings-1', account=self.before['account_id'],
+                       changes=[dict(track_key=second, before=None, rating=4)])
+        lib.import_ratings(self.db, changes)
+        for change, message in [(dict(track_key=second, before=None, rating=2), 'changed'),
+                                (dict(track_key='unknown', before=None, rating=3), 'unobserved'),
+                                (dict(track_key=second, before=4, rating=True), 'Invalid')]:
+            changes['changes'] = [dict(track_key=first, before=None, rating=5), change]
+            with self.assertRaisesRegex(ValueError, message):
+                lib.import_ratings(self.db, changes)
+            self.assertEqual(lib.song_ratings(self.db), {second: 4})
+        changes['account'] = 'another-account'
+        with self.assertRaisesRegex(ValueError, 'different catalog'):
+            lib.import_ratings(self.db, changes)
+        with self.db:
+            self.db.execute('DROP TABLE song_ratings')
+        self.assertEqual(lib.song_ratings(self.db), {})
+
     def test_metadata_report_uses_existing_raw_observations(self):
         import track_metadata
 

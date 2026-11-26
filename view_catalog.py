@@ -35,6 +35,7 @@ def create_view(catalog, output, hierarchy=None):
     snapshots = []
     with closing(library.connect(catalog)) as db:
         db.execute('BEGIN')
+        ratings = library.song_ratings(db)
         for s in db.execute('SELECT id,label,created_at,account_id,status FROM snapshots ORDER BY id DESC'):
             sources = library.sources(db, s['id'])
             tree = folder_tree.latest_tree(hierarchy, s['account_id']) if hierarchy else None
@@ -56,9 +57,10 @@ def create_view(catalog, output, hierarchy=None):
     data = json.dumps(snapshots, ensure_ascii=True).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
     replacements = {
         '__DATA__': data,
+        '__RATINGS__': json.dumps(list(ratings.items()), ensure_ascii=True).replace('<', '\\u003c'),
         '__PATH__': html.escape(str(Path(catalog).resolve())),
     }
-    page = re.sub(r'__DATA__|__PATH__', lambda match: replacements[match.group()], TEMPLATE)
+    page = re.sub(r'__DATA__|__RATINGS__|__PATH__', lambda match: replacements[match.group()], TEMPLATE)
     output.write_text(page, encoding='utf-8')
     return output.resolve()
 
@@ -72,21 +74,28 @@ button.link{border:0;background:transparent;color:#126244;text-decoration:underl
 .controls #clear-filters{align-self:flex-end;margin:0;font:inherit;color:inherit}
 #details button.link,#status button.link{margin:4px 12px 4px 0}#details li{line-height:1.55}
 #details dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px}#details dt{font-weight:700}#details dd{margin:0}
-#details ul{max-height:16rem;overflow:auto}
+#details ul{max-height:16rem;overflow:auto}#details label{max-width:200px}
 </style></head><body><main><div class="eyebrow">PERSONAL MUSIC LIBRARY / READ-ONLY</div>
 <h1>Where is your music?</h1><div class="path">__PATH__</div>
 <div class="note" id="notice"></div>
 <div class="controls"><label>Saved snapshot<select id="snapshot"></select></label><label>Folder<select id="folder"></select></label><label>Playlist<select id="source"></select></label><label>Search songs, artists, albums or IDs<input id="search" type="search"></label>
+<label>Rating<select id="rating-filter"><option value="">Any rating</option><option value="unrated">Unrated</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+<label>Order<select id="rating-order"><option value="">Source order</option><option value="highest">Highest rating first</option><option value="lowest">Lowest rating first</option></select></label>
 <button id="clear-filters" type="button">Clear all filters</button></div>
 <section id="details" class="note" hidden aria-live="polite"></section>
-<div id="status" role="status"></div><div class="table"><table><thead><tr><th>Playlist</th><th>Position</th><th>Song</th><th>Artists</th><th>Type</th><th>Observed identity</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div id="rating-changes" hidden><button id="download-ratings" type="button">Download rating changes</button><span id="rating-status" role="status"></span></div>
+<div id="status" role="status"></div><div class="table"><table><thead><tr><th>Playlist</th><th>Position</th><th>Song</th><th>Artists</th><th>Type</th><th>Rating</th><th>Observed identity</th></tr></thead><tbody id="rows"></tbody></table></div>
 <button id="previous">Previous page</button><button id="next">Next page</button>
-<footer>One row means one placement. A song may appear in several playlists or twice in the same one.<br>Positions here start at 1. Local references do not prove the audio exists or plays on your phone.<br>This is a saved view: reopen the launcher after importing new data. It cannot edit the database or Spotify. No data is uploaded.</footer>
+<footer>One row means one placement. A song may appear in several playlists or twice in the same one.<br>Positions here start at 1. Local presence and playback require separate evidence.<br>Reopen the launcher after importing new data or applying rating changes. No data is uploaded.</footer>
 <script type="application/json" id="data">__DATA__</script>
+<script type="application/json" id="ratings">__RATINGS__</script>
 <script>
 'use strict';
 const data=JSON.parse(document.getElementById('data').textContent);
 const el=id=>document.getElementById(id);
+const ratings = new Map(JSON.parse(el('ratings').textContent));
+const ratingChanges = new Map();
+const ratingFor = key => ratingChanges.has(key) ? ratingChanges.get(key) : (ratings.get(key) ?? null);
 let current, names, page = 0, selectedKey = '';
 const route = new URLSearchParams(location.hash.slice(1));
 function option(text, value) {
@@ -165,6 +174,21 @@ function showSong(row) {
     append(details, 'p', row.track_key);
     const placements = row.identity_basis === 'unidentified' ? [row] :
         current.items.filter(item => item.track_key === row.track_key);
+    if (row.identity_basis !== 'unidentified') {
+        const label = append(details, 'label', 'Your rating');
+        const rating = document.createElement('select');
+        rating.append(option('Unrated', ''), ...[1, 2, 3, 4, 5].map(value => option(`${value}/5`, value)));
+        rating.value = ratingFor(row.track_key) ?? '';
+        rating.onchange = () => {
+            const next = rating.value ? Number(rating.value) : null;
+            if (next === (ratings.get(row.track_key) ?? null)) ratingChanges.delete(row.track_key);
+            else ratingChanges.set(row.track_key, next);
+            el('rating-changes').hidden = !ratingChanges.size;
+            el('rating-status').textContent = `${ratingChanges.size} unsaved rating change(s)`;
+            render();
+        };
+        label.append(rating);
+    }
     const fields = [['album', 'Album'], ['album_artist', 'Album artist'], ['release_date', 'Release date'],
         ['isrc', 'ISRC'], ['genre', 'Genre (album or artist)'], ['track_number', 'Track number'],
         ['disc_number', 'Disc number']];
@@ -213,11 +237,21 @@ function searchCatalog(value = '') {
 }
 function render() {
     const query = el('search').value.trim().toLocaleLowerCase(), source = el('source').value;
+    const ratingFilter = el('rating-filter').value, ratingOrder = el('rating-order').value;
     const allowed = new Set(folderSources().map(item => item.source));
     const found = current.items.filter(row => allowed.has(row.source) && (!source || row.source === source) &&
+        (!ratingFilter || (ratingFilter === 'unrated' ? ratingFor(row.track_key) === null :
+            ratingFor(row.track_key) === Number(ratingFilter))) &&
         (!selectedKey || row.track_key === selectedKey) && (!query ||
             [row.title, row.artists, row.track_key, row.metadata.album, row.metadata.album_id,
                 row.metadata.album_artist, row.metadata.isrc].join(' ').toLocaleLowerCase().includes(query)));
+    if (ratingOrder) {
+        const rank = key => {
+            const rating = ratingFor(key);
+            return rating === null ? 6 : (ratingOrder === 'highest' ? -rating : rating);
+        };
+        found.sort((a, b) => rank(a.track_key) - rank(b.track_key));
+    }
     const last = Math.max(0, Math.ceil(found.length / 200) - 1);
     page = Math.min(page, last);
     el('rows').replaceChildren();
@@ -229,6 +263,8 @@ function render() {
         action(append(row, 'td', ''), item.title || 'Unknown', () => showSong(item));
         append(row, 'td', item.artists);
         append(row, 'td', item.missing ? 'Missing' : item.is_local ? 'Local' : 'Catalog');
+        const rating = ratingFor(item.track_key);
+        append(row, 'td', rating === null ? '—' : `${rating}/5`);
         append(row, 'td', item.track_key);
         el('rows').append(row);
     }
@@ -256,9 +292,25 @@ el('snapshot').onchange = () => load();
 el('folder').onchange = () => { resetSources(); page = 0; render(); };
 el('source').onchange = () => { selectedKey = ''; page = 0; render(); };
 el('search').oninput = () => { selectedKey = ''; page = 0; render(); };
+for (const id of ['rating-filter', 'rating-order']) el(id).onchange = () => { page = 0; render(); };
 el('clear-filters').onclick = () => {
     el('rows').closest('.table').scrollTop = 0;
+    el('rating-filter').value = '';
+    el('rating-order').value = '';
     searchCatalog();
+};
+el('download-ratings').onclick = () => {
+    const changes = Array.from(ratingChanges, ([track_key, rating]) => ({
+        track_key, before: ratings.get(track_key) ?? null, rating,
+    }));
+    const payload = {format: 'personal-music-library-ratings-1', account: current.account_id, changes};
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'catalog-rating-changes.json';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    el('rating-status').textContent = 'Apply this file locally with library.py import-ratings.';
 };
 el('previous').onclick = () => { page--; render(); };
 el('next').onclick = () => { page++; render(); };

@@ -36,6 +36,7 @@ for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery o
 | Inspect and protect | CSV exports, static catalog view, checksummed catalog ZIP, and restore verification |
 | Preserve folders | Optional read-only Spotifast rootlist import; live validation still needed |
 | Rank songs | [Playlist reach, personal plays, and worldwide streams](docs/OPERATING_GUIDE.md#song-stats) |
+| Rate songs | [Edit, filter, and sort exact-identity ratings](docs/OPERATING_GUIDE.md#rate-songs) across saved captures |
 | Enrich recording genres | [Cache MusicBrainz recording tags](docs/METADATA.md#musicbrainz-recording-genres) for offline comparisons |
 | Check playlist capacity | [Estimate remaining slots from saved captures](docs/OPERATING_GUIDE.md#playlist-capacity) |
 | Investigate unavailable tracks | [Review saved playability and recovery evidence](docs/OPERATING_GUIDE.md#unavailable-tracks-and-recovery) |

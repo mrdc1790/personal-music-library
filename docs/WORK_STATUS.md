@@ -1,5 +1,14 @@
 # Work status
 
+## November 26, 2026 — manual song ratings
+
+Edit or clear 1–5 ratings in the [catalog explorer](OPERATING_GUIDE.md#rate-songs),
+then download and apply changes to SQLite. The explorer filters and sorts
+ratings. Each exact identity shares its rating across snapshots. Tests verify
+the CLI import, conflicting and invalid batches, and backup and restore. An
+offline Chrome check exercised details, filtering, sorting, snapshot switching,
+and the downloaded change file. All 111 offline tests passed.
+
 ## November 26, 2026 — catalog navigation and metadata visibility
 
 Song details expose captured release, ISRC, genre, and album credit evidence

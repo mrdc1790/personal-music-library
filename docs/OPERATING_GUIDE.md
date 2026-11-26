@@ -309,7 +309,7 @@ snapshot with the most exported playlists. Choose a different snapshot to see
 its history. Once a folder tree is available, select a folder to include its
 subfolders or browse by the playlist breadcrumbs.
 **Clear all filters** returns to page one of the selected snapshot and clears
-the folder, playlist, search, and exact song identity filters. Regenerate an
+the folder, playlist, search, exact song identity, and rating filters. Regenerate an
 older catalog view with the command above to get the button.
 
 `--catalog` adds a separate **Saved catalog placements** section to the
@@ -353,7 +353,28 @@ Online cleaners can use broader matching. Spotify Dedup, for example, offers
 strict ID matching and fuzzy matching on title, artist, and similar duration.
 It can flag distinct IDs as possible duplicates and remove selected entries
 from Spotify after review. Similar metadata can also match distinct versions.
-The catalog explorer is read-only. [Spotify Dedup](https://spotify-dedup.com/)
+The catalog explorer does not change Spotify. [Spotify Dedup](https://spotify-dedup.com/)
+
+### Rate songs
+
+Open a song's details and choose a rating from 1 to 5 or **Unrated** to clear
+it. Filter for a particular rating or **Unrated**, and sort by highest or lowest
+with unrated rows last. All placements of the same observed identity share one
+rating across snapshots. Different Spotify IDs and local references keep their
+own ratings. Placements without an identity cannot be rated.
+
+Download the changes from the explorer before closing it, then apply the file
+to the same local catalog and reopen the explorer. Rating drafts are held in
+the open page. An import rejects a conflicting edit and keeps the entire batch
+unapplied. Catalog backups include saved ratings.
+
+```powershell
+python library.py import-ratings "$env:USERPROFILE\Downloads\catalog-rating-changes.json"
+python view_catalog.py
+```
+
+Use `python library.py --db 'C:\path\to\catalog.sqlite' import-ratings ...`
+when the explorer was generated from a different catalog path.
 
 ### Import playlist folders
 
