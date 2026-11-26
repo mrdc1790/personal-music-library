@@ -18,6 +18,7 @@ import zipfile
 
 import availability
 import checkpoint_export
+import logical_playlists
 import playlist_capacity
 import song_stats
 import track_metadata
@@ -46,7 +47,7 @@ CREATE TABLE IF NOT EXISTS song_ratings (
 CREATE VIEW IF NOT EXISTS membership AS
  SELECT snapshot_id,track_key,source,COUNT(*) AS occurrence_count
  FROM items WHERE missing=0 GROUP BY snapshot_id,track_key,source;
-"""
+""" + logical_playlists.SCHEMA
 
 
 def connect(path, write=False):
@@ -215,13 +216,29 @@ def lookup(db, sid, term):
 def set_query(db, sid, operation, selected):
     if len(selected) < 2 or len(set(selected)) != len(selected):
         raise ValueError("Provide at least two distinct playlist/source IDs.")
-    coverage = {p["source"]: p["exported"] for p in sources(db, sid)}
-    if any(not coverage.get(source) for source in selected):
+    coverage = {p["source"]: bool(p["exported"]) for p in sources(db, sid)}
+    account = db.execute("SELECT account_id FROM snapshots WHERE id=?", (sid,)).fetchone()[0]
+    groups = logical_playlists.definitions(db, account) if any(s.startswith('collection:') for s in selected) else {}
+    members = {}
+    for source in selected:
+        if source.startswith('collection:'):
+            group = groups.get(source.removeprefix('collection:'))
+            if group is None:
+                raise ValueError('A requested collection does not exist. Use collections to list collection IDs.')
+            members[source] = group['members']
+        else:
+            members[source] = [source]
+    if any(not coverage.get(playlist) for group in members.values() for playlist in group):
         raise ValueError("A requested playlist was not exported or does not exist. Use playlists to inspect coverage.")
+    selections = defaultdict(list)
+    for source, group in members.items():
+        for playlist in group:
+            selections[playlist].append(source)
     sets, details = {source: set() for source in selected}, {}
     for row in rows(db, sid):
-        if row["source"] in sets and row["identity_basis"] != "unidentified":
-            sets[row["source"]].add(row["track_key"])
+        if row["source"] in selections and row["identity_basis"] != "unidentified":
+            for source in selections[row["source"]]:
+                sets[source].add(row["track_key"])
             details.setdefault(row["track_key"], row)
     first, *rest = [sets[s] for s in selected]
     if operation == "union":
@@ -361,7 +378,7 @@ def backup(db, destination):
         content = copy.read_bytes()
         manifest = dict(format=1, created_at=datetime.now(timezone.utc).isoformat(),
                         sha256=hashlib.sha256(content).hexdigest(),
-                        includes="Catalog, raw snapshots, song ratings, and imported listening events and stream totals")
+                        includes="Catalog, raw snapshots, ratings, logical collections, listening events and stream totals")
         with zipfile.ZipFile(destination, "x", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("catalog.sqlite", content)
             archive.writestr("manifest.json", json.dumps(manifest, indent=2))
@@ -409,6 +426,13 @@ def main():
     metadata.add_argument("--snapshot", type=int)
     metadata.add_argument("--output", type=Path, help="New private JSON file with per-placement metadata")
     sub.add_parser("snapshots")
+    save_collection = sub.add_parser("save-collection", help="Save ordered members of a local playlist collection")
+    save_collection.add_argument("collection_id")
+    save_collection.add_argument("name")
+    save_collection.add_argument("playlists", nargs="+")
+    save_collection.add_argument("--active", help="Member playlist ID receiving new additions")
+    collections = sub.add_parser("collections", help="Show saved playlist groups and their snapshot coverage")
+    collections.add_argument("--snapshot", type=int)
     for command in ("playlists", "find", "query", "export", "song-stats"):
         p = sub.add_parser(command)
         p.add_argument("--snapshot", type=int)
@@ -454,14 +478,16 @@ def main():
             restore(args.archive, args.output)
             print("Restored catalog to", args.output)
             return 0
-        if args.command == "import-ratings" and not args.db.is_file():
-            raise ValueError("Import an audit snapshot before applying rating changes.")
-        write = args.command in ("import", "import-ratings") or args.command in stream_imports
+        if args.command in ("import-ratings", "save-collection") and not args.db.is_file():
+            raise ValueError("Import an audit snapshot before editing the catalog.")
+        write = args.command in ("import", "import-ratings", "save-collection") or args.command in stream_imports
         with closing(connect(args.db, write=write)) as db:
             if args.command == "import":
                 result = dict(snapshot_id=import_snapshot(db, json.loads(args.snapshot.read_text(encoding="utf-8-sig")), args.label))
             elif args.command == "import-ratings":
                 result = import_ratings(db, json.loads(args.input.read_text(encoding="utf-8-sig")))
+            elif args.command == "save-collection":
+                result = logical_playlists.save(db, args.collection_id, args.name, args.playlists, args.active)
             elif args.command in stream_imports:
                 importer, _ = stream_imports[args.command]
                 result = importer(db, args.input)
@@ -473,11 +499,15 @@ def main():
                 backup(db, args.output)
                 result = dict(backup=str(args.output), uploaded=False)
             else:
-                if args.command in ("song-stats", "capacity", "availability", "metadata"):
+                if args.command in ("song-stats", "capacity", "availability", "metadata", "collections", "query"):
                     db.execute("BEGIN")
                 sid = snapshot_id(db, args.snapshot)
                 if args.command == "playlists":
                     result = sources(db, sid)
+                elif args.command == "collections":
+                    account = db.execute("SELECT account_id FROM snapshots WHERE id=?", (sid,)).fetchone()[0]
+                    groups = logical_playlists.definitions(db, account)
+                    result = logical_playlists.reports(db, sid, groups, sources(db, sid))
                 elif args.command == "find":
                     result = lookup(db, sid, args.term)
                     result = [{k: r[k] for k in ("source", "playlist_name", "position", "track_key", "title", "artists", "identity_basis")} for r in result]

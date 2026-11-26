@@ -74,11 +74,11 @@ browsing and repeated snapshots. Playback needs device testing.
 
 ## Catalog support
 
-The first deliverable is a read-only capacity report from saved observations.
-It should help choose an active volume, flag playlists near the cap, and show
-where more evidence is needed. Later, map volumes by stable playlist ID into
-one logical collection per category and preview rollover destinations. Keep
-the original playlist memberships, order, and duplicate occurrences.
+Use the [historical capacity report](OPERATING_GUIDE.md#playlist-capacity) to
+choose an active volume, flag playlists near the cap, and check evidence gaps.
+[Group volumes in the catalog](OPERATING_GUIDE.md#group-split-playlists) by stable
+playlist ID. The combined view retains the individual placements and repeats.
+Test a real rollover with one category before expanding the workflow.
 
 Native folder playback makes automatic splitting and publishing optional.
 Measure the work of manual rollover before adding a writer. Keep the separate

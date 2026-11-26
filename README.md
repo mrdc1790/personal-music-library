@@ -39,6 +39,7 @@ for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery o
 | Rate songs | [Edit, filter, and sort exact-identity ratings](docs/OPERATING_GUIDE.md#rate-songs) across saved captures |
 | Enrich recording genres | [Cache MusicBrainz recording tags](docs/METADATA.md#musicbrainz-recording-genres) for offline comparisons |
 | Check playlist capacity | [Estimate remaining slots from saved captures](docs/OPERATING_GUIDE.md#playlist-capacity) |
+| Browse split playlists together | [Group saved playlist IDs](docs/OPERATING_GUIDE.md#group-split-playlists) in ordered collections |
 | Investigate unavailable tracks | [Review saved playability and recovery evidence](docs/OPERATING_GUIDE.md#unavailable-tracks-and-recovery) |
 | Repair shadow tracks | Guarded reviewed migration commands; offline-tested only |
 

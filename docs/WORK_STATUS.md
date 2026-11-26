@@ -1,5 +1,14 @@
 # Work status
 
+## November 26, 2026 — logical playlist collections
+
+The catalog groups split playlists by stable IDs with ordered members and an
+optional active volume. [Browse, compare, or rank by collection](OPERATING_GUIDE.md#group-split-playlists)
+using saved captures. The offline suite checks repeats across members, playlist
+renames, missing and partial coverage, and collection reach. All 112 tests
+passed. An offline Chrome fixture verified group order, totals, and active
+volume labels.
+
 ## November 26, 2026 — manual song ratings
 
 Edit or clear 1–5 ratings in the [catalog explorer](OPERATING_GUIDE.md#rate-songs),

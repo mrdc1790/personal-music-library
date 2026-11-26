@@ -11,6 +11,7 @@ import webbrowser
 
 import folder_tree
 import library
+import logical_playlists
 import track_metadata
 
 
@@ -38,6 +39,9 @@ def create_view(catalog, output, hierarchy=None):
         ratings = library.song_ratings(db)
         for s in db.execute('SELECT id,label,created_at,account_id,status FROM snapshots ORDER BY id DESC'):
             sources = library.sources(db, s['id'])
+            groups = logical_playlists.definitions(db, s['account_id'])
+            sources_by_id = {source['source']: source for source in sources}
+            collections = [logical_playlists.describe(group, sources_by_id) for group in groups.values()]
             tree = folder_tree.latest_tree(hierarchy, s['account_id']) if hierarchy else None
             folders, paths, membership = folder_tree.folder_paths(tree)
             for source in sources:
@@ -51,6 +55,7 @@ def create_view(catalog, output, hierarchy=None):
                 item['metadata'] = track_metadata.card(json.loads(item.pop('raw_json')))
                 items.append(item)
             snapshots.append(dict(s, sources=sources, items=items,
+                                  collections=collections,
                                   folders=folders, tree_imported_at=tree['imported_at'] if tree else None))
     if not snapshots:
         raise ValueError('This catalog has no snapshots.')
@@ -72,6 +77,7 @@ TEMPLATE = '''<!doctype html>
 *{box-sizing:border-box}body{margin:0;background:#f4f6f3;color:#173126;font:16px system-ui,sans-serif}main{max-width:1400px;margin:auto;padding:32px}h1{font-size:36px;margin:8px 0}.eyebrow{font-size:12px;font-weight:750;letter-spacing:2px}.note{background:#dfebe2;padding:16px;border-radius:12px;margin:18px 0;line-height:1.6}.path{font-size:12px;overflow-wrap:anywhere;color:#52665a}.controls{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}label{display:grid;gap:7px;flex:1;min-width:220px;font-weight:650}select,input{width:100%;padding:11px;border:1px solid #a5b6a8;border-radius:7px;background:white;font:inherit;color:inherit}.table{overflow:auto;background:white;border:1px solid #d3ddd5;border-radius:12px;max-height:62vh}table{border-collapse:collapse;width:100%;font-size:14px}th{text-align:left;background:#eaf0eb;position:sticky;top:0}td,th{padding:13px;border-bottom:1px solid #e3e9e4}td:last-child{font:12px ui-monospace,monospace;overflow-wrap:anywhere;min-width:230px}#status{margin:15px 0;font-weight:600}footer{margin-top:18px;font-size:13px;color:#52665a;line-height:1.6}button{padding:10px;border:1px solid #a5b6a8;border-radius:7px;cursor:pointer;background:white;margin:12px 8px 0 0}
 button.link{border:0;background:transparent;color:#126244;text-decoration:underline;padding:0;margin:0;text-align:left;font:inherit}
 .controls #clear-filters{align-self:flex-end;margin:0;font:inherit;color:inherit}
+.controls [hidden]{display:none}
 #details button.link,#status button.link{margin:4px 12px 4px 0}#details li{line-height:1.55}
 #details dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px}#details dt{font-weight:700}#details dd{margin:0}
 #details ul{max-height:16rem;overflow:auto}#details label{max-width:200px}
@@ -79,9 +85,11 @@ button.link{border:0;background:transparent;color:#126244;text-decoration:underl
 <h1>Where is your music?</h1><div class="path">__PATH__</div>
 <div class="note" id="notice"></div>
 <div class="controls"><label>Saved snapshot<select id="snapshot"></select></label><label>Folder<select id="folder"></select></label><label>Playlist<select id="source"></select></label><label>Search songs, artists, albums or IDs<input id="search" type="search"></label>
+<label id="collection-control" hidden>Logical playlist<select id="collection"></select></label>
 <label>Rating<select id="rating-filter"><option value="">Any rating</option><option value="unrated">Unrated</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
 <label>Order<select id="rating-order"><option value="">Source order</option><option value="highest">Highest rating first</option><option value="lowest">Lowest rating first</option></select></label>
 <button id="clear-filters" type="button">Clear all filters</button></div>
+<section id="collection-details" class="note" hidden></section>
 <section id="details" class="note" hidden aria-live="polite"></section>
 <div id="rating-changes" hidden><button id="download-ratings" type="button">Download rating changes</button><span id="rating-status" role="status"></span></div>
 <div id="status" role="status"></div><div class="table"><table><thead><tr><th>Playlist</th><th>Position</th><th>Song</th><th>Artists</th><th>Type</th><th>Rating</th><th>Observed identity</th></tr></thead><tbody id="rows"></tbody></table></div>
@@ -97,6 +105,7 @@ const ratings = new Map(JSON.parse(el('ratings').textContent));
 const ratingChanges = new Map();
 const ratingFor = key => ratingChanges.has(key) ? ratingChanges.get(key) : (ratings.get(key) ?? null);
 let current, names, page = 0, selectedKey = '';
+let collection = null;
 const route = new URLSearchParams(location.hash.slice(1));
 function option(text, value) {
     const node = document.createElement('option');
@@ -136,6 +145,37 @@ function resetSources() {
         el('source').append(option(playlistLabel(source) + ' — ' + coverage, source.source));
     }
 }
+function showCollection(key = '') {
+    collection = current.collections.find(group => group.collection_id === key) ?? null;
+    el('collection').value = collection?.collection_id ?? '';
+    el('folder').disabled = Boolean(collection) || !current.folders.length;
+    el('source').disabled = Boolean(collection);
+    const details = el('collection-details');
+    details.hidden = !collection;
+    details.replaceChildren();
+    if (!collection) return;
+    el('folder').value = '';
+    resetSources();
+    const members = new Set(collection.members.map(member => member.playlist_id));
+    const identities = new Set();
+    for (const row of current.items) {
+        if (members.has(row.source) && row.identity_basis !== 'unidentified') identities.add(row.track_key);
+    }
+    append(details, 'h2', collection.name);
+    append(details, 'p', `${collection.observed_placements.toLocaleString()} observed placements · ` +
+        `${identities.size.toLocaleString()} observed identities · ${collection.complete ? 'Complete members' : 'Partial coverage'}`);
+    const list = document.createElement('ol');
+    for (const member of collection.members) {
+        const item = append(list, 'li', '');
+        if (member.coverage === 'absent') item.append(`${member.playlist_id} · absent from this capture`);
+        else {
+            action(item, member.name, () => browsePlaylist(member.playlist_id));
+            item.append(` · ${member.placements.toLocaleString()} observed placements · ${member.coverage}`);
+        }
+        if (member.playlist_id === collection.active_playlist) item.append(' · Active volume');
+    }
+    details.append(list);
+}
 function load(key = '') {
     current = data[Number(el('snapshot').value)];
     names = new Map(current.sources.map(source => [source.source, source]));
@@ -144,7 +184,10 @@ function load(key = '') {
     el('details').hidden = true;
     el('folder').replaceChildren(option('All folders', ''));
     current.folders.forEach(folder => el('folder').append(option(folderLabel(folder.path), folder.id)));
-    el('folder').disabled = !current.folders.length;
+    el('collection-control').hidden = !current.collections.length;
+    el('collection').replaceChildren(option('All playlists', ''), ...current.collections.map(
+        group => option(group.name, group.collection_id)));
+    showCollection();
     resetSources();
     const tree = current.tree_imported_at
         ? ' Folder paths come from the cached import dated ' + current.tree_imported_at + '.'
@@ -161,6 +204,7 @@ function browsePlaylist(source) {
     selectedKey = '';
     el('search').value = '';
     el('folder').value = '';
+    showCollection();
     resetSources();
     el('source').value = source;
     page = 0;
@@ -230,6 +274,7 @@ function showSong(row) {
 function searchCatalog(value = '') {
     selectedKey = '';
     el('folder').value = '';
+    showCollection();
     resetSources();
     el('search').value = value;
     page = 0;
@@ -238,20 +283,21 @@ function searchCatalog(value = '') {
 function render() {
     const query = el('search').value.trim().toLocaleLowerCase(), source = el('source').value;
     const ratingFilter = el('rating-filter').value, ratingOrder = el('rating-order').value;
-    const allowed = new Set(folderSources().map(item => item.source));
+    const members = collection && new Map(collection.members.map((member, position) => [member.playlist_id, position]));
+    const allowed = members || new Set(folderSources().map(item => item.source));
     const found = current.items.filter(row => allowed.has(row.source) && (!source || row.source === source) &&
         (!ratingFilter || (ratingFilter === 'unrated' ? ratingFor(row.track_key) === null :
             ratingFor(row.track_key) === Number(ratingFilter))) &&
         (!selectedKey || row.track_key === selectedKey) && (!query ||
             [row.title, row.artists, row.track_key, row.metadata.album, row.metadata.album_id,
                 row.metadata.album_artist, row.metadata.isrc].join(' ').toLocaleLowerCase().includes(query)));
-    if (ratingOrder) {
-        const rank = key => {
-            const rating = ratingFor(key);
-            return rating === null ? 6 : (ratingOrder === 'highest' ? -rating : rating);
-        };
-        found.sort((a, b) => rank(a.track_key) - rank(b.track_key));
-    }
+    const rank = key => {
+        const rating = ratingFor(key);
+        return rating === null ? 6 : (ratingOrder === 'highest' ? -rating : rating);
+    };
+    if (ratingOrder || members) found.sort((a, b) =>
+        (ratingOrder ? rank(a.track_key) - rank(b.track_key) : 0) ||
+        (members ? members.get(a.source) - members.get(b.source) : 0));
     const last = Math.max(0, Math.ceil(found.length / 200) - 1);
     page = Math.min(page, last);
     el('rows').replaceChildren();
@@ -291,6 +337,12 @@ el('snapshot').selectedIndex = requested >= 0 ? requested : broadest;
 el('snapshot').onchange = () => load();
 el('folder').onchange = () => { resetSources(); page = 0; render(); };
 el('source').onchange = () => { selectedKey = ''; page = 0; render(); };
+el('collection').onchange = () => {
+    showCollection(el('collection').value);
+    selectedKey = '';
+    page = 0;
+    render();
+};
 el('search').oninput = () => { selectedKey = ''; page = 0; render(); };
 for (const id of ['rating-filter', 'rating-order']) el(id).onchange = () => { page = 0; render(); };
 el('clear-filters').onclick = () => {

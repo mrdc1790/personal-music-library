@@ -13,6 +13,8 @@ import zipfile
 
 import library as lib
 from library_demo import sample_snapshots
+import logical_playlists
+import song_stats
 import view_catalog
 
 
@@ -147,6 +149,42 @@ class CatalogTests(unittest.TestCase):
         diff = lib.set_query(self.db, self.a, "difference", ["Chill", "Festival"])
         self.assertEqual([r["title"] for r in diff], ["Harbor"])
         self.assertEqual(len(lib.lookup(self.db, self.a, "Moonrise")), 4)
+
+    def test_logical_collection_keeps_order_duplicates_renames_and_coverage(self):
+        logical_playlists.save(self.db, 'split', 'Split playlist', ['Festival', 'Chill'], active='Chill')
+        groups = logical_playlists.definitions(self.db, self.before['account_id'])
+        self.assertEqual(logical_playlists.definitions(self.db, 'other-account'), {})
+        group, = logical_playlists.reports(self.db, self.a, groups, lib.sources(self.db, self.a))
+        self.assertEqual([member['playlist_id'] for member in group['members']], ['Festival', 'Chill'])
+        self.assertEqual(group['active_playlist'], 'Chill')
+        self.assertEqual((group['observed_placements'], group['observed_identities']), (5, 3))
+        self.assertTrue(group['complete'])
+        self.assertEqual([row['title'] for row in lib.set_query(self.db, self.a, 'intersection',
+                                                               ['collection:split', 'liked'])], ['Moonrise', 'Harbor'])
+        rankings = song_stats.report(self.db, self.a, None, sort='collection')
+        moonrise = next(row for row in rankings['songs'] if row['title'] == 'Moonrise')
+        self.assertEqual((moonrise['observed_playlist_count'], moonrise['observed_collection_count']), (2, 1))
+
+        changed = deepcopy(self.after)
+        changed['playlists'][0]['metadata']['name'] = 'New volume name'
+        changed['playlists'][1]['exported'] = False
+        later = lib.import_snapshot(self.db, changed, 'renamed, partial')
+        group, = logical_playlists.reports(self.db, later, groups, lib.sources(self.db, later))
+        self.assertEqual([member['coverage'] for member in group['members']], ['partial', 'complete'])
+        self.assertEqual(group['members'][1]['name'], 'New volume name')
+        self.assertFalse(group['complete'])
+        with self.assertRaisesRegex(ValueError, 'not exported'):
+            lib.set_query(self.db, later, 'difference', ['collection:split', 'liked'])
+
+        changed['playlists'].pop(1)
+        changed['occurrences'] = [row for row in changed['occurrences'] if row['source'] != 'Festival']
+        missing = lib.import_snapshot(self.db, changed, 'missing member')
+        group, = logical_playlists.reports(self.db, missing, groups, lib.sources(self.db, missing))
+        self.assertEqual(group['members'][0]['coverage'], 'absent')
+        self.assertIsNone(group['members'][0]['placements'])
+        with self.assertRaisesRegex(ValueError, 'known to the catalog'):
+            logical_playlists.save(self.db, 'split', 'Changed', ['Uncaptured'])
+        self.assertEqual(logical_playlists.definitions(self.db, self.before['account_id']), groups)
 
     def test_unknown_playlist_is_not_treated_as_empty(self):
         snapshot = deepcopy(self.after)

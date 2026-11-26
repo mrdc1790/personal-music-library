@@ -4,11 +4,13 @@ from collections import Counter, defaultdict
 import json
 
 import folder_tree
+import logical_playlists
 import stream_counts
 
 
 SORT_FIELDS = {
     "playlist": "playlist_score",
+    "collection": "observed_collection_count",
     "personal": "personal_imported_plays_30s",
     "personal-spotify": "personal_spotify_plays_30s",
     "worldwide": "worldwide_imported_streams",
@@ -44,10 +46,18 @@ def report(db, snapshot, hierarchy, folder_depth=1, term="", sort="playlist", li
     if folder_depth < 1 or limit < 1:
         raise ValueError("Folder depth and limit must be positive.")
     metadata = dict(db.execute("SELECT id,created_at,status,account_id FROM snapshots WHERE id=?", (snapshot,)).fetchone())
-    tree = folder_tree.latest_tree(hierarchy, metadata.pop("account_id")) if hierarchy else None
+    account = metadata["account_id"]
+    if hierarchy:
+        metadata.pop("account_id")
+    tree = folder_tree.latest_tree(hierarchy, account) if hierarchy else None
     category_for = playlist_folders(tree, folder_depth)
     playlist_coverage = {row[0]: bool(row[1]) for row in db.execute(
         "SELECT source,exported FROM playlists WHERE snapshot_id=? AND source!='liked'", (snapshot,))}
+    groups = logical_playlists.definitions(db, account)
+    collections_for = defaultdict(set)
+    for group in groups.values():
+        for playlist in group['members']:
+            collections_for[playlist].add(group['collection_id'])
     personal, worldwide, history_coverage = stream_counts.observations(db)
     tracks = {}
     memberships = defaultdict(set)
@@ -74,6 +84,9 @@ def report(db, snapshot, hierarchy, folder_depth=1, term="", sort="playlist", li
         key = track["track_key"]
         sources = memberships.get(key, ())
         categories = Counter(category_for[source] for source in sources if category_for.get(source))
+        if groups or sort == 'collection':
+            collections = {group for source in sources for group in collections_for.get(source, ())}
+            track.update(observed_collection_count=len(collections), collection_ids=sorted(collections))
         track.update(
             playlist_score=len(sources) + len(categories),
             observed_playlist_count=len(sources),
@@ -89,7 +102,7 @@ def report(db, snapshot, hierarchy, folder_depth=1, term="", sort="playlist", li
     field = SORT_FIELDS[sort]
     ranked.sort(key=lambda row: (
         row[field] is None, -(row[field] or 0), -row["playlist_score"], (row["title"] or "").casefold(), row["track_key"]))
-    return dict(
+    result = dict(
         snapshot=metadata,
         playlist_coverage=dict(exported=sum(playlist_coverage.values()), known=len(playlist_coverage),
                                exported_with_known_folder=sum(exported and bool(category_for.get(source))
@@ -101,3 +114,9 @@ def report(db, snapshot, hierarchy, folder_depth=1, term="", sort="playlist", li
         matching_songs=len(ranked),
         songs=ranked[:limit],
     )
+    if groups:
+        result['collection_coverage'] = [dict(
+            collection_id=group['collection_id'], name=group['name'], configured_members=len(group['members']),
+            exported_members=sum(playlist_coverage.get(source, False) for source in group['members']),
+        ) for group in groups.values()]
+    return result

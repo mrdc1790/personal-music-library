@@ -309,7 +309,7 @@ snapshot with the most exported playlists. Choose a different snapshot to see
 its history. Once a folder tree is available, select a folder to include its
 subfolders or browse by the playlist breadcrumbs.
 **Clear all filters** returns to page one of the selected snapshot and clears
-the folder, playlist, search, exact song identity, and rating filters. Regenerate an
+the folder, playlist, logical playlist, search, exact song identity, and rating filters. Regenerate an
 older catalog view with the command above to get the button.
 
 `--catalog` adds a separate **Saved catalog placements** section to the
@@ -375,6 +375,30 @@ python view_catalog.py
 
 Use `python library.py --db 'C:\path\to\catalog.sqlite' import-ratings ...`
 when the explorer was generated from a different catalog path.
+
+### Group split playlists
+
+Use `python library.py playlists` to find the saved IDs. Save a collection by
+passing its members in order. Run the same command with the same collection ID
+to revise its name, members, or active volume. Each member must appear in at
+least one imported snapshot. The current grouping applies to each saved
+snapshot, so playlist renames and moves preserve membership.
+
+```powershell
+python library.py save-collection dance 'Dance A–Z' ID_A_TO_L ID_M_TO_Z --active ID_M_TO_Z
+python library.py collections --snapshot 2
+python library.py query intersection collection:dance liked --snapshot 2
+python library.py song-stats --snapshot 2 --sort collection
+```
+
+Choose **Logical playlist** in the catalog explorer to see the ordered members,
+observed placements, and distinct identified tracks. Every placement keeps its
+original playlist and position. Incomplete or absent members are visible and
+their group totals are partial. CLI set queries require complete exports for
+every member of the selected groups. Song stats counts each configured group
+once per identity using its exported members and reports the member coverage.
+The original per-playlist scoring and capacity reports still use individual
+Spotify playlists. Catalog backups include the local group definitions.
 
 ### Import playlist folders
 

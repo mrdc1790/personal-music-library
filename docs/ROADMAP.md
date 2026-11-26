@@ -62,12 +62,11 @@ separately when additional coverage is needed and any cooldown has elapsed.
    Measure larger occurrence sets separately. `lookup`, set operations, and
    comparisons still materialize snapshot rows in Python. Add focused indexed
    SQL and paged browsing where measurements justify them.
-2. **Organize category volumes.** Record ordered playlist IDs and the active
-   volume for each logical collection. Use the report to preview rollover and
-   start with manual Spotify folder management. Pilot the [folder-tree adapter](INTEGRATION_DESIGN.md#folder-structure-adapter)
-   separately from playback. Review automatic splitting or publishing only
-   after measuring the effort of manual rollover. Include existing alphabetical
-   splits in the [logical playlist pilot](#logical-playlists-for-split-collections-planned).
+2. **Pilot category volumes.** Use [logical playlists](#logical-playlists-for-split-collections)
+   to group existing splits and record the active volume. Use the capacity
+   report to preview manual rollover. Pilot the [folder-tree adapter](INTEGRATION_DESIGN.md#folder-structure-adapter)
+   separately from playback and measure the effort of manual rollover before
+   considering automatic splitting or publishing.
 3. **Expand library coverage and intelligence.** Extend local file inventory
    and device reconciliation, then develop [artist history](#artist-history-and-enrichment-planned),
    reviewed recording relationships, and [library intelligence](LIBRARY_INTELLIGENCE.md)
@@ -92,31 +91,21 @@ catalog. One rating per observed identity follows its placements across
 snapshots, regenerated views, and catalog backups. Sharing a rating across
 different identities remains a follow-up to reviewed recording links.
 
-### Logical playlists for split collections (planned)
+### Logical playlists for split collections
 
-Let the user explicitly group existing Spotify playlists into one named
-collection, including alphabetical splits such as A–L and M–Z and numbered
-volumes created around the 10,000-item cap. Store the ordered member playlist
-IDs so renaming or moving a playlist preserves the group. Use a validated,
-account-matched folder tree to browse members and suggest possible groups.
-Require confirmation of membership and support manual grouping before a folder
-tree is available.
-
-Make the collection selectable in the explorer and comparisons. Show its
-combined placements and unique observed identities, with the original playlist
-and position on each row. A repeat across volumes contributes two placements
-and one unique identity, and counts as reach in one collection when using
-collection-level song stats. Capacity remains per Spotify playlist. Flag
-missing or partial members and show observed totals as partial. Verify with a
-split pair, a repeated identity across both halves, a renamed playlist, and an
-incomplete member.
+The catalog stores [explicit ordered collections](OPERATING_GUIDE.md#group-split-playlists)
+with an optional active volume. Browse their observed placements and identities,
+use them in CLI set queries, or rank by reach across configured collections.
+The explorer shows absent and partial members. Stable IDs preserve the group
+through playlist renames. Folder-based group suggestions and a real category
+playback and rollover pilot remain pending.
 
 ### Delivery status and dependencies
 
 | Area | Current status | Next acceptance evidence |
 |---|---|---|
 | Catalog capture, history, queries, and backups | Offline checkpoint export and catalog import verified; incomplete sources remain visible | Measure import and query cost and capture fresh evidence where needed |
-| Playlist capacity and rollover | Historical capacity report implemented. Volume mapping remains planned | Test one category with direct sibling playlists on both devices |
+| Playlist capacity and rollover | Historical capacity and logical volume mappings implemented | Test one category with direct sibling playlists on both devices |
 | Song stats | Offline playlist and folder scoring, personal play imports, and dated worldwide totals | Refresh the membership and folder captures. Import a current Extended Streaming History ZIP and available service totals. Check field coverage on a small real sample |
 | Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | When a repair is needed, measure an authorized read-only preview with retained coverage and progress |
 | Query performance | Exact-instance index exists; general lookup/set/compare paths still materialize snapshot rows | Reproducible measurements and focused SQL-query regression tests before claiming scale gains |
