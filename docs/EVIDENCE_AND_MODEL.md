@@ -42,6 +42,11 @@ Same ISRC, title, artist, or duration can support a candidate but cannot alone p
 
 `items` retains title, artist text, returned/original identity, local/missing/playable flags, album, duration, ISRC, and added timestamp, while raw entries retain other source metadata. Artist reports distinguish first-credit placement counts, all-credit placement counts, distinct observed identities, and unmatched name-only local credits. These are observations, not artist-follow history or canonical artist records.
 
+The [metadata report](METADATA.md) reads raw entries from existing snapshots
+and counts populated fields per placement. Its optional JSON export preserves
+ordered track and album artist credits and release-date precision. Local
+inventory tags and audio properties retain their own path and scan evidence.
+
 ## Coverage, counts, and local files
 
 An unreadable, partial, or unexported source is never empty. Comparisons distinguish coverage changes from membership changes. Unknown identities remain visible in occurrence browsing but cannot safely participate in set operations.

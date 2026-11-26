@@ -73,6 +73,9 @@ def inventory(roots):
                             try:
                                 with wave.open(str(path), 'rb') as audio:
                                     entry['duration_ms'] = round(audio.getnframes() * 1000 / audio.getframerate())
+                                    entry['audio'] = dict(sample_rate_hz=audio.getframerate(),
+                                                          channels=audio.getnchannels(),
+                                                          bits_per_sample=audio.getsampwidth() * 8)
                             except (OSError, EOFError, wave.Error, ZeroDivisionError) as exc:
                                 entry['metadata_error'] = type(exc).__name__
                         after = path.stat()
@@ -199,15 +202,19 @@ def inventory_index(scan):
             or not isinstance(scan.get('roots'), list) or not scan['roots']):
         raise ValueError('Expected a local inventory report with at least one scanned root.')
     titles = defaultdict(list)
-    hashes = defaultdict(set)
+    hashes = defaultdict(dict)
     for entry in scan['entries']:
         if entry['status'] == 'complete':
             names = {normalized(entry['filename_title']), normalized(entry.get('tags', {}).get('title'))}
             for name in names - {''}:
                 titles[name].append(entry)
             if entry.get('sha256'):
-                hashes[entry['sha256']].add(entry['path'])
+                hashes[entry['sha256']][entry['path']] = entry
     return titles, hashes, scan.get('confirmations', {})
+
+
+def file_metadata(entry):
+    return {key: entry[key] for key in ('path', 'duration_ms', 'tags', 'audio') if key in entry}
 
 
 def file_candidates(index, title, duration_ms, *, uri=None, artists=(), album=None):
@@ -216,7 +223,9 @@ def file_candidates(index, title, duration_ms, *, uri=None, artists=(), album=No
     contradictions = {}
     confirmation = confirmations.get(uri)
     if confirmation:
-        confirmation = dict(confirmation, paths=sorted(hashes.get(confirmation['sha256'], ())))
+        matches = hashes.get(confirmation['sha256'], {})
+        paths = sorted(matches)
+        confirmation = dict(confirmation, paths=paths, files=[file_metadata(matches[path]) for path in paths])
     artist_names = {normalized(artist) for artist in artists} - {''}
     title = normalized(title)
     album = normalized(album or reference_album(uri))
@@ -241,7 +250,7 @@ def file_candidates(index, title, duration_ms, *, uri=None, artists=(), album=No
                 contradictions[path, reason] = dict(path=path, reason=reason)
         else:
             evidence = 'audio_tags' if tag_title else 'filename_title'
-            candidates[path] = dict(path=path, evidence=evidence, duration_ms=duration)
+            candidates[path] = dict(file_metadata(entry), evidence=evidence)
     return list(candidates.values()), list(contradictions.values()), confirmation
 
 

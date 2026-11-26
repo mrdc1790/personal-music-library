@@ -17,6 +17,13 @@ Use `--output` for an explicit JSON destination. Existing destinations are never
 overwritten. Reports contain private paths and captured metadata; keep them out
 of commits.
 
+The inventory preserves available ID3v2.3/v2.4 DJ and release tags on MP3s,
+including BPM, initial key, genre, and available date fields. WAV observations
+include duration, sample rate, channels, and bit depth. The comparison shows
+these values with their candidate or confirmed file paths. Scan again to capture
+the new fields in an older inventory. See [metadata coverage](METADATA.md#local-files-and-dj-metadata)
+for field semantics and the separate audio-analysis pilot.
+
 ## Show file locations in a saved playlist comparison
 
 Spotify's `spotify:local:` reference contains song metadata. The filesystem

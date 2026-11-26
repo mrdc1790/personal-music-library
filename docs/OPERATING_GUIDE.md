@@ -267,7 +267,8 @@ python preview_audit.py --run 'C:\path\to\run' --open
 python preview_audit.py --run 'C:\path\to\run' --playlist PLAYLIST_A --playlist PLAYLIST_B --max-rows 16000 --open
 ```
 
-Click **Song**, **Artist**, **Length**, **Type**, or **Trial playlists** to sort the
+Click **Song**, **Artist**, **Length**, **Type**, **Trial playlists**, **Album**,
+or **Release date** to sort the
 table. Click again to reverse the order. Length sorts by duration with unknown
 lengths at the end. Trial playlists sorts by the number of distinct playlists in
 the preview that contain the song, including playlists outside the current A/B
@@ -277,12 +278,20 @@ Use the funnel beside any header to sort in either direction or filter that
 column. **Value** lets you search the available values and choose which to keep.
 To keep only a few, uncheck **Select all matching values** with an empty search,
 then search for and check the values you want. **Condition** supports Contains,
-Does not contain, and Equals on the displayed text. Choose **Apply** to save the
+Does not contain, and Equals on text columns. For **Length** and **Trial playlists**,
+it offers equals, does not equal, and strict and inclusive comparisons. Enter a
+length like `3:30` or `210` in whole seconds. Length conditions use the displayed
+rounded seconds. Use **Value** to select unknown lengths. Choose **Apply** to save the
 filter, **Cancel** to discard edits, or **Clear** to remove the column's filter.
 Active funnels are highlighted. Column filters combine with each other, the
 playlist operation, and the main search before pagination. Reloading the report
 resets the table controls. Regenerate older HTML from the saved run with the
 command above to get the new controls offline.
+
+The song details show **Date added** per placement because the same song can
+have different added dates in different playlists. Release dates use the
+provider's available precision. See [metadata coverage and exports](METADATA.md)
+for the full catalog, file tags, and planned audio analysis.
 
 The default budget covers up to eight complete sources and 10,000 placements in
 total, with automatic selection favoring playlists of 50 to 1,500 placements.

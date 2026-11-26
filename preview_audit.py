@@ -10,6 +10,7 @@ import webbrowser
 import folder_tree
 import library
 import local_inventory
+import track_metadata
 from storage_paths import data_root
 
 
@@ -60,16 +61,20 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
                     raise ValueError('Invalid positions or row limit exceeded; no partial source is presented as complete.')
                 row = json.loads(raw)
                 identity, basis = library.identity(row, state['created_at'])
+                metadata = track_metadata.observed(row)
                 item = dict(source=k, position=position + 1, key=identity, basis=basis,
                     title=row.get('title') or 'Unknown', artists=', '.join(row.get('artists') or []),
-                    duration_ms=row.get('duration_ms'), local=bool(row.get('is_local')), missing=bool(row.get('missing')))
+                    duration_ms=row.get('duration_ms'), local=bool(row.get('is_local')), missing=bool(row.get('missing')),
+                    album=metadata['album'].get('name'), release_date=metadata['album'].get('release_date'),
+                    added_at=metadata['added_at'])
                 if files is not None and item['local']:
                     title = None if item['missing'] else row.get('title')
                     candidates, conflicts, confirmation = local_inventory.file_candidates(
                         files, title, item['duration_ms'], uri=row.get('returned_uri'),
                         artists=row.get('artists') or [])
                     if confirmation:
-                        confirmation = dict(confirmed_at=confirmation['confirmed_at'], paths=confirmation['paths'])
+                        confirmation = dict(confirmed_at=confirmation['confirmed_at'], paths=confirmation['paths'],
+                                            files=confirmation['files'])
                     item['local_files'] = dict(candidates=candidates, conflicts=conflicts,
                                                confirmation=confirmation,
                                                usable_title=bool(title))
@@ -128,8 +133,9 @@ dialog label{margin-top:10px;min-width:0}dialog label:has(input[type="checkbox"]
 <label><input id="filter-select-all" type="checkbox"> Select all matching values</label>
 <div id="filter-values" class="filter-values"></div><small id="filter-value-count" role="status"></small>
 </div>
-<div id="filter-by-condition" hidden><label>Condition<select id="filter-operator"><option value="contains">Contains</option><option value="excludes">Does not contain</option><option value="equals">Equals</option></select></label>
-<label>Text<input id="filter-text" type="text"></label></div>
+<div id="filter-by-condition" hidden><label>Condition<select id="filter-operator"></select></label>
+<label><span id="filter-text-label">Text</span><input id="filter-text" type="text" aria-describedby="filter-error"></label>
+<small id="filter-error" role="alert"></small></div>
 <div class="filter-actions"><button id="filter-apply" type="button">Apply</button><button id="filter-cancel" type="button">Cancel</button><button id="filter-clear" type="button">Clear</button></div>
 </dialog>
 <footer id="foot"></footer></main><script id="data" type="application/json">__DATA__</script><script>
@@ -144,6 +150,17 @@ function addText(box, tag, text) {
     const node = document.createElement(tag);
     node.textContent = text;
     box.append(node);
+}
+function addFile(list, path, file, suffix = '') {
+    const item = document.createElement('li');
+    item.textContent = path + suffix;
+    const tags = Object.entries(file?.tags ?? {}).map(([key, value]) => key.replaceAll('_', ' ') + ': ' + value);
+    if (tags.length) addText(item, 'div', 'File tags · ' + tags.join(' · '));
+    if (file?.audio) {
+        const {sample_rate_hz, channels, bits_per_sample} = file.audio;
+        addText(item, 'div', `${sample_rate_hz} Hz · ${channels} channel(s) · ${bits_per_sample}-bit PCM`);
+    }
+    list.append(item);
 }
 function showLocalFiles(box, song) {
     addText(box, 'h3', 'Local file locations');
@@ -172,7 +189,7 @@ function showLocalFiles(box, song) {
         confirmation ||= evidence.confirmation;
         for (const candidate of evidence.candidates) {
             if (!paths.has(candidate.path) || candidate.evidence === 'audio_tags') {
-                paths.set(candidate.path, candidate.evidence);
+                paths.set(candidate.path, candidate);
             }
         }
         for (const conflict of evidence.conflicts) {
@@ -184,8 +201,9 @@ function showLocalFiles(box, song) {
         if (confirmation.paths.length) {
             addText(box, 'p', 'Confirmed file bytes · reviewed ' + confirmation.confirmed_at);
             const list = document.createElement('ul');
+            const files = new Map((confirmation.files ?? []).map(file => [file.path, file]));
             for (const path of confirmation.paths) {
-                addText(list, 'li', path);
+                addFile(list, path, files.get(path));
                 paths.delete(path);
             }
             box.append(list);
@@ -196,8 +214,8 @@ function showLocalFiles(box, song) {
     if (paths.size) {
         addText(box, 'p', paths.size === 1 ? 'One candidate' : paths.size + ' possible paths');
         const list = document.createElement('ul');
-        for (const [path, basis] of paths) {
-            addText(list, 'li', path + (basis === 'audio_tags' ? ' · audio tags' : ' · filename'));
+        for (const [path, candidate] of paths) {
+            addFile(list, path, candidate, candidate.evidence === 'audio_tags' ? ' · audio tags' : ' · filename');
         }
         box.append(list);
         addText(box, 'small', 'Candidates reflect the saved scan and need review.');
@@ -220,7 +238,11 @@ function showSong(song) {
     addText(box, 'h2', song.title + ' — ' + song.artists);
     addText(box, 'p', song.key);
     for (const r of song.placements) {
-        addText(box, 'p', names.get(r.source) + ' · position ' + r.position);
+        const evidence = [names.get(r.source) + ' · position ' + r.position];
+        if (r.added_at) evidence.push('Added ' + r.added_at);
+        if (r.album) evidence.push(r.album);
+        if (r.release_date) evidence.push('Released ' + r.release_date);
+        addText(box, 'p', evidence.join(' · '));
     }
     addText(box, 'small', 'Membership shown only in selected trial sources.');
     if (song.local) showLocalFiles(box, song);
@@ -242,6 +264,17 @@ function durationLabel(ms) {
     return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
 }
 
+function wholeNumber(text) {
+    if (!/^[0-9]+$/.test(text)) return null;
+    const number = Number(text);
+    return Number.isSafeInteger(number) ? number : null;
+}
+
+function durationSeconds(text) {
+    const parts = /^([0-9]+):([0-5][0-9])$/.exec(text);
+    return wholeNumber(parts ? String(Number(parts[1]) * 60 + Number(parts[2])) : text);
+}
+
 for (const song of songs.values()) {
     song.type = song.missing ? 'Missing' : song.local ? 'Local reference' : 'Spotify';
     song.playlistCount = new Set(song.placements.map(row => row.source)).size;
@@ -250,10 +283,18 @@ for (const song of songs.values()) {
 const columns = [
     {label: 'Song', value: song => song.title},
     {label: 'Artist', value: song => song.artists},
-    {label: 'Length', value: song => durationLabel(song.duration_ms), number: song => song.duration_ms},
+    {label: 'Length', value: song => durationLabel(song.duration_ms), number: song => song.duration_ms,
+        parse: durationSeconds, conditionValue: song => song.duration_ms == null ? null : Math.round(song.duration_ms / 1000),
+        inputLabel: 'Length (m:ss or whole seconds)'},
     {label: 'Type', value: song => song.type},
-    {label: 'Trial playlists', value: song => String(song.playlistCount), number: song => song.playlistCount},
+    {label: 'Trial playlists', value: song => String(song.playlistCount), number: song => song.playlistCount,
+        parse: wholeNumber, conditionValue: song => song.playlistCount, inputLabel: 'Playlist count (whole number)'},
+    {label: 'Album', value: song => song.album ?? ''},
+    {label: 'Release date', value: song => song.release_date ?? ''},
 ];
+const textOperators = [['contains', 'Contains'], ['excludes', 'Does not contain'], ['equals', 'Equals']];
+const numericOperators = [['lt', 'Less than'], ['lte', 'Less than or equal to'], ['equals', 'Equals'],
+    ['ne', 'Does not equal'], ['gte', 'Greater than or equal to'], ['gt', 'Greater than']];
 const collator = new Intl.Collator(undefined, {sensitivity: 'base', numeric: true});
 const filters = new Map();
 let sortColumn = null;
@@ -332,7 +373,10 @@ function openFilter(column) {
     el('filter-title').textContent = 'Filter ' + column.label;
     el('filter-search').value = '';
     el('filter-mode').value = saved?.mode ?? 'values';
-    el('filter-operator').value = saved?.operator ?? 'contains';
+    const operators = column.parse ? numericOperators : textOperators;
+    el('filter-operator').replaceChildren(...operators.map(([value, label]) => option(label, value)));
+    el('filter-operator').value = saved?.operator ?? (column.parse ? 'equals' : 'contains');
+    el('filter-text-label').textContent = column.inputLabel ?? 'Text';
     el('filter-text').value = saved?.text ?? '';
     updateFilterMode();
     el('column-filter').showModal();
@@ -380,6 +424,7 @@ function updateFilterMode() {
     const byValue = el('filter-mode').value === 'values';
     el('filter-by-value').hidden = !byValue;
     el('filter-by-condition').hidden = byValue;
+    el('filter-error').textContent = '';
     if (byValue) renderFilterValues();
 }
 
@@ -393,6 +438,7 @@ function saveFilter(filter) {
 
 el('filter-mode').onchange = updateFilterMode;
 el('filter-search').oninput = renderFilterValues;
+el('filter-text').oninput = () => { el('filter-error').textContent = ''; };
 el('filter-select-all').onchange = event => {
     for (const value of matchingValues()) {
         if (event.target.checked) chosenValues.add(value);
@@ -407,6 +453,16 @@ el('filter-apply').onclick = () => {
     } else {
         const operator = el('filter-operator').value;
         const text = el('filter-text').value.trim();
+        if (filterColumn.parse) {
+            const threshold = filterColumn.parse(text);
+            if (threshold == null) {
+                el('filter-error').textContent = 'Enter a valid ' + filterColumn.inputLabel.toLocaleLowerCase() + '.';
+                el('filter-text').focus();
+                return;
+            }
+            saveFilter({mode, operator, text, threshold});
+            return;
+        }
         saveFilter(text || operator === 'equals' ? {mode, operator, text} : null);
     }
 };
@@ -419,8 +475,21 @@ for (const [button, direction] of [['sort-ascending', 1], ['sort-descending', -1
     };
 }
 
-function matchesFilter(value, filter) {
+function matchesFilter(song, column, filter) {
+    const value = column.value(song);
     if (filter.mode === 'values') return filter.values.has(value);
+    if (column.conditionValue) {
+        const number = column.conditionValue(song), threshold = filter.threshold;
+        if (number == null) return false;
+        switch (filter.operator) {
+            case 'lt': return number < threshold;
+            case 'lte': return number <= threshold;
+            case 'equals': return number === threshold;
+            case 'ne': return number !== threshold;
+            case 'gte': return number >= threshold;
+            case 'gt': return number > threshold;
+        }
+    }
     const text = filter.text.toLocaleLowerCase();
     const candidate = value.toLocaleLowerCase();
     if (filter.operator === 'equals') return candidate === text;
@@ -441,7 +510,7 @@ function compareSongs(left, right) {
 function render() {
     const activeFilters = [...filters];
     const found = baseResults().filter(song =>
-        activeFilters.every(([column, filter]) => matchesFilter(column.value(song), filter)));
+        activeFilters.every(([column, filter]) => matchesFilter(song, column, filter)));
     if (sortColumn) found.sort(compareSongs);
     page = Math.min(page, Math.max(0, Math.ceil(found.length / 100) - 1));
     el('rows').replaceChildren();

@@ -20,6 +20,7 @@ import availability
 import checkpoint_export
 import playlist_capacity
 import song_stats
+import track_metadata
 import stream_counts
 
 SCHEMA = """
@@ -358,6 +359,9 @@ def main():
     unavailable.add_argument("--snapshot", type=int, help="Use this capture instead of the latest one")
     unavailable.add_argument("--inventory", type=Path, help="Existing local_inventory.py JSON report")
     unavailable.add_argument("--output", type=Path, help="New private HTML report")
+    metadata = sub.add_parser("metadata", help="Count or export track, artist, and release observations")
+    metadata.add_argument("--snapshot", type=int)
+    metadata.add_argument("--output", type=Path, help="New private JSON file with per-placement metadata")
     sub.add_parser("snapshots")
     for command in ("playlists", "find", "query", "export", "song-stats"):
         p = sub.add_parser(command)
@@ -417,7 +421,7 @@ def main():
                 backup(db, args.output)
                 result = dict(backup=str(args.output), uploaded=False)
             else:
-                if args.command in ("song-stats", "capacity", "availability"):
+                if args.command in ("song-stats", "capacity", "availability", "metadata"):
                     db.execute("BEGIN")
                 sid = snapshot_id(db, args.snapshot)
                 if args.command == "playlists":
@@ -427,6 +431,13 @@ def main():
                     result = [{k: r[k] for k in ("source", "playlist_name", "position", "track_key", "title", "artists", "identity_basis")} for r in result]
                 elif args.command == "query":
                     result = set_query(db, sid, args.operation, args.sources)
+                elif args.command == "metadata":
+                    result = track_metadata.report(db, sid, placements=args.output is not None)
+                    if args.output is not None:
+                        with args.output.open("x", encoding="utf-8") as stream:
+                            json.dump(result, stream, ensure_ascii=False, indent=2)
+                        del result["placements"]
+                        result["report"] = str(args.output.resolve())
                 elif args.command == "capacity":
                     before = snapshot_id(db, args.before) if args.before is not None else None
                     result = playlist_capacity.report(db, sid, before)

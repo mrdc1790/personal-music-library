@@ -168,9 +168,9 @@ class LocalInventoryTests(unittest.TestCase):
             local.save_inventory(self.db_path, second)
         self.assertEqual(before, self.db_path.read_bytes())
 
-    def tagged_mp3(self, name, title='Song', artist='Synthetic artist', album='Album'):
+    def tagged_mp3(self, name, title='Song', artist='Synthetic artist', album='Album', extra=()):
         frames = []
-        for code, value in [(b'TIT2', title), (b'TPE1', artist), (b'TALB', album)]:
+        for code, value in [(b'TIT2', title), (b'TPE1', artist), (b'TALB', album), *extra]:
             payload = b'\x01' + value.encode('utf-16') + b'\0\0'
             frames.append(code + len(payload).to_bytes(4, 'big') + b'\0\0' + payload)
         data = b''.join(frames)
@@ -180,7 +180,9 @@ class LocalInventoryTests(unittest.TestCase):
         return path
 
     def test_audio_tags_find_numbered_file_and_surface_metadata_conflicts(self):
-        match = self.tagged_mp3('01 - Song.mp3')
+        match = self.tagged_mp3('01 - Song.mp3', extra=[
+            (b'TBPM', '126'), (b'TKEY', 'Am'), (b'TCON', 'House'),
+            (b'TDRL', '2022-03'), (b'TYER', '2020'), (b'TPE2', 'Album credit')])
         artist_conflict = self.tagged_mp3('02 - Song.mp3', artist='Other artist')
         album_conflict = self.tagged_mp3('03 - Song.mp3', album='Other album')
         title_conflict = self.tagged_mp3('Song.mp3', title='Other song')
@@ -188,6 +190,11 @@ class LocalInventoryTests(unittest.TestCase):
         first = report['references'][0]
         self.assertEqual([(c['path'], c['evidence']) for c in first['candidates']],
                          [(str(match), 'audio_tags')])
+        tags = first['candidates'][0]['tags']
+        for field, value in [('bpm', '126'), ('initial_key', 'Am'), ('genre', 'House'),
+                             ('release_date', '2022-03'), ('recording_year', '2020'),
+                             ('album_artist', 'Album credit')]:
+            self.assertEqual(tags[field], value)
         self.assertEqual({(c['path'], c['reason']) for c in first['contradictions']},
                          {(str(artist_conflict), 'tag_artist_differs'),
                           (str(album_conflict), 'tag_album_differs'),

@@ -1,5 +1,8 @@
 # Library intelligence: changes, playlist relationships, and DJ exploration
 
+Use the [metadata report](METADATA.md) to measure fields in dated snapshots
+before planning additional artist, release, or DJ enrichment.
+
 Planning and public documentation reviewed on **October 6, 2026**. This records
 the user's ideas for the personal library after dependable capture and caching:
 compare one or many playlists, describe their musical characteristics, find

@@ -55,6 +55,33 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(lib.rows(self.db, self.a)), 8)
         self.assertEqual(len(lib.rows(self.db, b)), 7)
 
+    def test_metadata_report_uses_existing_raw_observations(self):
+        import track_metadata
+
+        baseline = track_metadata.report(self.db, self.a, placements=True)
+        row = lib.rows(self.db, self.a)[0]
+        original = json.loads(row["raw_json"])
+        original["raw"] = {"item": {
+            "explicit": False, "popularity": 0,
+            "artists": [{"name": "First", "id": "artist-id"}, {"name": "Second"}],
+            "album": {"name": "Album", "release_date": "2020-04", "release_date_precision": "month"},
+        }}
+        with self.db:
+            self.db.execute("UPDATE items SET raw_json=? WHERE snapshot_id=? AND source=? AND position=?",
+                            (json.dumps(original), self.a, row["source"], row["position"]))
+        report = track_metadata.report(self.db, self.a, placements=True)
+        self.assertEqual(report["observed_placements"], 8)
+        self.assertGreater(report["field_placements"]["release_date"], 0)
+        expected_popularity = baseline["field_placements"]["popularity"] + (
+            "popularity" not in baseline["placements"][0]["track"])
+        self.assertEqual(report["field_placements"]["popularity"], expected_popularity)
+        self.assertEqual(report["field_placements"]["artist_genres"], 0)
+        placement = report["placements"][0]
+        self.assertEqual(placement["album"]["release_date_precision"], "month")
+        self.assertEqual([artist["name"] for artist in placement["artists"]], ["First", "Second"])
+        self.assertFalse(placement["track"]["explicit"])
+        self.assertNotIn("placements", track_metadata.report(self.db, self.a))
+
     def test_partial_scan_with_failed_likes_is_unknown_not_empty(self):
         partial = deepcopy(self.before)
         partial['status'] = 'partial'

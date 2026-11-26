@@ -1,7 +1,13 @@
 """Bounded, read-only extraction of basic MP3 ID3 text tags."""
 
 MAX_TAG_BYTES = 2 * 1024 * 1024
-TEXT_FRAMES = {b'TIT2': 'title', b'TPE1': 'artist', b'TALB': 'album'}
+TEXT_FRAMES = {
+    b'TIT2': 'title', b'TPE1': 'artist', b'TALB': 'album', b'TPE2': 'album_artist',
+    b'TCOM': 'composer', b'TCON': 'genre', b'TBPM': 'bpm', b'TKEY': 'initial_key',
+    b'TDRL': 'release_date', b'TDOR': 'original_release_date', b'TORY': 'original_release_year',
+    b'TDRC': 'recording_date', b'TYER': 'recording_year', b'TRCK': 'track_number',
+    b'TPOS': 'disc_number', b'TSRC': 'isrc', b'TPUB': 'publisher',
+}
 ENCODINGS = ('latin-1', 'utf-16', 'utf-16-be', 'utf-8')
 
 

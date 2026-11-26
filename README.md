@@ -75,6 +75,7 @@ there; the catalog and DJ workflows do not depend on it.
 | Read this | When you need it |
 |---|---|
 | [Operating guide](docs/OPERATING_GUIDE.md) | Scan, resume, import, query, preview, export, back up, or inspect folders |
+| [Metadata coverage](docs/METADATA.md) | Inspect captured track, artist, release, and placement fields or plan local audio analysis |
 | [Playlist curation](docs/PLAYLIST_CURATION.md) | Keep New Music Friday going with playlist volumes and test folder playback |
 | [Evidence and data model](docs/EVIDENCE_AND_MODEL.md) | Interpret identities, coverage, local tracks, duplicates, or client disagreement |
 | [Sharing local files](docs/SHARE_LOCAL_FILES.md) | Give a friend MP3 setup and phone-sync instructions without confusing them with catalog coverage |

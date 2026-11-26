@@ -14,6 +14,11 @@ The grounded architecture is a local catalog that observes provider metadata and
 
 The personal database is the engine for later exploration: build durable metadata and relationships for tracks/recordings, releases, artists, ordered memberships, owned audio, and personal decisions; enrich them through selected independent sources. Playlist algebra, musical profiles, DJ suggestions, and artist/album placement questions then query saved local evidence with zero provider calls. Collection and enrichment refresh run separately, and results show their evidence dates and coverage. Rich metadata is a planned extension of the working catalog, not merely a temporary Spotify response cache.
 
+The [metadata guide](METADATA.md) records the shipped coverage/export command,
+album and release columns, numeric length filters, and local tag reads. Next
+steps are a separate owned-audio analysis pilot for BPM, key, and waveform, and
+an optional provider enrichment workflow keyed by artist and release IDs.
+
 ## Current priority
 
 The catalog supports offline checkpoint export, historical capacity reports,

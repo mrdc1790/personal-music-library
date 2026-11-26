@@ -1,5 +1,14 @@
 # Work status
 
+## November 26, 2026 — metadata coverage and duration filters
+
+The offline comparison supports numeric duration and playlist-count conditions,
+sortable Album and Release date columns, and per-placement added dates. Existing
+catalog snapshots support field coverage counts and a private metadata export.
+Local inventory reads embedded MP3 DJ tags and WAV audio properties separately.
+The [metadata guide](METADATA.md) covers current fields and the next audio
+analysis and enrichment pilots.
+
 ## November 26, 2026 — local file paths in playlist comparisons
 
 Save dated filesystem inventories in a separate SQLite store and use a saved

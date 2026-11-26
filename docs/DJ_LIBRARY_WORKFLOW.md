@@ -1,5 +1,10 @@
 # DJ library workflow and rekordbox delivery (planned)
 
+The [metadata guide](METADATA.md#local-files-and-dj-metadata) lists the local
+MP3 tags and WAV properties already captured and the proposed owned-audio
+analysis pilot. Embedded BPM and key are file-supplied values. Use an independent
+analysis or reviewed DJ export when an estimate or beat grid is needed.
+
 Direction clarified on **October 27, 2026**: the shared long-term goal is to DJ
 with a deeply organized, tagged, trustworthy music library, probably through
 rekordbox. Rekordbox is the leading target, not a verified installed version,
