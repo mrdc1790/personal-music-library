@@ -1,5 +1,13 @@
 # Work status
 
+## November 26, 2026 — recording candidate review
+
+[Compare an exact saved track or local reference](RECORDING_CANDIDATES.md)
+with candidate Spotify tracks from a chosen snapshot. The report
+shows release metadata, supporting and conflicting signals, and all observed
+placements. It makes no provider requests. Live local removal and broader
+release-family comparison remain open.
+
 ## November 26, 2026 — followed-artist history
 
 Import [dated followed-artist captures](OPERATING_GUIDE.md#followed-artist-history)

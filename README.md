@@ -42,6 +42,7 @@ for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery o
 | Browse split playlists together | [Group saved playlist IDs](docs/OPERATING_GUIDE.md#group-split-playlists) in ordered collections |
 | Follow artist history | [Import dated followed-artist captures](docs/OPERATING_GUIDE.md#followed-artist-history) and join their exact IDs to saved placements |
 | Investigate unavailable tracks | [Review saved playability and recovery evidence](docs/OPERATING_GUIDE.md#unavailable-tracks-and-recovery) |
+| Review replacement candidates | [Compare saved recordings and local references](docs/RECORDING_CANDIDATES.md) |
 | Repair shadow tracks | Guarded reviewed migration commands; offline-tested only |
 
 Run `python library.py song-stats` after importing a playlist snapshot. The

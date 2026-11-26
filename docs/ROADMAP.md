@@ -176,14 +176,21 @@ These requirements preserve the useful design from the earlier “Spotify Librar
 - **Comparisons:** match followed artists against dated festival lineups, or compare artist overlap across lists friends choose to share. Use reviewed artist identities and retain ambiguous matches and coverage gaps.
 - **Personal discovery score:** experiment with lower popularity, higher personal save rate, greater genre similarity, and lower mainstream overlap. Define the reference set for mainstream overlap and the denominator and observation window for save rate. Show the component scores and keep missing inputs unknown. A view of followed artists with no observed plays requires listening data and must name the captured sources and time window; playlist absence alone cannot support it.
 
-### Recording resolver and release-family discovery (planned)
+### Recording resolver and release-family discovery
 
-The “Clarify Spotify Duplicates” discussion has largely already been incorporated into [the identity taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy), [reference-tool research](REFERENCE_PROJECTS.md), and [migration guidance](MIGRATION.md). Its remaining discovery requirement belongs here: begin with one confusing saved track and recover candidate old releases, sibling releases, neighboring tracks, and their captured playlist/Liked Songs placements. These are planned capabilities, not a working `resolve-track` command.
+The [recording candidate report](RECORDING_CANDIDATES.md) starts from an exact
+saved identity and compares historical release, ISRC, credit, duration, version
+and placement evidence. It also accepts Spotify local references as inputs.
+Release-family comparison, neighboring tracks, and durable review decisions
+remain planned. The [identity taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy)
+and [migration guide](MIGRATION.md) define the acceptance boundaries.
 
 The [October 6, 2026 navigation observation](HISTORICAL_OBSERVATIONS.md#october-6-2026-oldshadow-album-navigation-appears-restored) reports that View album now reaches the old/shadow album without an Android app update. Old-release discovery must cover both reachable and unreadable old albums; restored client navigation does not establish API readability, merged identities, or transferred membership. Capture the opened release identity separately from the stored track identity and keep migration optional.
 
 1. Start with a captured provider ID/URI and historical raw metadata. Report its observed release, artists, ISRC, duration, version markers, original/returned identity evidence, snapshot, and coverage. If the old release is unavailable now, keep the historical observations; do not reconstruct missing neighbors from the current album's positions alone.
-2. Produce read-only candidate reports from ISRC with artist/duration/version checks, then release-family comparisons, then weaker title/artist/duration candidates. Add external recording IDs and owned-audio fingerprints later. Preserve supporting and contradictory evidence, missing fields, and ambiguous or unmatched tracks. Heuristic labels are not calibrated probability percentages.
+2. Review saved ISRC and title/artist/duration candidates with their supporting,
+   contradictory and unknown fields. Add release-family comparison, external
+   recording IDs, and owned-audio fingerprints in later stages.
 3. Compare release track lists beyond disc/track ordinal position. Standard-to-deluxe, resequenced, missing-track, and bonus-track cases need partial candidate mappings with explicit unmatched entries. This does not relax either executor's current album/identity gates.
 4. Record relationship classification and reviewed same-recording/keep-separate decisions without deleting provider instances or rewriting historical occurrences. A preferred album/instance is a separate user policy from recording equivalence. Support both literal-instance placement queries and, eventually, reviewed recording-level placement queries.
 5. Only a separately reviewed mapping may enter migration planning and explicit execution. Detection, canonical grouping, preferred-instance selection, occurrence deduplication, and migration remain separate actions. Retain unknown coverage and pre-existing destination placements.
