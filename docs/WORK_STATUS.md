@@ -1,5 +1,44 @@
 # Work status
 
+## November 26, 2026 — unavailable track and recovery report
+
+`library.py availability` produces a private HTML report from an imported
+capture. It lists unavailable placements, playable Spotify alternatives and
+relinks, and local filename candidates when supplied with an inventory. The
+report includes manual Spotify and SoundCloud searches for recovery leads.
+See the [operating guide](OPERATING_GUIDE.md#unavailable-tracks-and-recovery).
+
+Verified with 92 offline tests and a report from an existing catalog snapshot.
+The catalog was opened read-only. A fresh Spotify capture and a personal local
+inventory were outside this run.
+
+## November 16, 2026 — offline checkpoint export and playlist capacity
+
+`library.py export-checkpoint` exports committed rows and coverage from a
+resumable audit without making Spotify requests. `library.py capacity` reports
+historical playlist counts and estimated remaining slots, with an optional
+comparison to an older capture. See the [operating guide](OPERATING_GUIDE.md#playlist-capacity).
+
+Verified the bounded preview and exported a saved interrupted run into a
+temporary copy of the historical catalog. The private baseline report contains
+estimates and net changes where the evidence supports them. The original catalog
+and checkpoint were unchanged. All 85 offline tests passed. No live Spotify
+capture or account mutation was performed. The browser migrator's fresh
+capacity preflight remains separate.
+
+## November 16, 2026 — song scores and stream totals
+
+`library.py song-stats` ranks observed songs by distinct playlists and folder
+categories. Reports show personal plays and dated worldwide totals for Spotify
+and across imported services. See the [operating guide](OPERATING_GUIDE.md#song-stats)
+for the scoring formula, coverage, and input formats.
+
+Validation covered 81 offline tests and a synthetic command-line run through
+the three stream importers, backup, restore, and reporting. A local report
+also verified scoring against a saved partial audit. A fresh playlist snapshot,
+folder capture, Extended Streaming History ZIP, and worldwide source totals
+are needed for a current report with all fields populated.
+
 ## November 6, 2026 — duplicate counts in snapshot comparisons
 
 Offline snapshot comparisons show the remaining count for each observed track
@@ -29,12 +68,9 @@ import and reopen at [190,000 placements](PLAYLIST_CURATION.md#how-the-limits-ap
 
 ## Continue here
 
-1. Use the [offline preview](OPERATING_GUIDE.md#preview-and-folders) to select
-   completed sources from a saved run and check coverage. Verify a supported
-   export/import or add an offline export path for interrupted captures.
-2. Deliver the [capacity baseline](ROADMAP.md#next-work) from the historical
-   catalog, then measure query cost and expand coverage.
-3. Try one category with two direct sibling volumes in Spotify while the
+1. Measure [catalog query and import cost](ROADMAP.md#next-work) and expand
+   saved coverage when a fresh read-only capture is appropriate.
+2. Try one category with two direct sibling volumes in Spotify while the
    database work proceeds. When there is a concrete repair case, use the
    [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for that work.
 

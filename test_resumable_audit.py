@@ -1,11 +1,15 @@
 from pathlib import Path
+from contextlib import closing, redirect_stderr, redirect_stdout
+import io
 import json
 import tempfile
 import time
 import unittest
 from unittest.mock import patch
 import audit
-from resumable_audit import Run, check_cooldown, run_lock, cooldown_path
+import library
+from preview_audit import load_trial
+from resumable_audit import Run, check_cooldown, run_lock, cooldown_path, main
 
 class API:
     client_id = 'a' * 32
@@ -26,6 +30,90 @@ def entry(id):
 
 def page(items, next=None, total=None):
     return {'items': items, 'next': next, 'total': len(items) if total is None else total}
+
+
+class SelectedPlaylistTests(unittest.TestCase):
+    a, b = 'A' * 22, 'B' * 22
+
+    def test_cli_captures_and_imports_only_selected_playlists(self):
+        a, b = self.a, self.b
+        first = f'playlists/{a}/items?limit=50&market=from_token'
+        second = f'playlists/{b}/items?limit=50&market=from_token'
+        local_uri = 'spotify:local:Artist:Album:Song:123'
+        local = {'is_local': True, 'item': {'id': None, 'name': 'Song', 'uri': local_uri}}
+        api = API({
+            'me': {'id': 'account'},
+            f'playlists/{a}': {'id': a, 'name': 'First', 'snapshot_id': 'v1'},
+            f'playlists/{b}': {'id': b, 'name': 'Second', 'snapshot_id': 'v1'},
+            first: page([local, {'item': None}, local, entry('only-a')]),
+            second: page([entry('only-b'), local]),
+        })
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch('resumable_audit.data_root', return_value=root), \
+                    patch('audit.authorize', return_value={}) as authorize, \
+                    patch('audit.Spotify', return_value=api), redirect_stdout(io.StringIO()):
+                result = main(['--client-id', API.client_id, '--output', str(root),
+                               '--playlist', f'https://open.spotify.com/intl-en/playlist/{a}?si=example',
+                               '--playlist', f'spotify:playlist:{b}'])
+            self.assertEqual(result, 0)
+            authorize.assert_called_once_with(API.client_id, 'playlist-read-private playlist-read-collaborative')
+            self.assertEqual(api.calls, ['me', f'playlists/{a}', first, f'playlists/{a}',
+                                         f'playlists/{b}', second, f'playlists/{b}'])
+            folder, = root.iterdir()
+            saved = json.loads((folder / 'snapshot.json').read_text(encoding='utf-8'))
+            self.assertEqual(saved['selected_playlists'], [a, b])
+            self.assertFalse(saved['liked_exported'])
+            self.assertEqual([row['position'] for row in saved['occurrences'] if row['is_local']], [0, 2, 1])
+            self.assertTrue(saved['occurrences'][1]['missing'])
+            trial = load_trial(folder / 'library.sqlite', selected=[a, b])
+            self.assertEqual(trial['known_sources'], 2)
+            self.assertFalse(trial['discovery_complete'])
+            with closing(library.connect(root / 'catalog.sqlite', write=True)) as catalog:
+                sid = library.import_snapshot(catalog, saved, 'Selected playlists')
+                for operation, sources, expected in (
+                    ('union', [a, b], {local_uri, 'spotify:track:only-a', 'spotify:track:only-b'}),
+                    ('intersection', [a, b], {local_uri}),
+                    ('difference', [a, b], {'spotify:track:only-a'}),
+                    ('difference', [b, a], {'spotify:track:only-b'}),
+                ):
+                    rows = library.set_query(catalog, sid, operation, sources)
+                    self.assertEqual({row['track_key'] for row in rows}, expected)
+
+    def test_resume_keeps_selection_and_failed_coverage(self):
+        a, b = self.a, self.b
+        first = f'playlists/{a}/items?limit=50&market=from_token'
+        second = f'playlists/{b}/items?limit=50&market=from_token'
+        responses = {
+            'me': {'id': 'account'},
+            f'playlists/{a}': {'id': a, 'name': 'First', 'snapshot_id': 'v1'},
+            f'playlists/{b}': RuntimeError('HTTP 403'),
+            first: page([entry('a')]),
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            with closing(Run(temporary, API.client_id, [a, b])) as run:
+                run.execute(API(responses))
+                self.assertEqual(run.state['status'], 'partial')
+                self.assertFalse(run.snapshot()['playlists'][1]['exported'])
+            responses.update({f'playlists/{b}': {'id': b, 'name': 'Second', 'snapshot_id': 'v1'},
+                              second: page([entry('b')])})
+            resumed = API(responses)
+            with closing(Run(temporary)) as run:
+                run.execute(resumed)
+                self.assertTrue(run.state['status'].startswith('completed'))
+                self.assertEqual([row['returned_id'] for row in run.rows], ['a', 'b'])
+            self.assertEqual(resumed.calls, ['me', f'playlists/{a}', f'playlists/{b}', second, f'playlists/{b}'])
+
+    def test_cli_rejects_other_links_and_duplicate_selection(self):
+        for args in (
+            ['--playlist', f'https://example.com/playlist/{self.a}'],
+            ['--playlist', self.a, '--playlist', f'spotify:playlist:{self.a}'],
+            ['--playlist', self.a, '--resume', 'another-run'],
+        ):
+            with self.subTest(args=args), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+                main(args)
+            self.assertEqual(raised.exception.code, 2)
+
 
 class ResumeTests(unittest.TestCase):
     def setUp(self):

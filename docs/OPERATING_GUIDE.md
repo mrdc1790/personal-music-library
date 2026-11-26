@@ -52,11 +52,46 @@ python audit.py --resume 'C:\path\to\completed-run' --export-json
 ```
 
 For an interrupted run, use the offline preview below to inspect completed
-sources. On an unfinished run, `--resume --export-json` attempts an authenticated
-resume before export. Offline export of checkpoint evidence from an unfinished
-run is [planned](ROADMAP.md#next-work).
+sources, or export the committed checkpoint without contacting Spotify:
+
+```powershell
+python library.py export-checkpoint 'C:\path\to\run' 'C:\private\saved-checkpoint.json'
+python library.py import 'C:\private\saved-checkpoint.json' --label 'Saved checkpoint'
+```
+
+Use a new destination outside the repository. The export reads the resumable
+run's SQLite database in one read transaction. It includes committed prefixes,
+source status and errors, completion and validation times when recorded, and
+playlist discovery coverage. An incomplete source stays unexported for queries
+that require complete coverage. This is an importable observation, not a new
+capture or a resume file. `--resume --export-json` still attempts an
+authenticated resume on an unfinished run.
 
 On resume, unchanged completed playlists reuse captured rows; an unchanged interrupted playlist continues from its committed offset; a changed playlist is recaptured by itself. Liked Songs has no equivalent playlist snapshot token, so its saved prefix is revalidated using identity, URI, `added_at`, local flag, and total. A mismatch resets Liked Songs only. Do not edit checkpoint files: the run database is authoritative. A process lock and persisted per-client-ID cooldown prevent conflicting resumes; nothing wakes or continues automatically after the scanner exits.
+
+### Capture just the playlists you choose
+
+Pass a playlist link, `spotify:playlist:` URI, or playlist ID with each
+`--playlist`. Sign in with the catalog's Spotify app as usual. The audit reads
+the selected playlists directly and skips playlist discovery and Liked Songs.
+It prints the path to the importable `snapshot.json` when the run finishes.
+
+```powershell
+python audit.py --playlist 'PLAYLIST_A_LINK' --playlist 'PLAYLIST_B_LINK'
+python library.py import 'C:\path\to\run\snapshot.json' --label 'Two-playlist capture'
+```
+
+You can compare completed playlists in the [offline preview](#preview-and-folders)
+before importing the snapshot.
+
+```powershell
+python preview_audit.py --run 'C:\path\to\run' --open
+```
+
+Local entries returned by Spotify retain their local URIs and playlist
+positions. If Spotify denies access to a playlist, the run records that source
+as unreadable. Use `--resume` with the printed run folder to retry an
+interrupted or partial capture. The selection is saved in the run.
 
 ## Catalog, queries, and exports
 
@@ -85,6 +120,115 @@ key disappeared from that source, even if it remains elsewhere. Both maps
 require complete coverage and identified rows in both captures. The counts
 describe the change between captures. Identifying a specific surviving row
 or attributing the change to a cleanup requires additional evidence.
+
+## Unavailable tracks and recovery
+
+```powershell
+python library.py availability
+python library.py availability --snapshot 1
+python library.py availability --snapshot 1 --inventory 'C:\private\inventory.json'
+```
+
+The report opens as a local HTML file. It uses the latest imported snapshot by
+default and keeps every captured Liked Songs and playlist position, including
+duplicates. Open **Source coverage** to see which captures were incomplete and
+how many placements had no availability signal. Spotify may return a null
+object or omit relink details. The report keeps these gaps visible. Local
+Spotify references need their own [inventory and device checks](LOCAL_INVENTORY.md).
+
+The report shows playable relinks and alternatives observed in the same capture.
+The latter require matching ISRC, title and artists, with compatible duration
+and explicit flags where supplied. Review the exact version before using the
+[Spotify Playlist Migrator](https://github.com/mrdc1790/spotify-shadow-release-migrator)
+for a replacement. Account restrictions and conflicting signals get a review row.
+
+An unplayable or market-restricted track with no observed Spotify alternative
+can be a **SoundCloud recovery lead** after a complete inventory of the chosen
+folders finds no compatible filename. A missing or incomplete inventory puts it
+under **Check local copies and Spotify search**. Both sections link to manual
+Spotify and SoundCloud searches. Use a [local inventory report](LOCAL_INVENTORY.md)
+to check title or `Artist - Title` filenames. Different filenames and unscanned
+locations can hide copies. A Spotify flag records availability at capture time
+for that account and market. The service might make the track playable again.
+
+The report runs offline and saves to the `availability` folder under your Music
+Library data directory by default. Use `--output` to choose a new file.
+
+## Playlist capacity
+
+```powershell
+python library.py capacity --output 'C:\private\capacity.json'
+python library.py capacity --snapshot 2 --before 1 --output 'C:\private\capacity-change.json'
+```
+
+The report counts every captured placement, including repeats, local files
+and unavailable rows. It estimates remaining slots against the documented
+ordinary-playlist limit of 10,000 only for completed sources whose provider
+total agrees with the captured count. Unknown headroom stays null with a reason.
+The report lists known estimates from lowest to highest and labels Liked Songs
+separately. It includes the evidence timestamp and its basis; older exports may
+have only a run-level timestamp. With `--before`, it reports net placement changes
+for the same playlist when both captures qualify and their evidence times are
+strictly ordered. The report describes saved evidence; check current Spotify
+state before relying on spare capacity for a repair.
+
+## Song stats
+
+```powershell
+python library.py song-stats --term 'song or artist text'
+python library.py song-stats --folder-depth 2 --limit 100
+python library.py import-spotify-history 'C:\path\to\extended-spotify-history.zip'
+python library.py import-personal-plays 'C:\path\to\other-service-plays.csv'
+python library.py import-worldwide-streams 'C:\path\to\worldwide-streams.csv'
+python library.py song-stats --sort personal-spotify --output 'C:\private\song-stats.json'
+```
+
+- **Playlist score** adds one point per distinct playlist in the selected
+  catalog snapshot plus one per distinct known folder category. Three playlists
+  under Electronic score 4. Three playlists across three known categories
+  score 6. The default category is the outermost folder. Set `--folder-depth 2`
+  to distinguish Electronic / House and Electronic / Bass. Repeat copies in a
+  playlist count once. Liked Songs can supply a song to the report and adds
+  no points. The report names the snapshot and coverage. If a playlist is at
+  the root, lacks a folder match, or has conflicting category assignments, it
+  contributes its base point. Folder assignments come from the latest imported
+  tree for the snapshot's account, which can have a different date.
+- **Personal plays** use your Spotify [Extended Streaming History](https://support.spotify.com/us/article/understanding-your-data/)
+  audio-track events and optional reviewed events from other services. The
+  report shows personal Spotify plays and the sum across imported services.
+  Both count events with at least 30 seconds played. Per-service details also
+  show event counts, listening milliseconds, and dates. `null` means no
+  matching data. Zero means an observed count of zero. The standard Spotify
+  account export lacks Spotify track URIs, so use the Extended Streaming History
+  ZIP from the same account as the catalog. Spotify rows are matched by exact
+  track URI. Reimport merges overlapping events using their timestamp, track,
+  duration, platform, offline timestamp, and occurrence count within the ZIP.
+- **Worldwide streams** use the latest dated, imported totals for each service.
+  The worldwide Spotify field comes from the Spotify row. The total across
+  imported services may span different reporting dates and definitions. Check
+  the per-service detail for counts, dates, and sources. Spotify’s [Web API track data](https://developer.spotify.com/documentation/web-api/reference/get-track)
+  lacks raw stream totals. Use a source that provides worldwide all-time
+  track totals, such as an authorized [Spotify for Artists export](https://support.spotify.com/us/artists/article/exporting-data/)
+  or a distributor report for the same recording. Supply one row per service
+  and track per date. Exclude combined platforms, chart ranks, popularity
+  scores, views, release totals, and date-limited figures.
+
+Non-Spotify personal events CSV uses
+`service,event_id,track_key,ended_at,played_ms`. Use the playback service slug
+(e.g. `apple-music`), a stable event ID from that service's history, the
+reviewed Spotify track URI of the same recording, a timestamp with its time zone,
+and the actual time played in milliseconds. Use one event feed per playback
+service to avoid counting a play twice.
+
+Worldwide streams CSV uses `service,track_key,as_of,streams,source`. Use an
+exact Spotify track URI, a `YYYY-MM-DD` date, the integer count, and a source
+description. Both CSV imports require a reviewed recording match. Same-title
+tracks and different versions retain their own rows.
+
+All imports are offline. Listening events and dated stream totals are stored in
+the catalog and included in its backups. The Spotify archive itself and fields
+such as IP address are excluded. Store the database, reports, and backups in
+private storage.
 
 ## Preview and folders
 

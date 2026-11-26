@@ -35,30 +35,22 @@ manual trial. Folder curation and catalog delivery can proceed independently.
 
 ## Next work
 
-1. **Establish a catalog baseline from saved evidence.** Verify a supported
-   snapshot import or build an offline export of saved checkpoint evidence if
-   the available captures are interrupted. Keep incomplete sources, source
-   times, and errors visible. Use the current [offline preview](OPERATING_GUIDE.md#preview-and-folders)
-   to inspect completed sources now. Resume a live capture separately when
-   additional coverage is needed and any cooldown has elapsed.
-2. **Deliver a read-only capacity report.** Show each ordinary playlist's
-   captured placements, observed provider total where available, evidence
-   date, coverage, and estimated remaining slots where the counts agree.
-   Include duplicate, local, and unavailable placements in the count. Label
-   unknown headroom and distinguish Liked Songs from ordinary playlists.
-   Compare dated, complete captures of the same playlist to show net growth.
-3. **Scale the local queries.** Measure capture/import cost, report and
+The offline checkpoint export and [historical capacity baseline](OPERATING_GUIDE.md#playlist-capacity)
+are implemented and verified on saved evidence. Resume or run a live capture
+separately when additional coverage is needed and any cooldown has elapsed.
+
+1. **Scale the local queries.** Measure capture/import cost, report and
    exact-instance lookup latency, and memory with at least 100,000 observed
    identities, repeated placements, local references, and multiple snapshots.
    Measure larger occurrence sets separately. `lookup`, set operations, and
    comparisons still materialize snapshot rows in Python. Add focused indexed
    SQL and paged browsing where measurements justify them.
-4. **Organize category volumes.** Record ordered playlist IDs and the active
+2. **Organize category volumes.** Record ordered playlist IDs and the active
    volume for each logical collection. Use the report to preview rollover and
    start with manual Spotify folder management. Pilot the [folder-tree adapter](INTEGRATION_DESIGN.md#folder-structure-adapter)
    separately from playback. Review automatic splitting or publishing only
    after measuring the effort of manual rollover.
-5. **Expand library coverage and intelligence.** Extend local file inventory
+3. **Expand library coverage and intelligence.** Extend local file inventory
    and device reconciliation, then develop [artist history](#artist-history-and-enrichment-planned),
    reviewed recording relationships, and [library intelligence](LIBRARY_INTELLIGENCE.md)
    in stages. Retain raw occurrences and separate genuine versions. Use
@@ -78,8 +70,8 @@ application/device profile before broader writes or playback claims.
 
 | Area | Current status | Next acceptance evidence |
 |---|---|---|
-| Catalog capture, history, queries, and backups | Existing Python/SQLite implementation | Validate a saved snapshot import or export of saved checkpoint evidence with explicit coverage |
-| Playlist capacity and rollover | Capacity report and volume mapping are planned. Native folder playback is available in Spotify clients | Inspect a saved baseline and test one category with direct sibling playlists on both devices |
+| Catalog capture, history, queries, and backups | Offline checkpoint export and catalog import verified; incomplete sources remain visible | Measure import and query cost and capture fresh evidence where needed |
+| Playlist capacity and rollover | Historical capacity report implemented. Volume mapping remains planned | Test one category with direct sibling playlists on both devices |
 | Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | When a repair is needed, measure an authorized read-only preview with retained coverage and progress |
 | Query performance | Exact-instance index exists; general lookup/set/compare paths still materialize snapshot rows | Reproducible measurements and focused SQL-query regression tests before claiming scale gains |
 | Catalog discovery bridge | Deferred behind useful catalog coverage and a manual repair trial | Measured value, then versioned evidence export/import, account validation, and fresh discovery |
@@ -137,6 +129,13 @@ The “Artist History Design” discussion was reviewed on 2026-09-30. Its main 
 - **One evidence model, several outputs:** follow observations, genre evidence, reviewed artist mappings, and derived metrics should become versioned entities/relationships in the local SQLite catalog as each feature is implemented. CSV, optional workbooks, HTML dashboards, and future UI are views over that evidence, not independently maintained sources of truth. This does not add a graph database or implement these tables now; follow the [storage decision](STORAGE_DECISION.md) and preserve existing snapshots through tested schema upgrades.
 
 These requirements preserve the useful design from the earlier “Spotify Library Tracker Design” and “Artist History Design” discussions without depending on those chats remaining available. They do not change the current priority order or authorize artist-follow changes. Cross-repository scope was checked: this read-only catalog feature needs no companion change in the separate playlist migrator.
+
+#### Artist discovery ideas (later)
+
+- **Starter collections and exports:** build a local preview from the top tracks of a reviewed artist list. Spotify playlist creation would be a separate, explicit publishing action. Export followed-artist snapshots and derived metrics as CSV for offline analysis, including in pandas.
+- **Artist graphs and scene maps:** explore related-artist links with bounded depth and source coverage, and cluster artists using genre vectors derived from dated tags and reviewed mappings. Possible scene views include future garage, melodic house, downtempo, organic house, and IDM-adjacent music. Check what data sources can actually supply before relying on these features.
+- **Comparisons:** match followed artists against dated festival lineups, or compare artist overlap across lists friends choose to share. Use reviewed artist identities and retain ambiguous matches and coverage gaps.
+- **Personal discovery score:** experiment with lower popularity, higher personal save rate, greater genre similarity, and lower mainstream overlap. Define the reference set for mainstream overlap and the denominator and observation window for save rate. Show the component scores and keep missing inputs unknown. A view of followed artists with no observed plays requires listening data and must name the captured sources and time window; playlist absence alone cannot support it.
 
 ### Recording resolver and release-family discovery (planned)
 

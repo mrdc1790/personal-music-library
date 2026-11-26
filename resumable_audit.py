@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import sqlite3
 import time
@@ -14,6 +15,18 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 import audit
 from storage_paths import data_root
 from spotify_config import spotify_client_id
+
+
+def playlist_id(value):
+    candidate = value.strip().removeprefix('spotify:playlist:')
+    parsed = urlsplit(candidate)
+    if parsed.scheme == 'https' and parsed.netloc.lower() == 'open.spotify.com':
+        match = re.fullmatch(r'/(?:intl-[a-zA-Z-]+/)?playlist/([a-zA-Z0-9]{22})/?', parsed.path)
+        if match:
+            candidate = match[1]
+    if re.fullmatch(r'[a-zA-Z0-9]{22}', candidate):
+        return candidate
+    raise argparse.ArgumentTypeError('Expected a Spotify playlist link, URI, or ID.')
 
 
 def utc():
@@ -49,7 +62,7 @@ def run_lock(folder):
 
 
 class Run:
-    def __init__(self, folder, client_id=None):
+    def __init__(self, folder, client_id=None, selected_playlists=None):
         self.folder = Path(folder).resolve()
         self.folder.mkdir(parents=True, exist_ok=True)
         self.rows = audit.DiskRows(self.folder / 'library.sqlite')
@@ -67,6 +80,9 @@ class Run:
             self.state = dict(version=1, client_id=client_id, created_at=utc(), status='ready',
                               sources={}, manifest=[], discovery_complete=False, discovery_next='me/playlists?limit=50',
                               discovery_total=None, discovery_seen=[], cooldown_until=0, account_id=None)
+            if selected_playlists:
+                self.state.update(selected_playlists=list(selected_playlists),
+                                  manifest=[dict(id=key) for key in selected_playlists], discovery_next=None)
             self.save()
         self.write_status()
 
@@ -84,6 +100,8 @@ class Run:
         result = dict(created_at=s['created_at'], status=s['status'], account_id=s.get('account_id'),
                       client_id=s['client_id'], api_mode='development', errors=[], track_checks={},
                       liked_exported=s['sources'].get('liked', {}).get('status') == 'complete', playlists=[])
+        if s.get('selected_playlists'):
+            result['selected_playlists'] = s['selected_playlists']
         for meta in s['manifest']:
             source = s['sources'].get(meta['id'], {})
             result['playlists'].append(dict(metadata=source.get('metadata', meta), exported=source.get('status') == 'complete'))
@@ -94,6 +112,14 @@ class Run:
         if include_rows:
             result['occurrences'] = self.rows
         return result
+
+    def export_json(self):
+        path = self.folder / 'snapshot.json'
+        if self.state.get('selected_playlists'):
+            audit.write_json(path, self.snapshot())
+        else:
+            audit.export_report(self.folder, self.snapshot())
+        print('Catalog snapshot:', path, flush=True)
 
     def event(self, kind, **fields):
         record = dict(time=utc(), event=kind, **fields)
@@ -111,15 +137,22 @@ class Run:
             lines.append('Do not resume before: ' + datetime.fromtimestamp(s['cooldown_until'], timezone.utc).astimezone().isoformat())
         lines += ['Resume: double-click Resume this audit.cmd in this folder.',
                   'No automatic retry after exit. Close/reopen or Ctrl+C preserves committed pages.',
-                  'Counts are placements, not unique recordings. Incomplete sources are not complete backups.',
-                  'Liked Songs has no version token; prefix revalidation is required on resume.', '', 'Sources:']
-        for meta in s['manifest'] + [dict(id='liked', name='Liked Songs')]:
+                  'Counts are placements, not unique recordings. Incomplete sources are not complete backups.']
+        manifest = s['manifest']
+        if s.get('selected_playlists'):
+            lines.append('Scope: only the selected playlists.')
+        else:
+            lines.append('Liked Songs has no version token; prefix revalidation is required on resume.')
+            manifest = manifest + [dict(id='liked', name='Liked Songs')]
+        lines += ['', 'Sources:']
+        for meta in manifest:
             item = s['sources'].get(meta['id'], {})
-            lines.append(f"{item.get('status', 'pending')} | {meta.get('name', meta['id'])} | "
+            name = item.get('metadata', {}).get('name') or meta.get('name', meta['id'])
+            lines.append(f"{item.get('status', 'pending')} | {name} | "
                          f"{item.get('count', 0)}/{item.get('total', '?')} | {item.get('error', '')}")
         audit.write_json(self.folder / 'status-summary.json', dict(
             status=s['status'], completed=sum(x.get('status') == 'complete' for x in s['sources'].values()),
-            known_sources=len(s['manifest']) + 1, discovery_complete=s['discovery_complete']))
+            known_sources=len(manifest), discovery_complete=s['discovery_complete']))
         (self.folder / 'RUN STATUS.txt').write_text('\n'.join(lines), encoding='utf-8')
 
     def checkpoint(self, event, **fields):
@@ -254,12 +287,15 @@ class Run:
         s.update(account_id=account, status='running', last_error=None, cooldown_until=0)
         self.checkpoint('session_started')
         try:
-            self.discover(api)
+            selected = s.get('selected_playlists')
+            if not selected:
+                self.discover(api)
             for meta in s['manifest']:
                 key, name = meta['id'], meta.get('name', meta['id'])
                 source = s['sources'].get(key, {})
                 try:
                     current = self.request(api, f'playlists/{key}')
+                    name = current.get('name') or name
                     version = current.get('snapshot_id')
                     if not version:
                         raise RuntimeError('No playlist snapshot ID; cannot safely resume this source.')
@@ -288,15 +324,16 @@ class Run:
                     source.update(status='failed', error=str(error))
                     self.checkpoint('source_failed', source=key, error=str(error))
                     print(f'Not exported: {name}: {error}', flush=True)
-            if 'liked' not in s['sources']:
-                self.clear_source('liked')
-            liked = s['sources']['liked']
-            if not self.validate_liked_prefix(api):
-                self.clear_source('liked')
+            if not selected:
+                if 'liked' not in s['sources']:
+                    self.clear_source('liked')
                 liked = s['sources']['liked']
-                print('Liked Songs changed: recapturing likes only. Playlist checkpoints retained.', flush=True)
-            self.collect(api, 'liked', 'Liked Songs')
-            liked.update(status='complete', completed_at=utc())
+                if not self.validate_liked_prefix(api):
+                    self.clear_source('liked')
+                    liked = s['sources']['liked']
+                    print('Liked Songs changed: recapturing likes only. Playlist checkpoints retained.', flush=True)
+                self.collect(api, 'liked', 'Liked Songs')
+                liked.update(status='complete', completed_at=utc())
             failed = any(x.get('status') != 'complete' for x in s['sources'].values())
             s['status'] = 'partial' if failed else 'completed API export; hidden original IDs remain unknown'
             self.checkpoint('session_finished')
@@ -328,11 +365,16 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--client-id')
     parser.add_argument('--output', type=Path, default=data_root() / 'backups')
-    parser.add_argument('--resume', type=Path)
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument('--resume', type=Path)
+    source.add_argument('--playlist', action='append', type=playlist_id, metavar='LINK_OR_ID',
+                        help='Capture only this playlist; repeat for more playlists')
     parser.add_argument('--prepare-only', action='store_true')
     parser.add_argument('--status', action='store_true')
     parser.add_argument('--export-json', action='store_true', help='Optional large legacy JSON/report export after scanning')
     args = parser.parse_args(argv)
+    if args.playlist and len(args.playlist) != len(set(args.playlist)):
+        parser.error('Repeat --playlist with distinct playlists.')
     run = None
     try:
         if args.resume:
@@ -346,7 +388,7 @@ def main(argv=None):
             folder = args.output.resolve() / (datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + secrets.token_hex(3))
             folder.mkdir(parents=True, exist_ok=False)
         with run_lock(folder):
-            run = Run(folder, client_id)
+            run = Run(folder, client_id, args.playlist)
             launcher = f'@echo off\r\ncd /d "{Path(__file__).resolve().parent}"\r\npython resumable_audit.py --resume "{folder}"\r\npause\r\n'
             (folder / 'Resume this audit.cmd').write_text(launcher, encoding='utf-8')
             print('Run folder:', folder, flush=True)
@@ -354,14 +396,17 @@ def main(argv=None):
             if args.prepare_only or args.status:
                 print((folder / 'RUN STATUS.txt').read_text(encoding='utf-8'))
                 return 0
+            selected = run.state.get('selected_playlists')
+            export_json = args.export_json or selected
             if run.state['status'].startswith('completed'):
-                if args.export_json:
-                    audit.export_report(folder, run.snapshot())
+                if export_json:
+                    run.export_json()
                     return 0
                 raise RuntimeError('This run is complete. Start a fresh run to preserve its history.')
             check_cooldown(run.state['client_id'], run.state.get('cooldown_until', 0))
             try:
-                api = audit.Spotify(run.state['client_id'], audit.authorize(run.state['client_id']))
+                scopes = 'playlist-read-private playlist-read-collaborative' if selected else audit.SCOPES
+                api = audit.Spotify(run.state['client_id'], audit.authorize(run.state['client_id'], scopes))
                 run.execute(api)
             except (Exception, KeyboardInterrupt) as error:
                 run.db.rollback()
@@ -371,8 +416,8 @@ def main(argv=None):
                     run.state['cooldown_until'] = error.retry_at
                 run.checkpoint('session_stopped', error=run.state['last_error'])
                 raise
-            if args.export_json:
-                audit.export_report(folder, run.snapshot())
+            if export_json:
+                run.export_json()
             print('Finished:', run.state['status'], flush=True)
             return 0 if run.state['status'].startswith('completed') else 2
     except (Exception, KeyboardInterrupt) as error:

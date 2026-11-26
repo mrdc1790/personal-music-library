@@ -92,6 +92,12 @@ class PreviewTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 preview_audit.load_trial(self.path, **kwargs)
 
+    def test_preview_exposes_both_difference_directions(self):
+        out = preview_audit.render(preview_audit.load_trial(self.path), Path(self.tmp.name) / 'trial.html')
+        html = out.read_text(encoding='utf-8')
+        self.assertIn('<option value="difference">In A, absent from B</option>', html)
+        self.assertIn('<option value="reverse-difference">In B, absent from A</option>', html)
+
     def test_bad_coverage_rejected(self):
         with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('DELETE FROM occurrences WHERE source=? AND position=1', (P,))
