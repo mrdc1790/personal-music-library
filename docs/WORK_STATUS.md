@@ -1,5 +1,12 @@
 # Work status
 
+## November 26, 2026 — owned-audio draft playlists
+
+[Preview M3U text from saved playlists or collections](OWNED_AUDIO_PROJECTION.md)
+using reviewed local file bytes. The draft retains repeated paths and member
+order, lists unresolved placements, and records inventory and snapshot coverage.
+Player imports and rekordbox preparation checks remain pilot work.
+
 ## November 26, 2026 — recording candidate review
 
 [Compare an exact saved track or local reference](RECORDING_CANDIDATES.md)

@@ -134,6 +134,11 @@ Documents storage.
 
 ## Small delivery sequence and acceptance
 
+The [owned-audio draft](OWNED_AUDIO_PROJECTION.md) checks a saved playlist or
+collection against reviewed file evidence and previews M3U order and omissions.
+The remaining pilot needs an actual device profile and a chosen rekordbox
+exchange file before evaluating preparation fields or import fidelity.
+
 1. **Manual pilot:** choose a small, diverse authorized local sample, provisionally
    20-30 tracks, agree on useful labels, and inspect a chosen rekordbox export.
    Include a remix/edit pair, repeated placements, and uncertain/missing fields.

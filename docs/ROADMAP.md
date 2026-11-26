@@ -231,7 +231,8 @@ The “Local Spotify Library Brainstorming (origin of codex project)” discussi
 The catalog does not reproduce Spotify's proprietary recommendations, social backend, universal playback, or streamed audio. Larger local collections still face each selected player's/server's practical constraints; “unlimited” is not a validated capacity promise. The [integration design](INTEGRATION_DESIGN.md) records bounded Spotify outputs and owned-audio transfer acceptance. Cross-repository scope was checked: this vision belongs to the catalog roadmap and requires no companion change to the browser migrator. No download, account write, server installation, or recurring sync was configured. The chat's project-relevant vision is preserved without relying on it remaining available.
 
 - A Smarter Playlists-style local recipe UI: choose a snapshot, connect sources and set operations, preview, then save a reusable recipe. Scheduling and publishing come later.
-- Dry-run M3U/server-playlist reports after local audio is actually matched. Symfonium, Navidrome, and Jellyfin can be owned-audio endpoints; they do not turn streaming metadata into audio.
+- A [dry-run M3U report](OWNED_AUDIO_PROJECTION.md) projects reviewed owned audio.
+  Device paths and player/server behavior still need a real pilot.
 - BPM, key, energy, genre, mood, and DJ export only where evidence or analysis supplies it.
 - Provider adapters for Spotify, local/server, and potential Apple Music, YouTube, or SoundCloud references, each with a capability matrix.
 

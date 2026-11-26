@@ -114,7 +114,11 @@ Local inventory is a first-class source adapter, separate from Spotify playlists
 
 Recipe deduplication must declare its identity level: exact URI, reviewed recording group, or file identity. Single-versus-album candidates belong to recording-level review even when neither release is a shadow and no relink field exists. Cross-playlist overlap remains intentional unless a separate reviewed recipe says otherwise.
 
-Only after files are inventoried and matched should the project generate a dry-run M3U or music-server playlist report. Verify path mapping, ordering, duplicates, and unresolved entries on a small sample before bulk output. Symfonium, Navidrome, Jellyfin, and DJ software are potential endpoints for owned audio; they do not convert Spotify metadata into audio or establish universal playback.
+The [dry-run M3U manifest](OWNED_AUDIO_PROJECTION.md) uses only path evidence
+from reviewed files in a saved inventory. Verify path mapping, ordering,
+duplicates, and unresolved entries on a small sample before using the draft
+on a target device. Symfonium, Navidrome, Jellyfin, and DJ software remain
+separate acceptance targets for owned audio.
 
 ## Large collections and bounded provider outputs (planned)
 

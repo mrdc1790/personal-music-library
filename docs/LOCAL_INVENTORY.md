@@ -110,6 +110,11 @@ There is no automatic replacement, cleanup, or deletion workflow.
 
 ## Folder counts versus Local Files versus playlist counts
 
+For a reviewed set of local references, the catalog can
+[preview an M3U](OWNED_AUDIO_PROJECTION.md) using saved file confirmations.
+Each draft keeps the source positions and repeats, and leaves unresolved paths
+out of the proposed M3U text.
+
 The three-stage folder-audit workflow belongs to this project:
 audit selected folders, reconcile separately captured Spotify observations, and
 retain the evidence in the library workflow. Personal paths, playlist names,
