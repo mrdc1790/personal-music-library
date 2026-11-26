@@ -19,6 +19,13 @@ album and release columns, numeric length filters, and local tag reads. Next
 steps are a separate owned-audio analysis pilot for BPM, key, and waveform, and
 an optional provider enrichment workflow keyed by artist and release IDs.
 
+The [catalog explorer](OPERATING_GUIDE.md#browse-the-saved-catalog) now links song
+details, exact-identity placements, playlists, and available folder paths in
+each saved snapshot. The next folder milestone is obtaining and validating the
+real account's nested Spotifast rootlist against desktop order, empty folders,
+and sample playlist breadcrumbs. Deeper artist and release pages, cross-source
+recording joins, and a view of changes across snapshots remain follow-ons.
+
 ## Current priority
 
 The catalog supports offline checkpoint export, historical capacity reports,

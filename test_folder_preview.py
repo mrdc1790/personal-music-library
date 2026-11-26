@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 import folder_tree
+import library
 import preview_audit
 import local_inventory
 
@@ -26,6 +27,10 @@ class FolderTests(unittest.TestCase):
         self.assertEqual(account, 'me')
         self.assertEqual([n['parent_id'] for n in nodes], [None, 0, 0, None])
         self.assertEqual([n['sibling_order'] for n in nodes], [0, 0, 1, 1])
+        folders, paths, membership = folder_tree.folder_paths({'nodes': nodes})
+        self.assertEqual(folders, [{'id': 0, 'path': ['Dance']}, {'id': 1, 'path': ['Dance', 'Empty']}])
+        self.assertEqual(paths, {P: [['Dance']], Q: [[]]})
+        self.assertEqual(membership, {P: {0}, Q: set()})
 
     def test_rejects_unbalanced_or_unknown(self):
         for entries in [['FolderEnd'], [{'FolderStart': {'id': 'x', 'name': 'X'}}], [{'Unexpected': 1}]]:
@@ -79,6 +84,26 @@ class PreviewTests(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_catalog_placements_preserve_duplicates_and_partial_source_evidence(self):
+        data = preview_audit.load_trial(self.path)
+        key = data['items'][0]['key']
+        catalog = self.path.with_name('catalog.sqlite')
+        with closing(library.connect(catalog, write=True)) as db:
+            snapshot = library.import_snapshot(db, dict(account_id='me', status='incomplete',
+                playlists=[dict(metadata=dict(id=P, name='Captured'), exported=True),
+                           dict(metadata=dict(id=Q, name='Partial'), exported=False)],
+                occurrences=[dict(source=source, position=position, returned_uri=key)
+                             for source, position in ((P, 0), (P, 1), (Q, 0))]), 'synthetic')
+            library.import_snapshot(db, dict(account_id='me', status='complete', playlists=[],
+                                             occurrences=[]), 'narrower capture')
+        preview_audit.attach_catalog(data, catalog)
+        self.assertEqual(data['catalog']['snapshot'], snapshot)
+        self.assertEqual(data['catalog']['exported'], 1)
+        self.assertEqual([(r['source'], r['position'], r['exported'])
+                          for r in data['catalog']['placements'][key]], [(P, 1, 1), (P, 2, 1), (Q, 1, 0)])
+        with self.assertRaisesRegex(ValueError, 'another account'):
+            preview_audit.attach_catalog(dict(data, account='other'), catalog, snapshot)
 
     def test_complete_subset_preserves_duplicate_positions_and_escapes_html(self):
         data = preview_audit.load_trial(self.path)

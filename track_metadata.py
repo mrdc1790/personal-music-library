@@ -32,6 +32,23 @@ def observed(row):
                 added_at=row.get('added_at') or entry.get('added_at'))
 
 
+def card(row):
+    """Compact, source-attributed fields for a saved browser view."""
+    evidence = observed(row)
+    album, track = evidence['album'], evidence['track']
+    return fields(dict(
+        album=album.get('name'), album_id=album.get('id'),
+        album_artist=', '.join(artist['name'] for artist in evidence['album_artists'] if artist.get('name')),
+        release_date=album.get('release_date'), release_date_precision=album.get('release_date_precision'),
+        genre=', '.join(dict.fromkeys([*(album.get('genres') or []),
+                                      *(genre for artist in evidence['artists'] for genre in artist.get('genres', []))])),
+        isrc=row.get('isrc') or track.get('external_ids', {}).get('isrc'),
+        added_at=evidence['added_at'], track_number=track.get('track_number'),
+        disc_number=track.get('disc_number'),
+    ), ('album', 'album_id', 'album_artist', 'release_date', 'release_date_precision', 'genre',
+        'isrc', 'added_at', 'track_number', 'disc_number'))
+
+
 def report(db, snapshot, placements=False):
     """Count observed placements with fields and optionally include their evidence."""
     count = 0

@@ -267,9 +267,8 @@ python preview_audit.py --run 'C:\path\to\run' --open
 python preview_audit.py --run 'C:\path\to\run' --playlist PLAYLIST_A --playlist PLAYLIST_B --max-rows 16000 --open
 ```
 
-Click **Song**, **Artist**, **Length**, **Type**, **Trial playlists**, **Album**,
-or **Release date** to sort the
-table. Click again to reverse the order. Length sorts by duration with unknown
+Click any column header to sort the table. Click again to reverse the order.
+Length sorts by duration with unknown
 lengths at the end. Trial playlists sorts by the number of distinct playlists in
 the preview that contain the song, including playlists outside the current A/B
 selection.
@@ -288,10 +287,33 @@ playlist operation, and the main search before pagination. Reloading the report
 resets the table controls. Regenerate older HTML from the saved run with the
 command above to get the new controls offline.
 
-The song details show **Date added** per placement because the same song can
-have different added dates in different playlists. Release dates use the
-provider's available precision. See [metadata coverage and exports](METADATA.md)
-for the full catalog, file tags, and planned audio analysis.
+Click a song to see metadata and each **Date added**. Release dates use the
+provider's available precision. Use `--inventory-db` or `--inventory` to attach
+local file evidence. The comparison's BPM and Key columns use confirmed file
+tags from a saved SQLite inventory. Candidate tags stay under their file paths.
+See [metadata coverage and exports](METADATA.md) for fields and planned analysis.
+
+## Browse the saved catalog
+
+```powershell
+python view_catalog.py "$env:USERPROFILE\MusicLibraryData\catalog.sqlite"
+python preview_audit.py --run 'C:\path\to\run' --catalog "$env:USERPROFILE\MusicLibraryData\catalog.sqlite" --catalog-view "$env:USERPROFILE\MusicLibraryData\catalog-view.html" --open
+```
+
+In the explorer, select a snapshot, then search by song, artist, album, or ID.
+Click a song to see every observed placement for its exact identity in that
+snapshot, including duplicates and Liked Songs where captured. Click a playlist
+in the song details to browse its saved rows. The explorer starts with the
+snapshot with the most exported playlists. Choose a different snapshot to see
+its history. Once a folder tree is available, select a folder to include its
+subfolders or browse by the playlist breadcrumbs.
+
+`--catalog` adds a separate **Saved catalog placements** section to the
+comparison without changing the A/B results. It defaults to the same account's
+snapshot with the most exported playlists. Use `--catalog-snapshot` to choose
+another snapshot for that account. The section reports coverage and never
+treats missing or partial sources as empty. `--catalog-view` links directly to
+the selected song and snapshot in the generated explorer.
 
 The default budget covers up to eight complete sources and 10,000 placements in
 total, with automatic selection favoring playlists of 50 to 1,500 placements.
@@ -303,11 +325,25 @@ only the local HTML preview. Set membership uses the observed Spotify ID or loca
 URI. See the [capacity and playback guide](PLAYLIST_CURATION.md#how-the-limits-apply)
 for the independent Spotify limits and catalog scale goals.
 
-Spotify's Web API does not provide its folder tree. The optional read-only Spotifast rootlist adapter preserves nesting, empty folders, ordering, and provenance when available, but needs small live validation:
+### Import playlist folders
+
+The read-only Spotifast rootlist adapter preserves nesting, empty folders,
+ordering, and provenance. Refresh playlists and folders in a Spotifast build
+that saves the account-scoped rootlist, then quit normally before importing.
+The importer can also take an explicit saved rootlist JSON as its first argument.
+For a portable ZIP installation, look for the session under the
+`spotifast-data` directory next to the executable and pass its path explicitly.
+See [Spotifast's file locations](https://spotifast.rocks/settings-and-files/).
 
 ```powershell
 python folder_tree.py --run 'C:\path\to\run'
 ```
+
+Regenerate both views after import so they can display the newly saved tree.
+The tree and track snapshots have independent coverage and dates. If the
+importer reports that the session has no account-scoped rootlist, the views can
+still browse the flat saved playlists. The last known session on November 26,
+2026 had no importable tree.
 
 Use the Spotify client for [playing and shuffling native folders](PLAYLIST_CURATION.md).
 The catalog's folder view displays saved organization evidence.

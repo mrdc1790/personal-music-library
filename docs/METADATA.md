@@ -26,9 +26,14 @@ ordered artist and album artist credits, source, zero-based position, observed
 track key, and date added. Existing captures work without reimporting or
 contacting Spotify. Keep exports with your private catalog data.
 
-The [offline comparison](OPERATING_GUIDE.md#preview-and-folders) shows Album and
-Release date from the representative captured row for a grouped song. Its song
-details show each placement's available added date and release metadata.
+The [offline comparison](OPERATING_GUIDE.md#preview-and-folders) exposes Album,
+Album artist, Release date, ISRC, genre, and confirmed file-tag BPM and Key.
+The table uses a representative captured row for grouped Spotify metadata.
+Click a title to see observed metadata and each placement's added date. Unknown
+fields are called out in the details. An album or artist genre is source
+metadata and may describe something broader than the track. The
+[catalog explorer](OPERATING_GUIDE.md#browse-the-saved-catalog) links exact
+identities to saved playlists and can browse folder paths after import.
 
 ## Local files and DJ metadata
 

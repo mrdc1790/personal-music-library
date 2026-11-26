@@ -125,6 +125,24 @@ def latest_tree(target, account):
         return dict(row, nodes=[dict(n) for n in db.execute('SELECT * FROM hierarchy_nodes WHERE snapshot_id=? ORDER BY node_id', (row['id'],))])
 
 
+def folder_paths(tree):
+    """Return ordered folders, playlist breadcrumbs, and playlist ancestor IDs."""
+    folders = {None: []}
+    ancestors = {None: []}
+    playlists = {}
+    membership = {}
+    for node in tree['nodes'] if tree else ():
+        parent = folders[node['parent_id']]
+        lineage = ancestors[node['parent_id']]
+        if node['kind'] == 'folder':
+            folders[node['node_id']] = [*parent, node['name'] or '(unnamed folder)']
+            ancestors[node['node_id']] = [*lineage, node['node_id']]
+        else:
+            playlists.setdefault(node['provider_id'], []).append(parent)
+            membership.setdefault(node['provider_id'], set()).update(lineage)
+    return [dict(id=key, path=path) for key, path in folders.items() if key is not None], playlists, membership
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('session', type=Path, nargs='?', help='Spotifast session.json; auto-detect on Windows when omitted')

@@ -61,12 +61,10 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
                     raise ValueError('Invalid positions or row limit exceeded; no partial source is presented as complete.')
                 row = json.loads(raw)
                 identity, basis = library.identity(row, state['created_at'])
-                metadata = track_metadata.observed(row)
                 item = dict(source=k, position=position + 1, key=identity, basis=basis,
                     title=row.get('title') or 'Unknown', artists=', '.join(row.get('artists') or []),
                     duration_ms=row.get('duration_ms'), local=bool(row.get('is_local')), missing=bool(row.get('missing')),
-                    album=metadata['album'].get('name'), release_date=metadata['album'].get('release_date'),
-                    added_at=metadata['added_at'])
+                    **track_metadata.card(row))
                 if files is not None and item['local']:
                     title = None if item['missing'] else row.get('title')
                     candidates, conflicts, confirmation = local_inventory.file_candidates(
@@ -85,6 +83,7 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
             playlists.append(dict(id=k, name=source.get('metadata', {}).get('name') or ('Liked Songs' if k == 'liked' else k),
                 count=count, captured_at=source.get('completed_at'), validated_at=source.get('validated_at')))
         known_sources = len(state['manifest']) + int(not state.get('selected_playlists'))
+        tree = folder_tree.latest_tree(hierarchy, state.get('account_id')) if hierarchy else None
         return dict(account=state.get('account_id'), run=str(Path(database).resolve().parent),
                     run_status=state['status'], saved_at=state.get('updated_at'),
                     generated_at=datetime.now(timezone.utc).isoformat(),
@@ -92,7 +91,38 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
                     discovery_complete=state['discovery_complete'], playlists=playlists, items=items,
                     inventory=inventory_summary,
                     playlist_names={p['id']: p.get('name', p['id']) for p in state['manifest']},
-                    hierarchy=folder_tree.latest_tree(hierarchy, state.get('account_id')) if hierarchy else None)
+                    hierarchy=tree, folder_paths=folder_tree.folder_paths(tree)[1])
+
+
+def attach_catalog(data, catalog, snapshot=None, explorer=None):
+    """Attach exact-key placements from one account-matched catalog snapshot."""
+    with closing(library.connect(catalog)) as db:
+        db.execute('BEGIN')
+        if snapshot is None:
+            match = db.execute(
+                'SELECT s.id FROM snapshots s JOIN playlists p ON p.snapshot_id=s.id '
+                "WHERE s.account_id=? GROUP BY s.id ORDER BY sum(p.exported AND p.source!='liked') DESC, s.id DESC LIMIT 1",
+                (data['account'],)).fetchone()
+            if match is None:
+                raise ValueError('No catalog snapshot matches the comparison account.')
+            snapshot = match[0]
+        info = db.execute('SELECT account_id,created_at,status FROM snapshots WHERE id=?', (snapshot,)).fetchone()
+        if info is None or info['account_id'] != data['account']:
+            raise ValueError('Catalog snapshot is missing or belongs to another account.')
+        sources = library.sources(db, snapshot)
+        names = {source['source']: source for source in sources}
+        placements = {}
+        keys = dict.fromkeys(item['key'] for item in data['items'] if item['basis'] != 'unidentified')
+        for key in keys:
+            rows = db.execute('SELECT source,position,added_at FROM items WHERE snapshot_id=? AND track_key=? '
+                              'ORDER BY source,position', (snapshot, key))
+            for source, position, added_at in rows:
+                entry = names[source]
+                placements.setdefault(key, []).append(dict(source=source, name=entry['name'], position=position + 1,
+                                                            added_at=added_at, exported=entry['exported']))
+    data['catalog'] = dict(snapshot=snapshot, created_at=info['created_at'], status=info['status'],
+                           exported=sum(source['exported'] for source in sources), known=len(sources),
+                           placements=placements, explorer=Path(explorer).resolve().as_uri() if explorer else None)
 
 
 def render(data, output):
@@ -117,10 +147,13 @@ dialog::backdrop{background:#18392c55}dialog h2{margin-top:0}
 #filter-apply{background:#126244;color:white;border-color:#126244}
 dialog label{margin-top:10px;min-width:0}dialog label:has(input[type="checkbox"]){display:flex;align-items:baseline;gap:8px;margin:0;padding:4px}
 .filter-values{max-height:21vh;overflow:auto;border:1px solid #e5ece7;overflow-wrap:anywhere}
+.controls select{width:100%;min-width:0}#details dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 16px}
+#details dt{font-weight:650}#details dd{margin:0}td{vertical-align:top}
+.placement-list{max-height:16rem;overflow:auto;padding-left:1.5rem}
 </style><main><small>PERSONAL MUSIC LIBRARY · OFFLINE / READ ONLY</small><h1>Explore a little. Learn a lot.</h1>
 <div id="coverage" class="banner"></div><div class="controls">
 <label>Playlist A<select id="a"></select></label><label>Operation<select id="op"><option value="single">Browse A</option><option value="intersection">In both A and B</option><option value="difference">In A, absent from B</option><option value="reverse-difference">In B, absent from A</option><option value="union">In either A or B</option></select></label>
-<label>Playlist B<select id="b"></select></label><label>Search title / artist / ID<input id="search" type="search"></label></div>
+<label>Playlist B<select id="b"></select></label><label>Search song, artist, album or ID<input id="search" type="search"></label></div>
 <div class="grid"><section><h2>Playlist folders</h2><div id="folder-note" class="muted"></div><div id="tree"></div><h2>Overlap with A</h2><div id="overlap"></div></section>
 <section id="details"><h2>Where is this song?</h2><p>Click a song below to see its placements across the trial playlists.</p><small>Identity means the same observed Spotify ID or local URI. Different releases are not automatically merged.</small></section></div>
 <div id="status" role="status"></div><div class="scroll"><table><thead><tr id="headings"></tr></thead><tbody id="rows"></tbody></table></div>
@@ -237,6 +270,22 @@ function showSong(song) {
     box.replaceChildren();
     addText(box, 'h2', song.title + ' — ' + song.artists);
     addText(box, 'p', song.key);
+    addText(box, 'h3', 'Track metadata');
+    const fields = [['album', 'Album'], ['album_artist', 'Album artist'], ['release_date', 'Release date'],
+        ['isrc', 'ISRC'], ['genre', 'Genre (album or artist)']];
+    const metadata = document.createElement('dl');
+    for (const [field, label] of fields) {
+        const values = [...new Set(song.placements.map(row => row[field]).filter(Boolean))];
+        addText(metadata, 'dt', label);
+        addText(metadata, 'dd', values.join(' · ') || 'Unavailable in this capture');
+    }
+    for (const [label, value] of [['BPM (file tag)', song.bpm], ['Key (file tag)', song.initial_key]]) {
+        addText(metadata, 'dt', label);
+        addText(metadata, 'dd', value || 'No confirmed file tag in this report');
+    }
+    box.append(metadata);
+    if (song.local) addText(box, 'small', 'Audio file tags appear separately under Local file locations when inventory evidence is supplied.');
+    addText(box, 'h3', 'Comparison placements');
     for (const r of song.placements) {
         const evidence = [names.get(r.source) + ' · position ' + r.position];
         if (r.added_at) evidence.push('Added ' + r.added_at);
@@ -244,8 +293,32 @@ function showSong(song) {
         if (r.release_date) evidence.push('Released ' + r.release_date);
         addText(box, 'p', evidence.join(' · '));
     }
-    addText(box, 'small', 'Membership shown only in selected trial sources.');
+    if (d.catalog && song.basis !== 'unidentified') {
+        const capture = d.catalog;
+        addText(box, 'h3', 'Saved catalog placements');
+        addText(box, 'small', `Snapshot ${capture.snapshot} · ${capture.created_at ?? 'date unavailable'} · ${capture.status} · ${capture.exported}/${capture.known} known sources exported`);
+        const saved = Object.hasOwn(capture.placements, song.key) ? capture.placements[song.key] : [];
+        const list = document.createElement('ul');
+        list.className = 'placement-list';
+        for (const row of saved) {
+            const paths = Object.hasOwn(d.folder_paths ?? {}, row.source) ? d.folder_paths[row.source] : [];
+            const folders = paths.map(path => path.join(' / ') || 'Root').join(' · ');
+            addText(list, 'li', `${folders ? folders + ' / ' : ''}${row.name} · position ${row.position}` +
+                (row.added_at ? ' · Added ' + row.added_at : '') + (row.exported ? '' : ' · partial source'));
+        }
+        if (saved.length) box.append(list);
+        else addText(box, 'p', 'No exact identity match observed in this snapshot.');
+        if (capture.explorer) {
+            const link = document.createElement('a');
+            link.href = capture.explorer + '#' + new URLSearchParams({snapshot: capture.snapshot, key: song.key});
+            link.textContent = 'Open this song in the catalog explorer';
+            box.append(link);
+        }
+    } else {
+        addText(box, 'small', 'Playlist coverage is limited to the selected comparison sources.');
+    }
     if (song.local) showLocalFiles(box, song);
+    box.scrollIntoView({block: 'nearest'});
 }
 function matchesOperation(op, song, a, A, B) {
     if (op === 'single') return song.placements.some(row => row.source === a);
@@ -278,6 +351,10 @@ function durationSeconds(text) {
 for (const song of songs.values()) {
     song.type = song.missing ? 'Missing' : song.local ? 'Local reference' : 'Spotify';
     song.playlistCount = new Set(song.placements.map(row => row.source)).size;
+    const tags = song.placements.flatMap(row => (row.local_files?.confirmation?.files ?? []).map(file => file.tags));
+    for (const field of ['bpm', 'initial_key']) {
+        song[field] = [...new Set(tags.map(tag => tag?.[field]).filter(Boolean))].join(' · ');
+    }
 }
 
 const columns = [
@@ -291,6 +368,11 @@ const columns = [
         parse: wholeNumber, conditionValue: song => song.playlistCount, inputLabel: 'Playlist count (whole number)'},
     {label: 'Album', value: song => song.album ?? ''},
     {label: 'Release date', value: song => song.release_date ?? ''},
+    {label: 'Album artist', value: song => song.album_artist ?? ''},
+    {label: 'ISRC', value: song => song.isrc ?? ''},
+    {label: 'Genre', value: song => song.genre ?? ''},
+    {label: 'BPM (file tag)', value: song => song.bpm},
+    {label: 'Key (file tag)', value: song => song.initial_key},
 ];
 const textOperators = [['contains', 'Contains'], ['excludes', 'Does not contain'], ['equals', 'Equals']];
 const numericOperators = [['lt', 'Less than'], ['lte', 'Less than or equal to'], ['equals', 'Equals'],
@@ -357,7 +439,8 @@ function baseResults() {
     const query = el('search').value.toLocaleLowerCase();
     return [...songs.values()].filter(song =>
         matchesOperation(op, song, a, sets.get(a), sets.get(b)) &&
-        [song.title, song.artists, song.key].join(' ').toLocaleLowerCase().includes(query));
+        [song.title, song.artists, song.album, song.album_artist, song.isrc, song.key]
+            .join(' ').toLocaleLowerCase().includes(query));
 }
 
 function openFilter(column) {
@@ -561,6 +644,9 @@ def main():
     p.add_argument('--max-playlists', type=int, default=8)
     p.add_argument('--max-rows', type=int, default=10000)
     p.add_argument('--hierarchy', type=Path, default=data_root() / 'hierarchy.sqlite')
+    p.add_argument('--catalog', type=Path, help='Include exact-key placements from the saved catalog')
+    p.add_argument('--catalog-snapshot', type=int, help='Catalog snapshot ID; defaults to broadest exported playlist coverage')
+    p.add_argument('--catalog-view', type=Path, help='Link to an already generated catalog explorer HTML')
     inventory_source = p.add_mutually_exclusive_group()
     inventory_source.add_argument('--inventory', type=Path, help='Saved local inventory JSON')
     inventory_source.add_argument('--inventory-db', type=Path, help='Saved local inventory SQLite database')
@@ -570,6 +656,8 @@ def main():
     args = p.parse_args()
     if args.inventory_scan is not None and args.inventory_db is None:
         p.error('--inventory-scan requires --inventory-db')
+    if args.catalog is None and (args.catalog_snapshot is not None or args.catalog_view is not None):
+        p.error('--catalog-snapshot and --catalog-view require --catalog')
     try:
         run = args.run
         if run is None:
@@ -578,7 +666,7 @@ def main():
                 raise ValueError('No saved audit found. Specify --run with a resumable audit folder.')
             run = max(candidates, key=lambda path: path.stat().st_mtime).parent
         audit_db = run / 'library.sqlite'
-        inputs = (audit_db, args.hierarchy, args.inventory_db, args.inventory)
+        inputs = (audit_db, args.hierarchy, args.inventory_db, args.inventory, args.catalog, args.catalog_view)
         if any(path is not None and (
                path.resolve() == args.output.resolve() or
                (path.exists() and args.output.exists() and path.samefile(args.output)))
@@ -593,6 +681,8 @@ def main():
                 inventory.pop('confirmations', None)
         data = load_trial(audit_db, args.playlist, args.max_playlists, args.max_rows,
                           args.hierarchy, inventory=inventory)
+        if args.catalog:
+            attach_catalog(data, args.catalog, args.catalog_snapshot, args.catalog_view)
         output = render(data, args.output)
         print(f"Real-data trial: {len(data['playlists'])} sources, {len(data['items']):,} placements. No Spotify requests.")
         print(output)

@@ -1,5 +1,15 @@
 # Work status
 
+## November 26, 2026 — catalog navigation and metadata visibility
+
+Song details expose captured release, ISRC, genre, and album credit evidence
+along with confirmed local file tags when supplied. The comparison can include
+exact-identity placements from a broader same-account catalog snapshot. The
+[catalog explorer](OPERATING_GUIDE.md#browse-the-saved-catalog) links songs and
+playlists and can filter imported nested folders. The existing Spotifast
+session had no account-scoped rootlist, so the real hierarchy still needs a
+capture. See the [metadata guide](METADATA.md) for remaining audio enrichment.
+
 ## November 26, 2026 — metadata coverage and duration filters
 
 The offline comparison supports numeric duration and playlist-count conditions,
