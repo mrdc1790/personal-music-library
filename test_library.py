@@ -150,6 +150,20 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual([r["title"] for r in diff], ["Harbor"])
         self.assertEqual(len(lib.lookup(self.db, self.a, "Moonrise")), 4)
 
+    def test_exact_identity_lookup_and_single_snapshot_explorer(self):
+        key = 'spotify:track:' + 'A' * 22
+        full = lib.lookup(self.db, self.a, key)
+        self.assertEqual(lib.lookup_identity(self.db, self.a, key), full)
+        self.assertEqual([(row['source'], row['position']) for row in full],
+                         [('Chill', 0), ('Chill', 2), ('Festival', 0), ('liked', 0)])
+        self.assertEqual(lib.lookup_identity(self.db, self.a, key[:-1]), [])
+        lib.import_snapshot(self.db, self.after, 'second')
+        catalog = self.folder / 'catalog.sqlite'
+        output = self.folder / 'view.html'
+        page = view_catalog.create_view(catalog, output, snapshot=self.a).read_text(encoding='utf-8')
+        payload = re.search(r'<script type="application/json" id="data">(.*?)</script>', page)
+        self.assertEqual([snapshot['id'] for snapshot in json.loads(payload.group(1))], [self.a])
+
     def test_logical_collection_keeps_order_duplicates_renames_and_coverage(self):
         logical_playlists.save(self.db, 'split', 'Split playlist', ['Festival', 'Chill'], active='Chill')
         groups = logical_playlists.definitions(self.db, self.before['account_id'])

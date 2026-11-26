@@ -68,13 +68,43 @@ browser recovery and any later repair handoff separate.
 
 ## Work before changing engines
 
-- Benchmark synthetic histories with at least 100,000 observed identities,
-  more placements than identities, local references, repeated snapshots, and
-  incomplete coverage. Measure import cost, query/report latency, and peak
-  memory. Push filtering/joins into SQL and measure the results before
-  considering a change of database engine.
+- Repeat the benchmark when storage or query behavior changes. Measure raw
+  import and report costs before considering a change of database engine.
 - Keep the evidence model explicit: recordings, releases, provider instances, owned files, occurrences, and candidate/review decisions remain separate. A relationship graph can be represented with relational tables; the term “graph” does not itself require a graph database. Changing engines cannot fix identity or incomplete-coverage mistakes.
 - Add schema migrations only when needed, with version checks, a verified backup, preservation of older evidence, and synthetic upgrade/restore tests. A PostgreSQL move would need explicit type, constraint, SQL, ID, transaction, and backup conversion checks; it is not an automatic file conversion.
 - Keep active databases on supported local storage through `storage_paths.py`. Use consistent verified archives for transfer/backup, not simultaneous edits to a cloud-synced or network-shared live file. [WAL](https://www.sqlite.org/wal.html) may improve reader/writer coexistence but still has one writer and extra files/checkpoint considerations; it is not enabled by this decision or a multi-machine sync mechanism.
+
+## Synthetic query benchmark
+
+The benchmark creates two temporary snapshots with repeated placements, local
+references and an unread source. Run it with Python 3.11 or newer. The memory
+pass reports peak traced Python allocations, excluding SQLite's native memory
+and the OS cache. Reported timings are individual local runs on Windows/Python
+3.13, with fixture creation included in each import measurement.
+
+```powershell
+python benchmark_catalog.py
+python benchmark_catalog.py --trace-memory
+python benchmark_catalog.py --repeats 250000
+```
+
+At 100,000 identities and 190,000 placements per snapshot, the database occupied
+284 MiB. Compare the prior code at commit `327d07c` with the indexed exact lookup,
+streaming substring scan, projected set query and per-source comparison.
+
+| Operation | Before | Updated |
+|---|---:|---:|
+| Exact observed key | 2.01 s via substring search | 0.0003 s via identity index |
+| Substring search | 1.98 s | 1.32 s |
+| Two-volume intersection | 1.80 s | 0.064 s |
+| Snapshot comparison | 3.78 s | 0.83 s |
+| Song stats | 1.71 s | 1.87 s |
+
+The traced comparison peak fell from 472 to about 25 MiB. The traced
+intersection fell from 232 to about 6 MiB. The import still took about 5–6
+seconds per snapshot with a traced peak of about 196 MiB. With 350,000
+placements per snapshot, imports took roughly 8 seconds, the comparison 1.64
+seconds, and the database occupied 524 MiB. The default explorer still embeds
+its selected history. Generate a smaller file with `view_catalog.py --snapshot ID`.
 
 The browser migrator was checked: its preview checkpoints and cooldown storage are recovery state, not a historical catalog. Its October 22, 2026 update adds IndexedDB preview persistence, with explicit session/memory fallback and fresh version checks on resume. This does not require this catalog to be complete or add SQLite to the browser. A future durable mutation journal or versioned catalog interface still needs a separate design and tests; neither app opens the other's database. The chat can be deleted without losing these choices or reconsideration criteria.

@@ -1,6 +1,6 @@
 # Catalog and browser migrator integration roadmap
 
-Updated November 19, 2026. This is the proposed sequence for the deferred
+Updated November 26, 2026. This is the proposed sequence for the deferred
 repair integration. The [catalog roadmap](ROADMAP.md#next-work) owns the offline
 checkpoint export and the capacity report backed by saved playlist evidence.
 
@@ -10,7 +10,8 @@ The catalog supports offline checkpoint export, historical capacity reports,
 selected playlist captures, saved previews, snapshot imports, and
 [song stats](OPERATING_GUIDE.md#song-stats).
 Refreshing song stats with current coverage is a separate data task. The
-migrator's live capacity preflight and the file bridge remain planned.
+browser supports one-playlist repairs and fresh capacity preflight, with
+offline coverage for near-capacity cases. The file bridge remains planned.
 
 ## Current priority
 
@@ -63,7 +64,9 @@ first bridge. There is currently no proposal/result exchange between them.
 1. **Align documentation — completed by this documentation update.**
    Both READMEs link here and distinguish current behavior from intended
    ownership. The catalog's existing migration commands remain documented.
-2. **Validate a manual repair workflow when needed.**
+2. **Validate a manual repair workflow when needed.** A one-playlist Spotify
+   track repair has been piloted. Local-file replacements and near-capacity
+   live acceptance still need separate cases.
    Start with useful saved coverage from the catalog's capacity milestone.
    Respect cooldowns and retain partial coverage as unknown.
    Identify a candidate from saved evidence, manually enter source/destination
@@ -120,7 +123,7 @@ first bridge. There is currently no proposal/result exchange between them.
   a removal signal, or permission to proceed.
 - Imported captures cannot bypass current coverage, identity, confirmation,
   add-before-remove, or verification gates. Each engine retains its own rules.
-- A future capacity preflight should check fresh total items plus every temporary
+- The browser's capacity preflight checks fresh total items plus every temporary
   addition in each target before starting any writes. If room is unknown or
   insufficient, stop with the source occurrences intact. Preserve the
   add-and-verify-before-remove order. [Spotify save-limit FAQ](https://community.spotify.com/forum/en/kb/articles/792-is-there-a-save-limit-on-spotify).

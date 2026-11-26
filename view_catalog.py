@@ -27,7 +27,7 @@ def default_catalog():
     return max(candidates, key=lambda p: p.stat().st_mtime) if candidates else None
 
 
-def create_view(catalog, output, hierarchy=None):
+def create_view(catalog, output, hierarchy=None, snapshot=None):
     output = Path(output)
     for source in (catalog, hierarchy):
         if source is not None and (output.resolve() == Path(source).resolve() or
@@ -37,7 +37,12 @@ def create_view(catalog, output, hierarchy=None):
     with closing(library.connect(catalog)) as db:
         db.execute('BEGIN')
         ratings = library.song_ratings(db)
-        for s in db.execute('SELECT id,label,created_at,account_id,status FROM snapshots ORDER BY id DESC'):
+        query = 'SELECT id,label,created_at,account_id,status FROM snapshots'
+        parameters = ()
+        if snapshot is not None:
+            query += ' WHERE id=?'
+            parameters = (library.snapshot_id(db, snapshot),)
+        for s in db.execute(query + ' ORDER BY id DESC', parameters):
             sources = library.sources(db, s['id'])
             groups = logical_playlists.definitions(db, s['account_id'])
             sources_by_id = {source['source']: source for source in sources}
@@ -374,6 +379,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('catalog', type=Path, nargs='?')
     parser.add_argument('--hierarchy', type=Path, default=data_root() / 'hierarchy.sqlite')
+    parser.add_argument('--snapshot', type=int, help='Generate a smaller explorer for just this snapshot')
     parser.add_argument('--no-open', action='store_true')
     args = parser.parse_args()
     path = args.catalog or default_catalog()
@@ -382,7 +388,8 @@ def main():
     if not path.is_file():
         parser.error(f'Catalog file not found: {path}')
     try:
-        output = create_view(path, path.with_name('catalog-view.html'), args.hierarchy)
+        name = 'catalog-view.html' if args.snapshot is None else f'catalog-view-{args.snapshot}.html'
+        output = create_view(path, path.with_name(name), args.hierarchy, args.snapshot)
     except (OSError, ValueError, sqlite3.Error) as error:
         parser.error(f'Could not create the catalog view: {error}')
     print('Read-only catalog view:', output)

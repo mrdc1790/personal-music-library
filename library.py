@@ -205,20 +205,31 @@ def import_ratings(db, document):
     return dict(updated_ratings=updated)
 
 
+def lookup_identity(db, sid, key):
+    # Keep the exact lookup on the identity index even when source order is requested.
+    return [dict(row) for row in db.execute(
+        "SELECT i.*,p.name AS playlist_name FROM items i INDEXED BY item_lookup "
+        "JOIN playlists p USING(snapshot_id,source) "
+        "WHERE i.snapshot_id=? AND i.track_key=? AND i.identity_basis!='unidentified' "
+        "ORDER BY i.source,i.position", (sid, key))]
+
+
 def lookup(db, sid, term):
     term = term.casefold()
-    names = {p["source"]: p["name"] for p in sources(db, sid)}
-    return [dict(r, playlist_name=names[r["source"]]) for r in rows(db, sid)
-            if term in " ".join(str(r.get(k) or "") for k in
-                ("track_key", "title", "artists", "returned_id", "original_id")).casefold()]
+    candidates = db.execute("SELECT i.*,p.name AS playlist_name FROM items i JOIN playlists p USING(snapshot_id,source) "
+                            "WHERE i.snapshot_id=? ORDER BY i.source,i.position", (sid,))
+    return [dict(r) for r in candidates if term in " ".join(str(r[k] or "") for k in
+            ("track_key", "title", "artists", "returned_id", "original_id")).casefold()]
 
 
 def set_query(db, sid, operation, selected):
     if len(selected) < 2 or len(set(selected)) != len(selected):
         raise ValueError("Provide at least two distinct playlist/source IDs.")
-    coverage = {p["source"]: bool(p["exported"]) for p in sources(db, sid)}
-    account = db.execute("SELECT account_id FROM snapshots WHERE id=?", (sid,)).fetchone()[0]
-    groups = logical_playlists.definitions(db, account) if any(s.startswith('collection:') for s in selected) else {}
+    coverage = dict(db.execute("SELECT source,exported FROM playlists WHERE snapshot_id=?", (sid,)))
+    groups = {}
+    if any(source.startswith('collection:') for source in selected):
+        account = db.execute("SELECT account_id FROM snapshots WHERE id=?", (sid,)).fetchone()[0]
+        groups = logical_playlists.definitions(db, account)
     members = {}
     for source in selected:
         if source.startswith('collection:'):
@@ -235,11 +246,13 @@ def set_query(db, sid, operation, selected):
         for playlist in group:
             selections[playlist].append(source)
     sets, details = {source: set() for source in selected}, {}
-    for row in rows(db, sid):
-        if row["source"] in selections and row["identity_basis"] != "unidentified":
-            for source in selections[row["source"]]:
-                sets[source].add(row["track_key"])
-            details.setdefault(row["track_key"], row)
+    for playlist in sorted(selections):
+        for key, title, artists in db.execute(
+                "SELECT track_key,title,artists FROM items WHERE snapshot_id=? AND source=? "
+                "AND identity_basis!='unidentified' ORDER BY position", (sid, playlist)):
+            for source in selections[playlist]:
+                sets[source].add(key)
+            details.setdefault(key, (title, artists))
     first, *rest = [sets[s] for s in selected]
     if operation == "union":
         result = first.union(*rest)
@@ -249,25 +262,25 @@ def set_query(db, sid, operation, selected):
         result = first.difference(*rest)
     else:
         raise ValueError("Unknown set operation.")
-    return [dict(track_key=key, title=details[key]["title"], artists=details[key]["artists"],
+    return [dict(track_key=key, title=details[key][0], artists=details[key][1],
                  source_count=sum(key in values for values in sets.values())) for key in sorted(result)]
 
 
 def compare(db, before, after):
     result = []
-    left, right = {p["source"]: p for p in sources(db, before)}, {p["source"]: p for p in sources(db, after)}
-    a, b = defaultdict(list), defaultdict(list)
-    for sid, target in ((before, a), (after, b)):
-        for row in rows(db, sid):
-            target[row["source"]].append(row)
+    left, right = ({row["source"]: row for row in db.execute(
+        "SELECT source,name,exported FROM playlists WHERE snapshot_id=?", (sid,))} for sid in (before, after))
     for source in sorted(set(left) | set(right)):
         if source not in left or source not in right or not left[source]["exported"] or not right[source]["exported"]:
             result.append(dict(source=source, status="coverage_changed_or_unknown", note="Not evidence of song deletion."))
             continue
-        if any(r["identity_basis"] == "unidentified" for r in a[source] + b[source]):
+        old, new = ([row[0] for row in db.execute(
+            "SELECT CASE WHEN identity_basis='unidentified' THEN NULL ELSE track_key END "
+            "FROM items WHERE snapshot_id=? AND source=? ORDER BY position", (sid, source))]
+            for sid in (before, after))
+        if None in old or None in new:
             result.append(dict(source=source, status="unidentified_items", note="Exact identity comparison unavailable."))
             continue
-        old, new = [r["track_key"] for r in a[source]], [r["track_key"] for r in b[source]]
         old_counts, new_counts = Counter(old), Counter(new)
         removed = old_counts - new_counts
         result.append(dict(source=source, status="changed" if old != new or left[source]["name"] != right[source]["name"] else "unchanged",
@@ -438,6 +451,7 @@ def main():
         p.add_argument("--snapshot", type=int)
         if command == "find":
             p.add_argument("term")
+            p.add_argument("--exact-key", action="store_true", help="Look up the full observed identity with the catalog index")
         elif command == "query":
             p.add_argument("operation", choices=["union", "intersection", "difference"])
             p.add_argument("sources", nargs="+")
@@ -509,7 +523,8 @@ def main():
                     groups = logical_playlists.definitions(db, account)
                     result = logical_playlists.reports(db, sid, groups, sources(db, sid))
                 elif args.command == "find":
-                    result = lookup(db, sid, args.term)
+                    finder = lookup_identity if args.exact_key else lookup
+                    result = finder(db, sid, args.term)
                     result = [{k: r[k] for k in ("source", "playlist_name", "position", "track_key", "title", "artists", "identity_basis")} for r in result]
                 elif args.command == "query":
                     result = set_query(db, sid, args.operation, args.sources)

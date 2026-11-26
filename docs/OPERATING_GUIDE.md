@@ -298,6 +298,7 @@ See [metadata coverage and exports](METADATA.md) for fields and planned analysis
 
 ```powershell
 python view_catalog.py "$env:USERPROFILE\MusicLibraryData\catalog.sqlite"
+python view_catalog.py --snapshot 2
 python preview_audit.py --run 'C:\path\to\run' --catalog "$env:USERPROFILE\MusicLibraryData\catalog.sqlite" --catalog-view "$env:USERPROFILE\MusicLibraryData\catalog-view.html" --open
 ```
 
@@ -308,6 +309,10 @@ in the song details to browse its saved rows. The explorer starts with the
 snapshot with the most exported playlists. Choose a different snapshot to see
 its history. Once a folder tree is available, select a folder to include its
 subfolders or browse by the playlist breadcrumbs.
+Use `--snapshot ID` to generate just that capture for large histories. The
+launcher writes a separate numbered HTML file. At the command line, use
+`python library.py find --exact-key 'spotify:track:TRACK_ID'` for an indexed
+whole-identity lookup that returns every saved placement in the chosen snapshot.
 **Clear all filters** returns to page one of the selected snapshot and clears
 the folder, playlist, logical playlist, search, exact song identity, and rating filters. Regenerate an
 older catalog view with the command above to get the button.

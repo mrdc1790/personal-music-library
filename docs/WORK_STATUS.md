@@ -1,5 +1,13 @@
 # Work status
 
+## November 26, 2026 — measured catalog queries
+
+The [synthetic benchmark](STORAGE_DECISION.md#synthetic-query-benchmark) tested
+two captures with 100,000 observed identities and up to 350,000 placements per
+capture. Exact lookups use the identity index, and CLI search, set queries,
+and comparisons materialize less data. Generate a single-snapshot explorer
+with `view_catalog.py --snapshot ID`. All 113 offline tests passed.
+
 ## November 26, 2026 — logical playlist collections
 
 The catalog groups split playlists by stable IDs with ordered members and an
@@ -160,8 +168,9 @@ import and reopen at [190,000 placements](PLAYLIST_CURATION.md#how-the-limits-ap
 
 ## Continue here
 
-1. Measure [catalog query and import cost](ROADMAP.md#next-work) and expand
-   saved coverage when a fresh read-only capture is appropriate.
+1. Use the [query benchmark](STORAGE_DECISION.md#synthetic-query-benchmark)
+   as the baseline for larger browser and reporting tests. Expand saved
+   coverage when a fresh read-only capture is appropriate.
 2. Try one category with two direct sibling volumes in Spotify while the
    database work proceeds. When there is a concrete repair case, use the
    [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for that work.
