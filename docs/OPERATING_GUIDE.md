@@ -267,6 +267,23 @@ python preview_audit.py --run 'C:\path\to\run' --open
 python preview_audit.py --run 'C:\path\to\run' --playlist PLAYLIST_A --playlist PLAYLIST_B --max-rows 16000 --open
 ```
 
+Click **Song**, **Artist**, **Length**, **Type**, or **Trial playlists** to sort the
+table. Click again to reverse the order. Length sorts by duration with unknown
+lengths at the end. Trial playlists sorts by the number of distinct playlists in
+the preview that contain the song, including playlists outside the current A/B
+selection.
+
+Use the funnel beside any header to sort in either direction or filter that
+column. **Value** lets you search the available values and choose which to keep.
+To keep only a few, uncheck **Select all matching values** with an empty search,
+then search for and check the values you want. **Condition** supports Contains,
+Does not contain, and Equals on the displayed text. Choose **Apply** to save the
+filter, **Cancel** to discard edits, or **Clear** to remove the column's filter.
+Active funnels are highlighted. Column filters combine with each other, the
+playlist operation, and the main search before pagination. Reloading the report
+resets the table controls. Regenerate older HTML from the saved run with the
+command above to get the new controls offline.
+
 The default budget covers up to eight complete sources and 10,000 placements in
 total, with automatic selection favoring playlists of 50 to 1,500 placements.
 Each occurrence counts, so two 8,000-item playlists need the 16,000-row budget

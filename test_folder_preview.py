@@ -99,13 +99,16 @@ class PreviewTests(unittest.TestCase):
         self.assertIn('<option value="difference">In A, absent from B</option>', html)
         self.assertIn('<option value="reverse-difference">In B, absent from A</option>', html)
 
-    def test_preview_exposes_song_and_artist_sort_buttons(self):
+    def test_preview_exposes_column_sort_and_filter_controls(self):
         out = preview_audit.render(preview_audit.load_trial(self.path), Path(self.tmp.name) / 'trial.html')
         html = out.read_text(encoding='utf-8')
-        for field, label in [('title', 'Song'), ('artists', 'Artist')]:
-            with self.subTest(field=field):
-                self.assertIn(f'<th scope="col" id="{field}-heading">', html)
-                self.assertIn(f'id="sort-{field}">{label} ', html)
+        for label in ('Song', 'Artist', 'Length', 'Type', 'Trial playlists'):
+            with self.subTest(label=label):
+                self.assertIn(f"{{label: '{label}', value:", html)
+        for control in ('column-filter', 'sort-ascending', 'sort-descending', 'filter-by-value',
+                        'filter-by-condition', 'filter-apply', 'filter-cancel', 'filter-clear'):
+            with self.subTest(control=control):
+                self.assertIn(f'id="{control}"', html)
 
     def test_bad_coverage_rejected(self):
         with closing(sqlite3.connect(self.path)) as db, db:

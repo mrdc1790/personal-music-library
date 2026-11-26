@@ -102,15 +102,36 @@ TEMPLATE = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="v
 <title>Your music — small trial</title><style>
 *{box-sizing:border-box}body{margin:0;background:#f1f5f2;color:#18392c;font:16px system-ui}main{max-width:1400px;margin:auto;padding:28px}h1{font-size:36px;margin:8px 0}h2{font-size:20px}.banner,section{background:white;border:1px solid #d4dfd7;border-radius:12px;padding:18px;margin:16px 0}.banner{background:#e0efe6;line-height:1.6}.controls{display:flex;gap:14px;flex-wrap:wrap}label{display:grid;gap:6px;flex:1;min-width:190px}input,select,button{font:inherit;padding:9px;border:1px solid #a3b7aa;border-radius:6px;background:white;color:inherit}button{cursor:pointer}table{border-collapse:collapse;width:100%;font-size:14px}td,th{text-align:left;padding:10px;border-bottom:1px solid #e5ece7}th{background:#eff5f0;position:sticky;top:0}.scroll{max-height:52vh;overflow:auto}small,.muted{color:#526b5e}.grid{display:grid;grid-template-columns:1fr 2fr;gap:18px}#tree{max-height:260px;overflow:auto}summary{cursor:pointer}#details{overflow-wrap:anywhere}#status{margin:16px 0;font-weight:650}button.link{border:0;padding:0;text-align:left;color:#126244;text-decoration:underline}footer{font-size:13px;line-height:1.6;margin-top:24px}@media(max-width:800px){.grid{display:block}main{padding:16px}}
 th .sort-column{background:transparent;border:0;padding:0;text-align:left;font-weight:inherit}
+.column-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.filter-column{background:transparent;padding:3px 6px;border-color:transparent}
+.filter-column[aria-pressed="true"]{background:#d1eadb;border-color:#4e8067;color:#164735}
+.filter-column::before{content:"";display:block;width:14px;height:14px;background:currentColor;clip-path:polygon(0 12%,100% 12%,63% 55%,63% 93%,37% 78%,37% 55%)}
+dialog{width:min(420px,calc(100% - 32px));max-height:calc(100% - 32px);padding:20px;border:1px solid #a3b7aa;border-radius:12px;color:inherit}
+dialog::backdrop{background:#18392c55}dialog h2{margin-top:0}
+.filter-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+#filter-apply{background:#126244;color:white;border-color:#126244}
+dialog label{margin-top:10px;min-width:0}dialog label:has(input[type="checkbox"]){display:flex;align-items:baseline;gap:8px;margin:0;padding:4px}
+.filter-values{max-height:21vh;overflow:auto;border:1px solid #e5ece7;overflow-wrap:anywhere}
 </style><main><small>PERSONAL MUSIC LIBRARY · OFFLINE / READ ONLY</small><h1>Explore a little. Learn a lot.</h1>
 <div id="coverage" class="banner"></div><div class="controls">
 <label>Playlist A<select id="a"></select></label><label>Operation<select id="op"><option value="single">Browse A</option><option value="intersection">In both A and B</option><option value="difference">In A, absent from B</option><option value="reverse-difference">In B, absent from A</option><option value="union">In either A or B</option></select></label>
 <label>Playlist B<select id="b"></select></label><label>Search title / artist / ID<input id="search" type="search"></label></div>
 <div class="grid"><section><h2>Playlist folders</h2><div id="folder-note" class="muted"></div><div id="tree"></div><h2>Overlap with A</h2><div id="overlap"></div></section>
 <section id="details"><h2>Where is this song?</h2><p>Click a song below to see its placements across the trial playlists.</p><small>Identity means the same observed Spotify ID or local URI. Different releases are not automatically merged.</small></section></div>
-<div id="status" role="status"></div><div class="scroll"><table><thead><tr><th scope="col" id="title-heading"><button type="button" class="sort-column" id="sort-title">Song <span aria-hidden="true">↕</span></button></th>
-<th scope="col" id="artists-heading"><button type="button" class="sort-column" id="sort-artists">Artist <span aria-hidden="true">↕</span></button></th><th>Length</th><th>Type</th><th>Trial playlists</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div id="status" role="status"></div><div class="scroll"><table><thead><tr id="headings"></tr></thead><tbody id="rows"></tbody></table></div>
 <button id="prev">Previous</button> <button id="next">Next</button>
+<dialog id="column-filter" aria-labelledby="filter-title"><h2 id="filter-title"></h2>
+<div class="filter-actions"><button id="sort-ascending" type="button">↑ Ascending</button><button id="sort-descending" type="button">↓ Descending</button></div>
+<label>Filter by<select id="filter-mode"><option value="values">Value</option><option value="condition">Condition</option></select></label>
+<div id="filter-by-value">
+<label>Search values<input id="filter-search" type="search"></label>
+<label><input id="filter-select-all" type="checkbox"> Select all matching values</label>
+<div id="filter-values" class="filter-values"></div><small id="filter-value-count" role="status"></small>
+</div>
+<div id="filter-by-condition" hidden><label>Condition<select id="filter-operator"><option value="contains">Contains</option><option value="excludes">Does not contain</option><option value="equals">Equals</option></select></label>
+<label>Text<input id="filter-text" type="text"></label></div>
+<div class="filter-actions"><button id="filter-apply" type="button">Apply</button><button id="filter-cancel" type="button">Cancel</button><button id="filter-clear" type="button">Clear</button></div>
+</dialog>
 <footer id="foot"></footer></main><script id="data" type="application/json">__DATA__</script><script>
 'use strict'; const d=JSON.parse(document.getElementById('data').textContent),el=id=>document.getElementById(id);let page=0;
 const names=new Map(d.playlists.map(p=>[p.id,p.name])),songs=new Map(),sets=new Map(d.playlists.map(p=>[p.id,new Set()]));
@@ -215,36 +236,250 @@ function matchesOperation(op, song, a, A, B) {
         default: return false;
     }
 }
-const sortColumns = ['title', 'artists'];
+function durationLabel(ms) {
+    if (ms == null) return 'Unknown';
+    const seconds = Math.round(ms / 1000);
+    return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+}
+
+for (const song of songs.values()) {
+    song.type = song.missing ? 'Missing' : song.local ? 'Local reference' : 'Spotify';
+    song.playlistCount = new Set(song.placements.map(row => row.source)).size;
+}
+
+const columns = [
+    {label: 'Song', value: song => song.title},
+    {label: 'Artist', value: song => song.artists},
+    {label: 'Length', value: song => durationLabel(song.duration_ms), number: song => song.duration_ms},
+    {label: 'Type', value: song => song.type},
+    {label: 'Trial playlists', value: song => String(song.playlistCount), number: song => song.playlistCount},
+];
 const collator = new Intl.Collator(undefined, {sensitivity: 'base', numeric: true});
+const filters = new Map();
 let sortColumn = null;
 let sortDirection = 1;
-for (const column of sortColumns) {
-    el('sort-' + column).onclick = () => {
-        sortDirection = sortColumn === column ? -sortDirection : 1;
-        sortColumn = column;
-        for (const field of sortColumns) {
-            const heading = el(field + '-heading');
-            const indicator = el('sort-' + field).querySelector('span');
-            if (field === sortColumn) {
-                heading.setAttribute('aria-sort', sortDirection === 1 ? 'ascending' : 'descending');
-                indicator.textContent = sortDirection === 1 ? '↑' : '↓';
-            } else {
-                heading.removeAttribute('aria-sort');
-                indicator.textContent = '↕';
-            }
+let filterColumn;
+let filterValues;
+let chosenValues;
+
+function resetResults() {
+    page = 0;
+    el('rows').closest('.scroll').scrollTop = 0;
+    render();
+}
+
+function sortBy(column, direction) {
+    sortColumn = column;
+    sortDirection = direction;
+    for (const field of columns) {
+        if (field === column) {
+            field.heading.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
+            field.indicator.textContent = direction === 1 ? '↑' : '↓';
+        } else {
+            field.heading.removeAttribute('aria-sort');
+            field.indicator.textContent = '↕';
         }
-        page = 0;
-        el('rows').closest('.scroll').scrollTop = 0;
-        render();
+    }
+    resetResults();
+}
+
+for (const column of columns) {
+    const heading = document.createElement('th');
+    heading.scope = 'col';
+    const controls = document.createElement('div');
+    controls.className = 'column-heading';
+    const sort = document.createElement('button');
+    sort.type = 'button';
+    sort.className = 'sort-column';
+    sort.textContent = column.label + ' ';
+    const indicator = document.createElement('span');
+    indicator.setAttribute('aria-hidden', 'true');
+    indicator.textContent = '↕';
+    sort.append(indicator);
+    sort.onclick = () => sortBy(column, sortColumn === column ? -sortDirection : 1);
+
+    const filter = document.createElement('button');
+    filter.type = 'button';
+    filter.className = 'filter-column';
+    filter.setAttribute('aria-label', 'Filter ' + column.label);
+    filter.setAttribute('aria-haspopup', 'dialog');
+    filter.setAttribute('aria-pressed', 'false');
+    filter.onclick = () => openFilter(column);
+    controls.append(sort, filter);
+    heading.append(controls);
+    el('headings').append(heading);
+    Object.assign(column, {heading, indicator, filter});
+}
+
+function baseResults() {
+    const a = el('a').value, b = el('b').value, op = el('op').value;
+    const query = el('search').value.toLocaleLowerCase();
+    return [...songs.values()].filter(song =>
+        matchesOperation(op, song, a, sets.get(a), sets.get(b)) &&
+        [song.title, song.artists, song.key].join(' ').toLocaleLowerCase().includes(query));
+}
+
+function openFilter(column) {
+    filterColumn = column;
+    const saved = filters.get(column);
+    const values = new Set(baseResults().map(column.value));
+    // Keep previous selections available when the playlist operation or search changes.
+    if (saved?.mode === 'values') {
+        for (const value of saved.values) values.add(value);
+    }
+    filterValues = [...values].sort(collator.compare);
+    chosenValues = new Set(saved?.mode === 'values' ? saved.values : filterValues);
+    el('filter-title').textContent = 'Filter ' + column.label;
+    el('filter-search').value = '';
+    el('filter-mode').value = saved?.mode ?? 'values';
+    el('filter-operator').value = saved?.operator ?? 'contains';
+    el('filter-text').value = saved?.text ?? '';
+    updateFilterMode();
+    el('column-filter').showModal();
+}
+
+function matchingValues() {
+    const query = el('filter-search').value.toLocaleLowerCase();
+    return filterValues.filter(value => (value || '(Blank)').toLocaleLowerCase().includes(query));
+}
+
+function updateSelectAll(matches) {
+    const checked = matches.filter(value => chosenValues.has(value)).length;
+    const selectAll = el('filter-select-all');
+    selectAll.checked = matches.length > 0 && checked === matches.length;
+    selectAll.indeterminate = checked > 0 && checked < matches.length;
+    selectAll.disabled = matches.length === 0;
+}
+
+function renderFilterValues() {
+    const matches = matchingValues();
+    const list = el('filter-values');
+    const limit = 200;
+    list.replaceChildren();
+    list.scrollTop = 0;
+    for (const value of matches.slice(0, limit)) {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = chosenValues.has(value);
+        checkbox.onchange = () => {
+            if (checkbox.checked) chosenValues.add(value);
+            else chosenValues.delete(value);
+            updateSelectAll(matches);
+        };
+        label.append(checkbox, value || '(Blank)');
+        list.append(label);
+    }
+    el('filter-value-count').textContent = matches.length > limit ?
+        `Showing first ${limit} of ${matches.length.toLocaleString()} values. Search to narrow the list.` :
+        `${matches.length.toLocaleString()} matching values`;
+    updateSelectAll(matches);
+}
+
+function updateFilterMode() {
+    const byValue = el('filter-mode').value === 'values';
+    el('filter-by-value').hidden = !byValue;
+    el('filter-by-condition').hidden = byValue;
+    if (byValue) renderFilterValues();
+}
+
+function saveFilter(filter) {
+    if (filter) filters.set(filterColumn, filter);
+    else filters.delete(filterColumn);
+    filterColumn.filter.setAttribute('aria-pressed', String(Boolean(filter)));
+    el('column-filter').close();
+    resetResults();
+}
+
+el('filter-mode').onchange = updateFilterMode;
+el('filter-search').oninput = renderFilterValues;
+el('filter-select-all').onchange = event => {
+    for (const value of matchingValues()) {
+        if (event.target.checked) chosenValues.add(value);
+        else chosenValues.delete(value);
+    }
+    renderFilterValues();
+};
+el('filter-apply').onclick = () => {
+    const mode = el('filter-mode').value;
+    if (mode === 'values') {
+        saveFilter(chosenValues.size === filterValues.length ? null : {mode, values: chosenValues});
+    } else {
+        const operator = el('filter-operator').value;
+        const text = el('filter-text').value.trim();
+        saveFilter(text || operator === 'equals' ? {mode, operator, text} : null);
+    }
+};
+el('filter-clear').onclick = () => saveFilter(null);
+el('filter-cancel').onclick = () => el('column-filter').close();
+for (const [button, direction] of [['sort-ascending', 1], ['sort-descending', -1]]) {
+    el(button).onclick = () => {
+        el('column-filter').close();
+        sortBy(filterColumn, direction);
     };
 }
-function render(){const a=el('a').value,b=el('b').value,op=el('op').value,A=sets.get(a),B=sets.get(b),q=el('search').value.toLocaleLowerCase();let found=[...songs.values()].filter(s=>matchesOperation(op,s,a,A,B)).filter(s=>[s.title,s.artists,s.key].join(' ').toLocaleLowerCase().includes(q));
-if (sortColumn) {
-    found.sort((left, right) => sortDirection * collator.compare(left[sortColumn], right[sortColumn]));
+
+function matchesFilter(value, filter) {
+    if (filter.mode === 'values') return filter.values.has(value);
+    const text = filter.text.toLocaleLowerCase();
+    const candidate = value.toLocaleLowerCase();
+    if (filter.operator === 'equals') return candidate === text;
+    if (filter.operator === 'excludes') return !candidate.includes(text);
+    return candidate.includes(text);
 }
-page=Math.min(page,Math.max(0,Math.ceil(found.length/100)-1));el('rows').replaceChildren();for(const s of found.slice(page*100,page*100+100)){const tr=document.createElement('tr'),td=document.createElement('td'),btn=document.createElement('button');btn.className='link';btn.textContent=s.title;btn.onclick=()=>showSong(s);td.append(btn);tr.append(td);const sec=Math.round((s.duration_ms||0)/1000);for(const v of [s.artists,s.duration_ms==null?'Unknown':Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'),s.missing?'Missing':s.local?'Local reference':'Spotify',new Set(s.placements.map(r=>r.source)).size]){const c=document.createElement('td');c.textContent=v;tr.append(c);}el('rows').append(tr);}el('status').textContent=`${found.length.toLocaleString()} observed identities · page ${page+1} · duplicates grouped; click a song for every position`;el('prev').disabled=page===0;el('next').disabled=(page+1)*100>=found.length;
-el('overlap').replaceChildren();const overlaps=d.playlists.filter(p=>p.id!==a).map(p=>({...p,shared:[...A].filter(k=>sets.get(p.id).has(k)).length})).sort((x,y)=>y.shared-x.shared);for(const p of overlaps){const row=document.createElement('p'),btn=document.createElement('button');btn.className='link';btn.textContent=`${p.name}: ${p.shared} shared`;btn.onclick=()=>{el('b').value=p.id;el('op').value='intersection';page=0;render();};row.append(btn);el('overlap').append(row);}}
+
+function compareSongs(left, right) {
+    if (!sortColumn.number) {
+        return sortDirection * collator.compare(sortColumn.value(left), sortColumn.value(right));
+    }
+    const a = sortColumn.number(left), b = sortColumn.number(right);
+    if (a == null) return b == null ? 0 : 1;
+    if (b == null) return -1;
+    return sortDirection * (a - b);
+}
+
+function render() {
+    const activeFilters = [...filters];
+    const found = baseResults().filter(song =>
+        activeFilters.every(([column, filter]) => matchesFilter(column.value(song), filter)));
+    if (sortColumn) found.sort(compareSongs);
+    page = Math.min(page, Math.max(0, Math.ceil(found.length / 100) - 1));
+    el('rows').replaceChildren();
+    for (const song of found.slice(page * 100, page * 100 + 100)) {
+        const row = document.createElement('tr');
+        const title = document.createElement('td');
+        const button = document.createElement('button');
+        button.className = 'link';
+        button.textContent = song.title;
+        button.onclick = () => showSong(song);
+        title.append(button);
+        row.append(title);
+        for (const column of columns.slice(1)) addText(row, 'td', column.value(song));
+        el('rows').append(row);
+    }
+    el('status').textContent = `${found.length.toLocaleString()} observed identities · page ${page + 1} · duplicates grouped; click a song for every position`;
+    el('prev').disabled = page === 0;
+    el('next').disabled = (page + 1) * 100 >= found.length;
+    const a = el('a').value;
+    const keys = [...sets.get(a)];
+    const overlaps = d.playlists.filter(p => p.id !== a)
+        .map(p => ({...p, shared: keys.filter(key => sets.get(p.id).has(key)).length}))
+        .sort((left, right) => right.shared - left.shared);
+    el('overlap').replaceChildren();
+    for (const playlist of overlaps) {
+        const row = document.createElement('p');
+        const button = document.createElement('button');
+        button.className = 'link';
+        button.textContent = `${playlist.name}: ${playlist.shared} shared`;
+        button.onclick = () => {
+            el('b').value = playlist.id;
+            el('op').value = 'intersection';
+            resetResults();
+        };
+        row.append(button);
+        el('overlap').append(row);
+    }
+}
 if(!d.hierarchy){el('folder-note').textContent='Folder hierarchy NOT captured yet. A flat playlist list does not preserve folders.';}else{el('folder-note').textContent=`Imported ${d.hierarchy.imported_at}. Cached tree; upstream capture time/completeness unverified. Folder capture is separate from track coverage.`;const parents=new Map([[null,el('tree')]]);for(const n of d.hierarchy.nodes){const parent=parents.get(n.parent_id);if(n.kind==='folder'){const det=document.createElement('details'),sum=document.createElement('summary');sum.textContent=n.name||'(unnamed folder)';det.append(sum);parent.append(det);parents.set(n.node_id,det);}else{const row=document.createElement('p');if(names.has(n.provider_id)){const btn=document.createElement('button');btn.className='link';btn.textContent=names.get(n.provider_id);btn.onclick=()=>{el('a').value=n.provider_id;el('op').value='single';page=0;render();};row.append(btn);}else row.textContent=(d.playlist_names[n.provider_id]||n.provider_id)+' — outside trial';parent.append(row);}}}
 for(const id of ['a','b','op','search'])el(id).addEventListener(id==='search'?'input':'change',()=>{page=0;render();});el('prev').onclick=()=>{page--;render();};el('next').onclick=()=>{page++;render();};render();
 </script></html>'''
