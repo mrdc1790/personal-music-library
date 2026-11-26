@@ -66,7 +66,8 @@ separately when additional coverage is needed and any cooldown has elapsed.
    volume for each logical collection. Use the report to preview rollover and
    start with manual Spotify folder management. Pilot the [folder-tree adapter](INTEGRATION_DESIGN.md#folder-structure-adapter)
    separately from playback. Review automatic splitting or publishing only
-   after measuring the effort of manual rollover.
+   after measuring the effort of manual rollover. Include existing alphabetical
+   splits in the [logical playlist pilot](#logical-playlists-for-split-collections-planned).
 3. **Expand library coverage and intelligence.** Extend local file inventory
    and device reconciliation, then develop [artist history](#artist-history-and-enrichment-planned),
    reviewed recording relationships, and [library intelligence](LIBRARY_INTELLIGENCE.md)
@@ -82,6 +83,36 @@ inspect a chosen rekordbox export, then implement one read-only import and a
 reviewable dry-run crate. The [pilot acceptance sequence](DJ_LIBRARY_WORKFLOW.md#small-delivery-sequence-and-acceptance)
 requires field mapping, correction preservation, round-trip checks, and a chosen
 application/device profile before broader writes or playback claims.
+
+### Manual song ratings (planned)
+
+Add a local 1–5 rating that can be entered, edited, or cleared from a song's
+details. Keep unrated songs distinct. Show the rating in the catalog table,
+support sorting in both directions, and filter for an exact rating such as
+5/5 or for unrated songs. Store one rating per saved track identity so every
+placement of that identity shares it across snapshots and regenerated views.
+Include ratings in catalog backups and test a restore. Different identities,
+including local and Spotify copies, can share a rating later through a
+reviewed recording link.
+
+### Logical playlists for split collections (planned)
+
+Let the user explicitly group existing Spotify playlists into one named
+collection, including alphabetical splits such as A–L and M–Z and numbered
+volumes created around the 10,000-item cap. Store the ordered member playlist
+IDs so renaming or moving a playlist preserves the group. Use a validated,
+account-matched folder tree to browse members and suggest possible groups.
+Require confirmation of membership and support manual grouping before a folder
+tree is available.
+
+Make the collection selectable in the explorer and comparisons. Show its
+combined placements and unique observed identities, with the original playlist
+and position on each row. A repeat across volumes contributes two placements
+and one unique identity, and counts as reach in one collection when using
+collection-level song stats. Capacity remains per Spotify playlist. Flag
+missing or partial members and show observed totals as partial. Verify with a
+split pair, a repeated identity across both halves, a renamed playlist, and an
+incomplete member.
 
 ### Delivery status and dependencies
 

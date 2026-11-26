@@ -329,6 +329,32 @@ only the local HTML preview. Set membership uses the observed Spotify ID or loca
 URI. See the [capacity and playback guide](PLAYLIST_CURATION.md#how-the-limits-apply)
 for the independent Spotify limits and catalog scale goals.
 
+### How duplicates appear
+
+The results table counts playlist placements. An exact track repeated at two
+positions in one playlist has two rows. If it appears in two playlists, the
+song details list both placements with their source and position. **Show only
+this identity** filters to the selected saved key. The song details count
+placements across the selected snapshot, even when the table is filtered.
+
+For Spotify catalog tracks, the key uses the original track ID when the
+snapshot has that evidence and otherwise uses the returned URI or ID. Local
+tracks use their Spotify local URI, a reference based on file metadata.
+Unidentified rows stay visible individually. A local file and a Spotify
+catalog release of the same song have different keys, as can two Spotify
+releases of the same recording. A title or album search can show both.
+
+Set queries such as `intersection` return one result per identified key and
+count which selected sources contain it. Snapshot comparisons can report
+changes in the number of placements. The explorer and these reports read saved
+evidence, so a placement count covers only what was captured.
+
+Online cleaners can use broader matching. Spotify Dedup, for example, offers
+strict ID matching and fuzzy matching on title, artist, and similar duration.
+It can flag distinct IDs as possible duplicates and remove selected entries
+from Spotify after review. Similar metadata can also match distinct versions.
+The catalog explorer is read-only. [Spotify Dedup](https://spotify-dedup.com/)
+
 ### Import playlist folders
 
 The read-only Spotifast rootlist adapter preserves nesting, empty folders,
