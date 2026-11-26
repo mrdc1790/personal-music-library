@@ -181,7 +181,8 @@ These requirements preserve the useful design from the earlier “Spotify Librar
 The [recording candidate report](RECORDING_CANDIDATES.md) starts from an exact
 saved identity and compares historical release, ISRC, credit, duration, version
 and placement evidence. It also accepts Spotify local references as inputs.
-Release-family comparison, neighboring tracks, and durable review decisions
+The catalog stores explicit, dated decisions for reviewed pairs.
+Release-family comparison, neighboring tracks, and recording-level grouping
 remain planned. The [identity taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy)
 and [migration guide](MIGRATION.md) define the acceptance boundaries.
 
@@ -192,7 +193,9 @@ The [October 6, 2026 navigation observation](HISTORICAL_OBSERVATIONS.md#october-
    contradictory and unknown fields. Add release-family comparison, external
    recording IDs, and owned-audio fingerprints in later stages.
 3. Compare release track lists beyond disc/track ordinal position. Standard-to-deluxe, resequenced, missing-track, and bonus-track cases need partial candidate mappings with explicit unmatched entries. This does not relax either executor's current album/identity gates.
-4. Record relationship classification and reviewed same-recording/keep-separate decisions without deleting provider instances or rewriting historical occurrences. A preferred album/instance is a separate user policy from recording equivalence. Support both literal-instance placement queries and, eventually, reviewed recording-level placement queries.
+4. Apply [reviewed pair decisions](RECORDING_CANDIDATES.md#save-an-explicit-review)
+   before designing recording-level placement queries. A preferred album or
+   instance is a separate user choice. Literal placements remain queryable.
 5. Only a separately reviewed mapping may enter migration planning and explicit execution. Detection, canonical grouping, preferred-instance selection, occurrence deduplication, and migration remain separate actions. Retain unknown coverage and pre-existing destination placements.
 
 Acceptance examples should be synthetic: one saved old track whose album is no longer readable; an old/current album pair; a standard/deluxe pair with unmatched bonus tracks; same ISRC with contradictory version evidence; single/album candidates without exposed relinking; and duplicate placements plus existing destinations. Revalidate available provider metadata before building the resolver; exposed relinking is optional evidence, and a missing field is not proof of no relationship.

@@ -21,6 +21,7 @@ import availability
 import checkpoint_export
 import logical_playlists
 import playlist_capacity
+import recording_review
 import song_stats
 import track_metadata
 import stream_counts
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS song_ratings (
 CREATE VIEW IF NOT EXISTS membership AS
  SELECT snapshot_id,track_key,source,COUNT(*) AS occurrence_count
  FROM items WHERE missing=0 GROUP BY snapshot_id,track_key,source;
-""" + logical_playlists.SCHEMA + artist_history.SCHEMA
+""" + logical_playlists.SCHEMA + artist_history.SCHEMA + recording_review.SCHEMA
 
 
 def connect(path, write=False):
@@ -392,7 +393,7 @@ def backup(db, destination):
         content = copy.read_bytes()
         manifest = dict(format=1, created_at=datetime.now(timezone.utc).isoformat(),
                         sha256=hashlib.sha256(content).hexdigest(),
-                        includes="Catalog, raw snapshots, ratings, logical collections, artist history, and stream evidence")
+                        includes="Catalog, raw snapshots, ratings, local reviews, collections, artist history, and stream evidence")
         with zipfile.ZipFile(destination, "x", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("catalog.sqlite", content)
             archive.writestr("manifest.json", json.dumps(manifest, indent=2))
@@ -447,6 +448,14 @@ def main():
     follow_import.add_argument("input", type=Path)
     follow_import.add_argument("--account", required=True, help="Catalog account that supplied the export")
     follow_import.add_argument("--coverage", required=True, choices=("complete", "partial"))
+    review = sub.add_parser("review-recording", help="Save a pairwise recording review in the local catalog")
+    review.add_argument("first_key")
+    review.add_argument("second_key")
+    review.add_argument("--decision", required=True, choices=recording_review.DECISIONS)
+    review.add_argument("--reason", required=True)
+    reviews = sub.add_parser("recording-reviews", help="List reviewed recording pairs")
+    reviews.add_argument("--key", help="Choose one exact observed track identity")
+    reviews.add_argument("--history", action="store_true", help="Include superseded and cleared decisions")
     sub.add_parser("snapshots")
     save_collection = sub.add_parser("save-collection", help="Save ordered members of a local playlist collection")
     save_collection.add_argument("collection_id")
@@ -501,7 +510,7 @@ def main():
             restore(args.archive, args.output)
             print("Restored catalog to", args.output)
             return 0
-        catalog_edits = ("import-ratings", "save-collection", "import-followed-artists")
+        catalog_edits = ("import-ratings", "save-collection", "import-followed-artists", "review-recording")
         if args.command in catalog_edits and not args.db.is_file():
             raise ValueError("Import an audit snapshot before editing the catalog.")
         write = args.command == "import" or args.command in catalog_edits or args.command in stream_imports
@@ -513,6 +522,10 @@ def main():
             elif args.command == "import-followed-artists":
                 result = artist_history.import_capture(db, json.loads(args.input.read_text(encoding="utf-8-sig")),
                                                        args.account, args.coverage == "complete")
+            elif args.command == "review-recording":
+                result = recording_review.save(db, args.first_key, args.second_key, args.decision, args.reason)
+            elif args.command == "recording-reviews":
+                result = recording_review.reviews(db, args.key, args.history)
             elif args.command == "save-collection":
                 result = logical_playlists.save(db, args.collection_id, args.name, args.playlists, args.active)
             elif args.command in stream_imports:

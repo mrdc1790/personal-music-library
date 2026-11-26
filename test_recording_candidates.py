@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import library
 import recording_candidates
+import recording_review
 
 
 ISRC = 'USABC2600001'
@@ -80,3 +81,25 @@ class RecordingCandidateTests(unittest.TestCase):
         self.assertTrue(data['source_key'].startswith('spotify:local:'))
         with self.assertRaisesRegex(ValueError, 'absent'):
             recording_candidates.report(self.db, sid, sid, 'Absent key')
+
+    def test_pair_review_is_direction_independent_and_retains_revisions(self):
+        source = observed('volume', 0, 'A', code=ISRC)
+        candidate = observed('volume', 1, 'B', code=ISRC)
+        sid = library.import_snapshot(self.db, capture(1, source, candidate), 'Review evidence')
+        left, right = source['returned_uri'], candidate['returned_uri']
+        args = ['library.py', '--db', str(self.path), 'review-recording', right, left,
+                '--decision', 'keep-separate', '--reason', 'Verified different audio versions']
+        with patch('sys.argv', args), redirect_stdout(StringIO()):
+            self.assertEqual(library.main(), 0)
+        review, = recording_candidates.report(self.db, sid, sid, left)['reviews']
+        self.assertEqual(review['decision'], 'keep-separate')
+        self.assertEqual((review['left_key'], review['right_key']), (left, right))
+        self.assertFalse(recording_review.save(self.db, left, right, 'keep-separate', review['reason'])['added'])
+        recording_review.save(self.db, left, right, 'same-recording', 'New evidence changed the decision')
+        recording_review.save(self.db, right, left, 'clear', 'Needs another listening check')
+        self.assertEqual(recording_review.reviews(self.db, left), [])
+        self.assertEqual([row['decision'] for row in recording_review.reviews(self.db, right, history=True)],
+                         ['keep-separate', 'same-recording', 'clear'])
+        self.assertEqual(len(library.rows(self.db, sid)), 2)
+        with self.assertRaisesRegex(ValueError, 'must be present'):
+            recording_review.save(self.db, left, 'spotify:track:' + 'X' * 22, 'same-recording', 'Test')

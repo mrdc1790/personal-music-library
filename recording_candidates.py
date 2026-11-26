@@ -8,6 +8,7 @@ import sqlite3
 import unicodedata
 
 import library
+import recording_review
 from storage_paths import data_root
 import track_metadata
 
@@ -120,6 +121,7 @@ def report(db, source_snapshot, snapshot, key, limit=50):
                            exported_sources=sum(sources.values()), known_sources=len(sources))
                  for sid, sources in coverage.items()}
     return dict(source_key=key, source_snapshot=snapshots[source_snapshot], search_snapshot=snapshots[snapshot],
+                reviews=recording_review.reviews(db, key),
                 source_placements=source, candidates=results[:limit], total_candidates=len(results))
 
 

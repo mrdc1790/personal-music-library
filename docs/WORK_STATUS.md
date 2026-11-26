@@ -1,5 +1,12 @@
 # Work status
 
+## November 26, 2026 — recording review history
+
+The catalog can [save and revise an explicit pair decision](RECORDING_CANDIDATES.md#save-an-explicit-review).
+The candidate report shows active reviews. Older decisions remain available
+with their reasons. Synthetic coverage exercises reversed pair order,
+idempotent retries, revisions, clearing, and preservation of placements.
+
 ## November 26, 2026 — owned-audio draft playlists
 
 [Preview M3U text from saved playlists or collections](OWNED_AUDIO_PROJECTION.md)

@@ -26,3 +26,19 @@ The search is limited to captured catalog tracks. It makes zero provider
 requests and does not authorize or execute a migration. An empty result means
 there was no candidate within the saved search evidence. Capture more sources
 or investigate a release separately if important evidence is missing.
+
+## Save an explicit review
+
+After checking two known identities, save a pairwise `same-recording` or
+`keep-separate` decision with a reason. Run `--decision clear` with a reason
+to withdraw it. The report shows active decisions involving the source track.
+
+```powershell
+python library.py review-recording 'spotify:track:FIRST_ID' 'spotify:track:SECOND_ID' --decision keep-separate --reason 'Verified separate edits'
+python library.py recording-reviews --key 'spotify:track:FIRST_ID' --history
+```
+
+Reviews are dated, backed up with SQLite, and retain superseded decisions.
+They apply to the exact pair. They leave historical identities, counts,
+ratings and migrations independent. A canonical group across multiple pairs
+would need its own review and rules for conflicting decisions.
