@@ -1,20 +1,23 @@
 """A bounded, offline explorer of completed sources in an audit SQLite database."""
-from contextlib import closing
+from contextlib import closing, nullcontext
 import argparse
 from datetime import datetime, timezone
+from functools import lru_cache
 import json
 from pathlib import Path
 import sqlite3
 import webbrowser
 
 import folder_tree
+import genre_enrichment
 import library
 import local_inventory
 import track_metadata
 from storage_paths import data_root
 
 
-def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarchy=None, inventory=None):
+def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarchy=None, inventory=None,
+               genre_cache=None):
     if not 1 <= max_playlists <= 50 or not 1 <= max_rows <= 50000:
         raise ValueError('Trial limits: 1–50 playlists and 1–50,000 placements.')
     files = local_inventory.inventory_index(inventory) if inventory is not None else None
@@ -24,6 +27,12 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
                                      root.get('status') == 'complete' for root in inventory['roots']))
     else:
         inventory_summary = None
+    if genre_cache is not None:
+        read_genre = genre_enrichment.cache_reader(genre_cache)
+
+        @lru_cache(maxsize=None)
+        def recording_genre(ref):
+            return genre_enrichment.observation(ref, read_genre)
     with closing(sqlite3.connect(Path(database).resolve().as_uri() + '?mode=ro', uri=True)) as db:
         db.execute('BEGIN')  # Consistent local read, even if another process resumes the audit.
         saved = db.execute('SELECT data FROM run_state WHERE id=1').fetchone()
@@ -65,6 +74,8 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
                     title=row.get('title') or 'Unknown', artists=', '.join(row.get('artists') or []),
                     duration_ms=row.get('duration_ms'), local=bool(row.get('is_local')), missing=bool(row.get('missing')),
                     **track_metadata.card(row))
+                if genre_cache is not None:
+                    item['recording_genre'] = recording_genre(genre_enrichment.reference(row))
                 if files is not None and item['local']:
                     title = None if item['missing'] else row.get('title')
                     candidates, conflicts, confirmation = local_inventory.file_candidates(
@@ -89,7 +100,7 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
                     generated_at=datetime.now(timezone.utc).isoformat(),
                     completed_sources=len(complete), known_sources=known_sources,
                     discovery_complete=state['discovery_complete'], playlists=playlists, items=items,
-                    inventory=inventory_summary,
+                    inventory=inventory_summary, has_genre_cache=genre_cache is not None,
                     playlist_names={p['id']: p.get('name', p['id']) for p in state['manifest']},
                     hierarchy=tree, folder_paths=folder_tree.folder_paths(tree)[1])
 
@@ -286,6 +297,33 @@ function showSong(song) {
         addText(metadata, 'dd', value || 'No confirmed file tag in this report');
     }
     box.append(metadata);
+    if (d.has_genre_cache) {
+        addText(box, 'h3', 'MusicBrainz recording genre');
+        const notes = {
+            ineligible: 'Missing usable recording evidence or a local-file reference',
+            pending: 'No cached lookup yet',
+            unmatched: 'No recording found for this ISRC',
+            ambiguous: 'Multiple recordings share this ISRC',
+            mismatch: 'The recording metadata did not agree with the captured track',
+            genre_pending: 'Recording matched, genre lookup pending',
+            recording_unavailable: 'Matched recording was unavailable at lookup time',
+            no_genres: 'Recording matched, no genre tags returned',
+        };
+        const observations = new Map(song.placements.map(({recording_genre: obs}) => [JSON.stringify(obs), obs]));
+        for (const obs of observations.values()) {
+            const text = obs.genres?.length ? obs.genres.join(' · ') : notes[obs.status];
+            const date = obs.fetched_at ? ` · fetched ${obs.fetched_at.slice(0, 10)} UTC` : '';
+            const paragraph = document.createElement('p');
+            paragraph.textContent = text + date;
+            if (obs.recording_id) {
+                const link = document.createElement('a');
+                link.href = 'https://musicbrainz.org/recording/' + encodeURIComponent(obs.recording_id);
+                link.textContent = 'MusicBrainz recording';
+                paragraph.append(' · ', link);
+            }
+            box.append(paragraph);
+        }
+    }
     if (song.local) addText(box, 'small', 'Audio file tags appear separately under Local file locations when inventory evidence is supplied.');
     addText(box, 'h3', 'Comparison placements');
     for (const r of song.placements) {
@@ -372,7 +410,9 @@ const columns = [
     {label: 'Release date', value: song => song.release_date ?? ''},
     {label: 'Album artist', value: song => song.album_artist ?? ''},
     {label: 'ISRC', value: song => song.isrc ?? ''},
-    {label: 'Genre', value: song => song.genre ?? ''},
+    {label: 'Genre (album or artist)', value: song => song.genre ?? ''},
+    ...(d.has_genre_cache ? [{label: 'Genre (MusicBrainz recording)', value: song =>
+        [...new Set(song.placements.flatMap(row => row.recording_genre.genres ?? []))].join(' · ')}] : []),
     {label: 'BPM (file tag)', value: song => song.bpm},
     {label: 'Key (file tag)', value: song => song.initial_key},
 ];
@@ -655,6 +695,8 @@ def main():
     p.add_argument('--catalog', type=Path, help='Include exact-key placements from the saved catalog')
     p.add_argument('--catalog-snapshot', type=int, help='Catalog snapshot ID; defaults to broadest exported playlist coverage')
     p.add_argument('--catalog-view', type=Path, help='Link to an already generated catalog explorer HTML')
+    p.add_argument('--genre-cache', nargs='?', type=Path, const=genre_enrichment.CACHE,
+                   help='Read saved MusicBrainz genres. With no path, use the default cache.')
     inventory_source = p.add_mutually_exclusive_group()
     inventory_source.add_argument('--inventory', type=Path, help='Saved local inventory JSON')
     inventory_source.add_argument('--inventory-db', type=Path, help='Saved local inventory SQLite database')
@@ -674,7 +716,8 @@ def main():
                 raise ValueError('No saved audit found. Specify --run with a resumable audit folder.')
             run = max(candidates, key=lambda path: path.stat().st_mtime).parent
         audit_db = run / 'library.sqlite'
-        inputs = (audit_db, args.hierarchy, args.inventory_db, args.inventory, args.catalog, args.catalog_view)
+        inputs = (audit_db, args.hierarchy, args.inventory_db, args.inventory, args.catalog, args.catalog_view,
+                  args.genre_cache)
         if any(path is not None and (
                path.resolve() == args.output.resolve() or
                (path.exists() and args.output.exists() and path.samefile(args.output)))
@@ -687,8 +730,10 @@ def main():
             inventory = json.loads(args.inventory.read_text(encoding='utf-8-sig'))
             if isinstance(inventory, dict):
                 inventory.pop('confirmations', None)
-        data = load_trial(audit_db, args.playlist, args.max_playlists, args.max_rows,
-                          args.hierarchy, inventory=inventory)
+        cache = closing(genre_enrichment.connect(args.genre_cache)) if args.genre_cache else nullcontext()
+        with cache as genre_cache:
+            data = load_trial(audit_db, args.playlist, args.max_playlists, args.max_rows,
+                              args.hierarchy, inventory=inventory, genre_cache=genre_cache)
         if args.catalog:
             attach_catalog(data, args.catalog, args.catalog_snapshot, args.catalog_view)
         output = render(data, args.output)

@@ -14,10 +14,10 @@ The grounded architecture is a local catalog that observes provider metadata and
 
 The personal database is the engine for later exploration: build durable metadata and relationships for tracks/recordings, releases, artists, ordered memberships, owned audio, and personal decisions; enrich them through selected independent sources. Playlist algebra, musical profiles, DJ suggestions, and artist/album placement questions then query saved local evidence with zero provider calls. Collection and enrichment refresh run separately, and results show their evidence dates and coverage. Rich metadata is a planned extension of the working catalog, not merely a temporary Spotify response cache.
 
-The [metadata guide](METADATA.md) records the shipped coverage/export command,
-album and release columns, numeric length filters, and local tag reads. Next
-steps are a separate owned-audio analysis pilot for BPM, key, and waveform, and
-an optional provider enrichment workflow keyed by artist and release IDs.
+The [metadata guide](METADATA.md) covers field coverage and export, local tags,
+and the separate MusicBrainz recording-genre pass. Next steps are a read-only
+owned-audio analysis pilot for BPM, key, and waveform, a rekordbox import pilot,
+and broader genre enrichment keyed by artist and release IDs.
 
 The [catalog explorer](OPERATING_GUIDE.md#browse-the-saved-catalog) now links song
 details, exact-identity placements, playlists, and available folder paths in
@@ -134,7 +134,7 @@ for the deferred bridge.
 
 The October 6, 2026 ideas are retained in the [library intelligence design and feasibility review](LIBRARY_INTELLIGENCE.md). Existing N-way CLI set queries, scan comparisons, and artist/source summaries are foundations, not an implemented self-updating recommendation system. Continuing refresh must discover new playlists, keep failed observations out of removal comparisons, revalidate playlist versions, and handle Liked Songs without assuming a version token. Profiles must expose genre/BPM/key coverage; artist/album suggestions need literal placement and complete release evidence first.
 
-The design includes source-dated MusicBrainz/Last.fm tag research and owned-audio/DJ metadata paths. Spotify currently deprecates artist genres and restricts affected apps' Audio Features/Analysis access. Its policy also constrains content analysis and AI ingestion, so Spotify-backed profiling is conditional on validating permission; local computation alone does not settle that. This is planned catalog work, with no scheduler, service connection, dependency installation, or account write configured by this documentation update.
+The catalog now supports an opt-in MusicBrainz recording-genre pass over saved captures. Artist and release tag enrichment, Last.fm evaluation, and owned-audio/DJ analysis remain planned. Spotify deprecates artist genres and restricts affected apps' Audio Features and Audio Analysis access. Spotify-backed profiling remains conditional on validating access and permissions.
 
 ### Reconciliation acceptance criteria (planned)
 

@@ -19,6 +19,16 @@ Local inventory reads embedded MP3 DJ tags and WAV audio properties separately.
 The [metadata guide](METADATA.md) covers current fields and the next audio
 analysis and enrichment pilots.
 
+## November 26, 2026 — recording genre enrichment
+
+The separate [MusicBrainz pass](METADATA.md#musicbrainz-recording-genres)
+reads imported captures, caches bounded recording genre lookups, and adds
+source-dated evidence to the offline comparison. The live Spotify audit and
+catalog are read-only inputs. Verified with 109 offline tests covering matching,
+request budgets, resume, read-only cache use, and comparison rendering. Audio
+analysis for BPM and key, rekordbox import, and artist and release tag
+enrichment remain on the roadmap.
+
 ## November 26, 2026 — local file paths in playlist comparisons
 
 Save dated filesystem inventories in a separate SQLite store and use a saved
