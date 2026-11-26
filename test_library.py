@@ -37,6 +37,7 @@ class CatalogTests(unittest.TestCase):
         payload = re.search(r'<script type="application/json" id="data">(.*?)</script>', html)
         self.assertEqual(json.loads(payload.group(1))[0]['label'], label)
         self.assertIn(escape(str(catalog.resolve())), html)
+        self.assertIn('<button id="clear-filters" type="button">Clear all filters</button>', html)
 
     def test_view_reports_missing_catalog_without_creating_it(self):
         catalog = self.folder / 'missing.sqlite'

@@ -69,13 +69,15 @@ TEMPLATE = '''<!doctype html>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f4f6f3;color:#173126;font:16px system-ui,sans-serif}main{max-width:1400px;margin:auto;padding:32px}h1{font-size:36px;margin:8px 0}.eyebrow{font-size:12px;font-weight:750;letter-spacing:2px}.note{background:#dfebe2;padding:16px;border-radius:12px;margin:18px 0;line-height:1.6}.path{font-size:12px;overflow-wrap:anywhere;color:#52665a}.controls{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}label{display:grid;gap:7px;flex:1;min-width:220px;font-weight:650}select,input{width:100%;padding:11px;border:1px solid #a5b6a8;border-radius:7px;background:white;font:inherit;color:inherit}.table{overflow:auto;background:white;border:1px solid #d3ddd5;border-radius:12px;max-height:62vh}table{border-collapse:collapse;width:100%;font-size:14px}th{text-align:left;background:#eaf0eb;position:sticky;top:0}td,th{padding:13px;border-bottom:1px solid #e3e9e4}td:last-child{font:12px ui-monospace,monospace;overflow-wrap:anywhere;min-width:230px}#status{margin:15px 0;font-weight:600}footer{margin-top:18px;font-size:13px;color:#52665a;line-height:1.6}button{padding:10px;border:1px solid #a5b6a8;border-radius:7px;cursor:pointer;background:white;margin:12px 8px 0 0}
 button.link{border:0;background:transparent;color:#126244;text-decoration:underline;padding:0;margin:0;text-align:left;font:inherit}
+.controls #clear-filters{align-self:flex-end;margin:0;font:inherit;color:inherit}
 #details button.link,#status button.link{margin:4px 12px 4px 0}#details li{line-height:1.55}
 #details dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px}#details dt{font-weight:700}#details dd{margin:0}
 #details ul{max-height:16rem;overflow:auto}
 </style></head><body><main><div class="eyebrow">PERSONAL MUSIC LIBRARY / READ-ONLY</div>
 <h1>Where is your music?</h1><div class="path">__PATH__</div>
 <div class="note" id="notice"></div>
-<div class="controls"><label>Saved snapshot<select id="snapshot"></select></label><label>Folder<select id="folder"></select></label><label>Playlist<select id="source"></select></label><label>Search songs, artists, albums or IDs<input id="search" type="search"></label></div>
+<div class="controls"><label>Saved snapshot<select id="snapshot"></select></label><label>Folder<select id="folder"></select></label><label>Playlist<select id="source"></select></label><label>Search songs, artists, albums or IDs<input id="search" type="search"></label>
+<button id="clear-filters" type="button">Clear all filters</button></div>
 <section id="details" class="note" hidden aria-live="polite"></section>
 <div id="status" role="status"></div><div class="table"><table><thead><tr><th>Playlist</th><th>Position</th><th>Song</th><th>Artists</th><th>Type</th><th>Observed identity</th></tr></thead><tbody id="rows"></tbody></table></div>
 <button id="previous">Previous page</button><button id="next">Next page</button>
@@ -201,7 +203,7 @@ function showSong(row) {
     details.append(list);
     details.scrollIntoView({block: 'nearest'});
 }
-function searchCatalog(value) {
+function searchCatalog(value = '') {
     selectedKey = '';
     el('folder').value = '';
     resetSources();
@@ -254,6 +256,10 @@ el('snapshot').onchange = () => load();
 el('folder').onchange = () => { resetSources(); page = 0; render(); };
 el('source').onchange = () => { selectedKey = ''; page = 0; render(); };
 el('search').oninput = () => { selectedKey = ''; page = 0; render(); };
+el('clear-filters').onclick = () => {
+    el('rows').closest('.table').scrollTop = 0;
+    searchCatalog();
+};
 el('previous').onclick = () => { page--; render(); };
 el('next').onclick = () => { page++; render(); };
 load(requested >= 0 ? route.get('key') ?? '' : '');

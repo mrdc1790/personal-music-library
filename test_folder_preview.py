@@ -131,7 +131,8 @@ class PreviewTests(unittest.TestCase):
             with self.subTest(label=label):
                 self.assertIn(f"{{label: '{label}', value:", html)
         for control in ('column-filter', 'sort-ascending', 'sort-descending', 'filter-by-value',
-                        'filter-by-condition', 'filter-apply', 'filter-cancel', 'filter-clear'):
+                        'filter-by-condition', 'filter-apply', 'filter-cancel', 'filter-clear',
+                        'clear-filters'):
             with self.subTest(control=control):
                 self.assertIn(f'id="{control}"', html)
 

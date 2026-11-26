@@ -283,9 +283,10 @@ length like `3:30` or `210` in whole seconds. Length conditions use the displaye
 rounded seconds. Use **Value** to select unknown lengths. Choose **Apply** to save the
 filter, **Cancel** to discard edits, or **Clear** to remove the column's filter.
 Active funnels are highlighted. Column filters combine with each other, the
-playlist operation, and the main search before pagination. Reloading the report
-resets the table controls. Regenerate older HTML from the saved run with the
-command above to get the new controls offline.
+playlist operation, and the main search before pagination. **Clear all filters**
+clears the search and every column filter, then returns to page one with the
+same playlists, operation, and sort order. Regenerate older HTML from the saved
+run with the command above to get the new controls offline.
 
 Click a song to see metadata and each **Date added**. Release dates use the
 provider's available precision. Use `--inventory-db` or `--inventory` to attach
@@ -307,6 +308,9 @@ in the song details to browse its saved rows. The explorer starts with the
 snapshot with the most exported playlists. Choose a different snapshot to see
 its history. Once a folder tree is available, select a folder to include its
 subfolders or browse by the playlist breadcrumbs.
+**Clear all filters** returns to page one of the selected snapshot and clears
+the folder, playlist, search, and exact song identity filters. Regenerate an
+older catalog view with the command above to get the button.
 
 `--catalog` adds a separate **Saved catalog placements** section to the
 comparison without changing the A/B results. It defaults to the same account's

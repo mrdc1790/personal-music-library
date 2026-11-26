@@ -148,12 +148,14 @@ dialog::backdrop{background:#18392c55}dialog h2{margin-top:0}
 dialog label{margin-top:10px;min-width:0}dialog label:has(input[type="checkbox"]){display:flex;align-items:baseline;gap:8px;margin:0;padding:4px}
 .filter-values{max-height:21vh;overflow:auto;border:1px solid #e5ece7;overflow-wrap:anywhere}
 .controls select{width:100%;min-width:0}#details dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 16px}
+.controls #clear-filters{align-self:flex-end}
 #details dt{font-weight:650}#details dd{margin:0}td{vertical-align:top}
 .placement-list{max-height:16rem;overflow:auto;padding-left:1.5rem}
 </style><main><small>PERSONAL MUSIC LIBRARY · OFFLINE / READ ONLY</small><h1>Explore a little. Learn a lot.</h1>
 <div id="coverage" class="banner"></div><div class="controls">
 <label>Playlist A<select id="a"></select></label><label>Operation<select id="op"><option value="single">Browse A</option><option value="intersection">In both A and B</option><option value="difference">In A, absent from B</option><option value="reverse-difference">In B, absent from A</option><option value="union">In either A or B</option></select></label>
-<label>Playlist B<select id="b"></select></label><label>Search song, artist, album or ID<input id="search" type="search"></label></div>
+<label>Playlist B<select id="b"></select></label><label>Search song, artist, album or ID<input id="search" type="search"></label>
+<button id="clear-filters" type="button">Clear all filters</button></div>
 <div class="grid"><section><h2>Playlist folders</h2><div id="folder-note" class="muted"></div><div id="tree"></div><h2>Overlap with A</h2><div id="overlap"></div></section>
 <section id="details"><h2>Where is this song?</h2><p>Click a song below to see its placements across the trial playlists.</p><small>Identity means the same observed Spotify ID or local URI. Different releases are not automatically merged.</small></section></div>
 <div id="status" role="status"></div><div class="scroll"><table><thead><tr id="headings"></tr></thead><tbody id="rows"></tbody></table></div>
@@ -550,6 +552,12 @@ el('filter-apply').onclick = () => {
     }
 };
 el('filter-clear').onclick = () => saveFilter(null);
+el('clear-filters').onclick = () => {
+    for (const column of filters.keys()) column.filter.setAttribute('aria-pressed', 'false');
+    filters.clear();
+    el('search').value = '';
+    resetResults();
+};
 el('filter-cancel').onclick = () => el('column-filter').close();
 for (const [button, direction] of [['sort-ascending', 1], ['sort-descending', -1]]) {
     el(button).onclick = () => {
