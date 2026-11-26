@@ -73,6 +73,12 @@ Spotify's Web API capture preserves playlist contents but not folder nodes, nest
 
 `folder_tree.py` is an offline-tested, read-only adapter for an account-scoped Spotifast rootlist cache. It can retain raw hierarchy payload, nested and empty folders, stable IDs where supplied, parent relationships, sibling order, and separate hierarchy snapshots. It joins playlist structure to audit data by Spotify playlist ID—not display name. The current limitation is important: no live account tree or direct rootlist fetch has yet been validated.
 
+[Song stats](OPERATING_GUIDE.md#song-stats) uses the latest imported hierarchy
+for the catalog account. It grants one point per distinct known category
+at the selected depth, in addition to one point per distinct exported
+playlist with the song. A category uses folder IDs, so shared names or
+numbered playlist volumes do not create false breadth.
+
 Keep structure coverage separate from playlist-content coverage. A rootlist playlist with unreadable contents remains visible in its folder with contents marked unknown. Malformed or incomplete rootlist structure must retain raw ordered evidence and a warning rather than being silently repaired into a trustworthy tree. Rootlist support does not expose hidden original IDs, bypass rate limits, remove the 10,000-item limit, or establish local-file playback.
 
 Spotify clients own folder setup and playback. Record which volumes play on
@@ -160,7 +166,8 @@ The chat's spotDL/yt-dlp commands, matching percentages, “only realistic appro
 
 The “Spotify Playlist Export” discussion was reviewed on 2026-09-30. Its core is already implemented or planned here: SQLite snapshot history, occurrence CSVs, per-playlist CSVs, song-to-playlist reverse indexes, artist/source summaries, exact observed-ID set operations, separate folder evidence, reviewed recording identity, and later owned-audio output. Do not create thousands of authoritative per-song/per-artist files; generate consolidated tables and optional filtered views from the catalog.
 
-Current `playlists.csv` does not include joined folder paths; hierarchy/content export joining remains work. Recording-level algebra, audio fingerprints, reliable moved-file recovery, provider publishing, and general Spotify playlist reconstruction remain planned. Restoring a catalog ZIP restores local evidence only; it does not rebuild Spotify, restore audio, or recover original provider attribution/dates. The separate migration engine's restricted rollback is not a general playlist-restoration feature. Example counts and proposed commands in the chat are illustrations, not measured results or implemented commands.
+The song-stats JSON report includes matched folder categories and coverage.
+Joined folder paths in `playlists.csv` remain future export work. Recording-level algebra, audio fingerprints, reliable moved-file recovery, provider publishing, and general Spotify playlist reconstruction remain planned. Restoring a catalog ZIP restores local evidence only; it does not rebuild Spotify, restore audio, or recover original provider attribution/dates. The separate migration engine's restricted rollback is not a general playlist-restoration feature. Example counts and proposed commands in the chat are illustrations, not measured results or implemented commands.
 
 [Exportify](https://github.com/watsonbox/exportify) and [Spotify's account-data archive](https://support.spotify.com/us/article/understanding-your-data/) are optional archival research leads, not required replacements for the scanner. Any future import must validate actual fields, identities, ordering, account, capture time, and completeness; retain missing fields as unknown and compare source data paths before claiming independent confirmation. Soundiiz and Set Operations for Spotify remain third-party transfer/algebra leads requiring current capability and safety review before use; this review did not validate or authorize their account writes.
 

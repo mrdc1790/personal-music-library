@@ -82,7 +82,10 @@ python library.py import 'C:\path\to\run\snapshot.json' --label 'Two-playlist ca
 ```
 
 You can compare completed playlists in the [offline preview](#preview-and-folders)
-before importing the snapshot.
+before importing the snapshot. The **Operation** menu includes both directions
+of difference, intersection, and union. The same menu works when previewing
+selected completed playlists from a full audit. Regenerate saved HTML files to
+pick up changes to the preview.
 
 ```powershell
 python preview_audit.py --run 'C:\path\to\run' --open
@@ -174,6 +177,13 @@ state before relying on spare capacity for a repair.
 
 ## Song stats
 
+For an initial report, import an audit snapshot using the commands above.
+For a current baseline, make a new read-only scan and import it under a new
+label. Keep older imports for comparison. Refresh the [folder capture](#preview-and-folders)
+from the same account near the scan date, then import any listening history and
+worldwide totals you have. You can run the ranking after the snapshot import
+while the other inputs are still pending.
+
 ```powershell
 python library.py song-stats --term 'song or artist text'
 python library.py song-stats --folder-depth 2 --limit 100
@@ -212,6 +222,20 @@ python library.py song-stats --sort personal-spotify --output 'C:\private\song-s
   or a distributor report for the same recording. Supply one row per service
   and track per date. Exclude combined platforms, chart ranks, popularity
   scores, views, release totals, and date-limited figures.
+
+Use `--snapshot ID` to choose the membership capture (the latest import is the
+default). The report uses the latest matching folder import, the full locally
+imported listening history, and the latest dated count per track and service.
+Each input therefore has its own date. Save a dated JSON report with `--output`
+when you want to keep the exact combination of inputs. The parent directory must exist.
+
+Sort by `playlist`, `personal-spotify`, `personal`, `worldwide-spotify`, or
+`worldwide`. The two cross-service sorts use the totals from imported services.
+Tracks with missing counts for the selected sort follow tracks with known
+counts. The default limit is 50 and `matching_songs` is the count before that
+limit. Reports cover identified music tracks and local references observed in
+exported sources from the selected snapshot. A song that appears only in an
+imported listening file needs an observed catalog placement to appear here.
 
 Non-Spotify personal events CSV uses
 `service,event_id,track_key,ended_at,played_ms`. Use the playback service slug
@@ -268,7 +292,11 @@ python library.py restore backups/catalog-2026-09-25.zip data/restored-catalog.s
 python library.py --db data/restored-catalog.sqlite snapshots
 ```
 
-The ZIP contains a consistent SQLite copy and checksum. It is not encrypted and contains music metadata, but not audio or migration journals. Restore refuses overwrites; verify a restored copy before relying on a backup. No cloud upload or scheduler is configured.
+The ZIP contains an unencrypted, checksummed copy of the catalog SQLite file,
+including imported listening events and stream totals. Keep hierarchy snapshots
+privately alongside it as a separate database. Spotify audio, music files, and
+migration journals have separate storage. Restore refuses overwrites. Verify a
+restored copy before relying on a backup.
 
 A checksum detects corruption, not authorship. Keep raw audit folders and migration journals alongside versioned catalog archives, and use a private destination only after validating a restore under a new filename. Synchronizing a live SQLite file can propagate mistakes; a closed, verified archive is the safer first online-backup unit. A catalog restore never reverts Spotify.
 

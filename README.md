@@ -1,6 +1,14 @@
 # Personal Music Library
 
-A local, evidence-preserving catalog for Spotify playlists, Liked Songs, and local-track references. It answers practical questions—where a song appears, where playlists overlap, what changed between captures, and which duplicate occurrences need review—without changing Spotify by default.
+Find every playlist a Spotify track appears in, see where playlists overlap, and compare what changed between captures. Personal Music Library turns playlist and Liked Songs metadata into a local catalog you can query offline.
+
+- **Working today** — Resume interrupted Spotify captures, search track placements, compare snapshots, and export CSVs or a verifiable backup.
+- **How it works** — Python and SQLite separate resumable capture from historical queries. The catalog preserves playlist order, duplicate placements, and which sources could be read, so incomplete data stays visible.
+- **Try it offline** — Run `python library_demo.py` to compare two fictional snapshots and restore a backup. No Spotify login required.
+
+[Technical case study](docs/PROJECT_OVERVIEW.md) · [Worked demo](docs/EXAMPLES.md) · [Setup and operations](docs/OPERATING_GUIDE.md)
+
+![Read-only catalog viewer showing fictional playlist placements, snapshot and playlist filters, and a song search field](docs/images/catalog-demo.png)
 
 It is not a Spotify replacement or audio archive. Spotify metadata does not include Spotify audio, and a local-track reference does not prove that a file exists or plays on a device. The longer-term direction is a personal music hub that bridges streaming metadata, owned audio, organization, and DJ-oriented enrichment; that work remains separate from the working catalog.
 
@@ -8,7 +16,10 @@ It is not a Spotify replacement or audio archive. Spotify metadata does not incl
 
 Double-click **`Try offline demo.cmd`** for a synthetic, self-contained walkthrough. For completed real data, double-click **`Preview saved music.cmd`** for a read-only, bounded explorer. Neither changes Spotify.
 
-The next database milestone is a capacity report from saved playlist evidence.
+The offline checkpoint export and playlist capacity report passed local
+checks. Publication is the next step. The song-stats commands are on `main`,
+with a separate task to refresh the underlying data.
+[Current handoff](docs/WORK_STATUS.md#current-publication-status).
 For manual New Music Friday curation, use Spotify folders to play across
 numbered playlist volumes. See the [curation guide](docs/PLAYLIST_CURATION.md)
 for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery order.
@@ -18,13 +29,24 @@ for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery o
 | Need | Current behavior |
 |---|---|
 | Capture Spotify metadata | Read-only, resumable audit with durable SQLite checkpoints |
+| Capture specific playlists | [Pass one link per `--playlist`](docs/OPERATING_GUIDE.md#capture-just-the-playlists-you-choose) and import or preview the result |
 | Browse a small completed capture | Read-only HTML preview with placements, search, and two-playlist set operations |
 | Keep history locally | Import snapshots into a separate SQLite catalog; prior snapshots remain intact |
 | Find and compare | Search every occurrence; local union, intersection, difference, duplicate, and scan comparison |
 | Inspect and protect | CSV exports, static catalog view, checksummed catalog ZIP, and restore verification |
 | Preserve folders | Optional read-only Spotifast rootlist import; live validation still needed |
 | Rank songs | [Playlist reach, personal plays, and worldwide streams](docs/OPERATING_GUIDE.md#song-stats) |
+| Check playlist capacity | [Estimate remaining slots from saved captures](docs/OPERATING_GUIDE.md#playlist-capacity) |
+| Investigate unavailable tracks | [Review saved playability and recovery evidence](docs/OPERATING_GUIDE.md#unavailable-tracks-and-recovery) |
 | Repair shadow tracks | Guarded reviewed migration commands; offline-tested only |
+
+Run `python library.py song-stats` after importing a playlist snapshot. The
+ranking gives one point per distinct playlist plus one per known folder
+category. Personal plays and worldwide stream totals have independent Spotify
+and cross-service fields. Add an account-matched folder capture and import
+listening history or dated service totals as they become available. The
+[worked example](docs/EXAMPLES.md#rank-songs-and-import-stream-counts) shows
+what each measure answers.
 
 Read-only [local audio-folder inventory and candidate reconciliation](docs/LOCAL_INVENTORY.md) are available for explicit roots and existing catalog snapshots. Matching is limited to filename candidates and optional WAV duration evidence.
 

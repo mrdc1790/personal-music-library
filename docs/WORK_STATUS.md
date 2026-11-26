@@ -1,5 +1,14 @@
 # Work status
 
+## November 26, 2026 — selected playlist capture and comparison
+
+Pass a link, URI, or ID per `--playlist` to capture those playlists in a
+resumable run. The run exports an importable snapshot, preserving Spotify's
+local references, duplicate placements, and source coverage. Generate an
+offline preview to compare in either direction, find shared tracks, or view
+the union. This also works on a bounded selection from a full audit.
+[Operating guide](OPERATING_GUIDE.md#capture-just-the-playlists-you-choose).
+
 ## November 26, 2026 — unavailable track and recovery report
 
 `library.py availability` produces a private HTML report from an imported
@@ -28,16 +37,40 @@ capacity preflight remains separate.
 
 ## November 16, 2026 — song scores and stream totals
 
-`library.py song-stats` ranks observed songs by distinct playlists and folder
-categories. Reports show personal plays and dated worldwide totals for Spotify
-and across imported services. See the [operating guide](OPERATING_GUIDE.md#song-stats)
-for the scoring formula, coverage, and input formats.
+[Song stats](OPERATING_GUIDE.md#song-stats) ranks observed songs by distinct
+playlists and folder categories. It reports personal plays and dated worldwide
+streams for Spotify and across imported services. The [worked example](EXAMPLES.md#rank-songs-and-import-stream-counts)
+shows the scoring and stream fields. The [evidence model](EVIDENCE_AND_MODEL.md#evidence-behind-song-stats)
+explains source coverage and the dates behind the join.
 
-Validation covered 81 offline tests and a synthetic command-line run through
-the three stream importers, backup, restore, and reporting. A local report
-also verified scoring against a saved partial audit. A fresh playlist snapshot,
-folder capture, Extended Streaming History ZIP, and worldwide source totals
-are needed for a current report with all fields populated.
+Validation covered 81 offline tests and a synthetic CLI run through the stream
+importers, backup, restore, and reporting. A local report verified playlist
+scoring against a saved partial audit. The implementation is complete. Refresh
+the playlist and folder capture, import Extended Streaming History and available
+dated worldwide totals, then check coverage on a small sample for a current
+report.
+
+## November 16, 2026 — original capacity handoff
+
+**Initial task.** Use `Preview saved music.cmd` to check coverage in an existing
+capture. The deliverable is a dated playlist capacity report from saved
+evidence. If the existing capture is interrupted and cannot be imported, build
+an offline checkpoint export first. The report should show playlist size,
+coverage, and remaining slots where the recorded counts support an estimate.
+This can start with the data already on disk.
+[Implementation sequence and acceptance criteria](ROADMAP.md#next-work).
+
+| Question | Current state |
+|---|---|
+| What happens at a rate limit? | The audit pauses and keeps committed pages in SQLite. The cooldown is saved. Resume the same run after it expires. The program requires a manual resume. |
+| Does resume restart the scan? | Unchanged playlists reuse saved rows and continue at the last committed offset where applicable. Changed playlists are recaptured individually. Liked Songs requires rereading and validating the saved prefix, which uses requests. A mismatch restarts Liked Songs. Use a new audit for a separate dated capture. |
+| Where do errors and progress go? | `RUN STATUS.txt` shows source progress, the latest failure, cooldown expiry, and resume instructions. `run.log.jsonl` keeps timestamped request, retry, failure, and checkpoint events. See the [operating guide](OPERATING_GUIDE.md#scan-and-resume). |
+| Is there a diff between runs? | Import two captures and run `library.py compare` with their snapshot IDs. It reports placement and order changes, including how many copies remain when a track loses placements. Unread sources remain unknown. Comparison is a separate offline step. See the [comparison guide](OPERATING_GUIDE.md#catalog-queries-and-exports). |
+| How do we investigate Liked Songs discrepancies? | Compare actual entries across the API, desktop, web, and phone where lists are available. Keep count-only evidence and device-specific gaps explicit. Use the read-only audio inventory for selected local folders. See [historical observations](HISTORICAL_OBSERVATIONS.md) and [local inventory](LOCAL_INVENTORY.md). |
+| What can I visualize? | The read-only viewer supports search and playlist/snapshot selection. The bounded preview can browse completed sources from a saved run. Full-scale import and browsing, capacity, broader overlap views, and duplicate review remain work items. See [preview and folders](OPERATING_GUIDE.md#preview-and-folders). |
+| How does Smarter Playlists fit? | Union, intersection, and difference work for covered sources. Saved recipes and a visual rule editor are planned. See [integration design](INTEGRATION_DESIGN.md). |
+| How does this help with DJing or a central hub? | The catalog retains duration and supplied source metadata. Local filename and optional WAV duration can help surface file candidates. Verified recording matches, BPM/key analysis, cues, rekordbox exports, and player integration are roadmap work. See the [DJ workflow](DJ_LIBRARY_WORKFLOW.md). |
+| What can we do about Spotify's 10k limit? | Keep the larger collection in the catalog and curate numbered Spotify playlists within a folder. The per-playlist limit still applies. Automatic splitting and publishing are planned. See [playlist curation](PLAYLIST_CURATION.md). |
 
 ## November 6, 2026 — duplicate counts in snapshot comparisons
 
@@ -73,6 +106,13 @@ import and reopen at [190,000 placements](PLAYLIST_CURATION.md#how-the-limits-ap
 2. Try one category with two direct sibling volumes in Spotify while the
    database work proceeds. When there is a concrete repair case, use the
    [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for that work.
+
+## Current publication status
+
+The checkpoint export, capacity report, selected playlist capture, and
+availability report are part of the catalog. Refreshing inputs for the
+[song-stats report](OPERATING_GUIDE.md#song-stats) remains a separate task.
+[Current milestone status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status).
 
 ## October 27, 2026 — DJ goal alignment and publication
 

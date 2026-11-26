@@ -1,14 +1,19 @@
-from contextlib import closing
+from contextlib import closing, redirect_stderr
 from copy import deepcopy
 import csv
+from html import escape
+from io import StringIO
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 import library as lib
 from library_demo import sample_snapshots
+import view_catalog
 
 
 class CatalogTests(unittest.TestCase):
@@ -20,6 +25,29 @@ class CatalogTests(unittest.TestCase):
         self.addCleanup(self.db.close)
         self.before, self.after = sample_snapshots()
         self.a = lib.import_snapshot(self.db, self.before, "first")
+
+    def test_view_keeps_placeholder_like_labels_and_paths_literal(self):
+        catalog = self.folder / '__DATA__ & catalog.sqlite'
+        output = self.folder / 'view.html'
+        label = '__PATH__ <Sample & title>'
+        with closing(lib.connect(catalog, write=True)) as db:
+            lib.import_snapshot(db, self.before, label)
+
+        html = view_catalog.create_view(catalog, output).read_text(encoding='utf-8')
+        payload = re.search(r'<script type="application/json" id="data">(.*?)</script>', html)
+        self.assertEqual(json.loads(payload.group(1))[0]['label'], label)
+        self.assertIn(escape(str(catalog.resolve())), html)
+
+    def test_view_reports_missing_catalog_without_creating_it(self):
+        catalog = self.folder / 'missing.sqlite'
+        stderr = StringIO()
+        with patch('sys.argv', ['view_catalog.py', str(catalog), '--no-open']):
+            with redirect_stderr(stderr), self.assertRaises(SystemExit) as error:
+                view_catalog.main()
+        self.assertEqual(error.exception.code, 2)
+        self.assertIn('Catalog file not found', stderr.getvalue())
+        self.assertFalse(catalog.exists())
+        self.assertFalse((catalog.parent / 'catalog-view.html').exists())
 
     def test_import_idempotent_and_history_not_overwritten(self):
         self.assertEqual(lib.import_snapshot(self.db, self.before, "same"), self.a)

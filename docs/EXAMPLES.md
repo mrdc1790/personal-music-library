@@ -87,6 +87,43 @@ python library.py --db data/example.sqlite compare 1 2
 
 Chill shows one removed occurrence of the URI ending in 22 `A` characters and `sequence_changed: true`. The other sources are unchanged. This correctly records the removal of one duplicate, rather than saying Moonrise disappeared entirely.
 
+### Rank songs and import stream counts
+
+```powershell
+python library.py --db data/example.sqlite song-stats --snapshot 1 --term Moonrise
+```
+
+Moonrise scores 2 before folder evidence is available. Chill and Festival
+each contribute one point. The second occurrence in Chill and the entry
+in Liked Songs contribute zero points. If Chill and Festival had the same
+folder category, the score would be 3. With two distinct folder categories,
+it would be 4. The synthetic snapshot uses short playlist IDs, so these
+folder cases are demonstrated by the folder-scoring tests.
+
+To try the two CSV import paths, add one synthetic personal event and two
+dated worldwide counts for Moonrise:
+
+```powershell
+@(
+    'service,event_id,track_key,ended_at,played_ms'
+    'apple-music,example-play,spotify:track:AAAAAAAAAAAAAAAAAAAAAA,2026-10-01T12:00:00Z,45000'
+) | Set-Content -Encoding utf8 data/example-personal.csv
+@(
+    'service,track_key,as_of,streams,source'
+    'spotify,spotify:track:AAAAAAAAAAAAAAAAAAAAAA,2026-10-01,200,Example dashboard'
+    'apple-music,spotify:track:AAAAAAAAAAAAAAAAAAAAAA,2026-10-03,50,Example distributor'
+) | Set-Content -Encoding utf8 data/example-worldwide.csv
+python library.py --db data/example.sqlite import-personal-plays data/example-personal.csv
+python library.py --db data/example.sqlite import-worldwide-streams data/example-worldwide.csv
+python library.py --db data/example.sqlite song-stats --snapshot 1 --term Moonrise
+```
+
+The report shows one personal play across the imported services and
+`null` for personal Spotify plays. It shows 200 worldwide Spotify streams
+and a worldwide sum of 250 across the two imported services. See the
+[operating guide](OPERATING_GUIDE.md#song-stats) to import a real Spotify
+Extended Streaming History ZIP or check the report's data coverage.
+
 ### Export readable tables
 
 ```powershell

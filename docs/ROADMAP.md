@@ -16,6 +16,11 @@ The personal database is the engine for later exploration: build durable metadat
 
 ## Current priority
 
+The catalog supports offline checkpoint export, historical capacity reports,
+and targeted playlist captures. The next milestones cover query performance
+and a pilot for numbered playlist volumes. Song stats has a separate data
+refresh task. [Current milestone status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status).
+
 Retain SQLite for the local operational catalog. The [storage decision and alternatives](STORAGE_DECISION.md) explain the fit, query-performance work, optional analytics path, and criteria for reconsidering a server database. No cloud service or second database engine is currently required.
 
 Build out the personal SQLite catalog first. Start with saved evidence and
@@ -72,6 +77,7 @@ application/device profile before broader writes or playback claims.
 |---|---|---|
 | Catalog capture, history, queries, and backups | Offline checkpoint export and catalog import verified; incomplete sources remain visible | Measure import and query cost and capture fresh evidence where needed |
 | Playlist capacity and rollover | Historical capacity report implemented. Volume mapping remains planned | Test one category with direct sibling playlists on both devices |
+| Song stats | Offline playlist and folder scoring, personal play imports, and dated worldwide totals | Refresh the membership and folder captures. Import a current Extended Streaming History ZIP and available service totals. Check field coverage on a small real sample |
 | Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | When a repair is needed, measure an authorized read-only preview with retained coverage and progress |
 | Query performance | Exact-instance index exists; general lookup/set/compare paths still materialize snapshot rows | Reproducible measurements and focused SQL-query regression tests before claiming scale gains |
 | Catalog discovery bridge | Deferred behind useful catalog coverage and a manual repair trial | Measured value, then versioned evidence export/import, account validation, and fresh discovery |
@@ -178,7 +184,7 @@ See [release-discovery research leads](REFERENCE_PROJECTS.md#release-discovery-r
 The “Local Spotify Library Brainstorming (origin of codex project)” discussion was reviewed on 2026-09-30. Its central direction is retained: Spotify can remain a discovery/social service while the local SQLite catalog preserves independent evidence, organization, and owned-audio relationships. Build useful catalog and resolver capabilities before deciding whether a custom player/UI is necessary.
 
 - **Discovery/import queue:** a captured like, playlist addition, or followed-artist release may produce a reviewable desired-library entry. Distinguish not yet inventoried, no candidate within completed roots, ambiguous match, reviewed match, desired acquisition, and verified import. Keep source IDs, snapshot/coverage, version preference, candidate evidence, user decision, and resulting file provenance. A queue entry is not proof of file absence everywhere or authorization to download. Dismissing or unliking an entry must not delete owned audio.
-- **Personal evidence:** consider ratings, favorites, user tags, discovery recollections, concert/festival associations, and listening/play/skip events as separately sourced and dated entities. Keep service likes distinct from local favorites; play counts must name their event sources and coverage. Unknown skip history is not “never skipped,” and a user-entered mood or discovery date must remain an assertion. Derived smart filters need these fields implemented and populated before claiming results.
+- **Personal evidence:** consider ratings, favorites, user tags, discovery recollections, concert/festival associations, and listening/play/skip events as separately sourced and dated entities. Keep service likes distinct from local favorites; play counts must name their event sources and coverage. Unknown skip history is not “never skipped,” and a user-entered mood or discovery date must remain an assertion. The [song stats report](OPERATING_GUIDE.md#song-stats) implements play-event imports and counts. Skip-specific reporting and filters across richer personal evidence remain future work.
 - **Additional source adapters:** saved albums and SoundCloud metadata/history are future capture candidates, not current collector coverage. Any existing external SoundCloud download pipeline remains independently managed; this catalog does not run it. Import chosen existing files with raw metadata and provenance, including unmatched releases; automatic tagging, moving, transcoding, artwork/lyrics enrichment, and cleanup require separate scope and review.
 - **Choose outputs by requirements:** before deployment or custom UI work, compare Navidrome/Symfonium, Jellyfin, Plexamp, Roon, Feishin, Finamp, Flacbox, and a custom client against required devices, actual playlist capacity, duplicate/order behavior, folder projections, offline use, metadata, accessibility, multi-user access, backup, and cost. These are evaluation candidates from the chat, not current compatibility endorsements. Test a small owned-audio projection and consult current provider documentation before selecting one. NAS/server hosting and automatic multi-device indexing are not implemented or guaranteed.
 
