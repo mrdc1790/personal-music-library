@@ -16,6 +16,7 @@ import sqlite3
 import tempfile
 import zipfile
 
+import artist_history
 import availability
 import checkpoint_export
 import logical_playlists
@@ -47,7 +48,7 @@ CREATE TABLE IF NOT EXISTS song_ratings (
 CREATE VIEW IF NOT EXISTS membership AS
  SELECT snapshot_id,track_key,source,COUNT(*) AS occurrence_count
  FROM items WHERE missing=0 GROUP BY snapshot_id,track_key,source;
-""" + logical_playlists.SCHEMA
+""" + logical_playlists.SCHEMA + artist_history.SCHEMA
 
 
 def connect(path, write=False):
@@ -391,7 +392,7 @@ def backup(db, destination):
         content = copy.read_bytes()
         manifest = dict(format=1, created_at=datetime.now(timezone.utc).isoformat(),
                         sha256=hashlib.sha256(content).hexdigest(),
-                        includes="Catalog, raw snapshots, ratings, logical collections, listening events and stream totals")
+                        includes="Catalog, raw snapshots, ratings, logical collections, artist history, and stream evidence")
         with zipfile.ZipFile(destination, "x", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("catalog.sqlite", content)
             archive.writestr("manifest.json", json.dumps(manifest, indent=2))
@@ -438,6 +439,14 @@ def main():
     metadata = sub.add_parser("metadata", help="Count or export track, artist, and release observations")
     metadata.add_argument("--snapshot", type=int)
     metadata.add_argument("--output", type=Path, help="New private JSON file with per-placement metadata")
+    follows = sub.add_parser("artist-follow-history", help="Compare saved follows and join catalog placement evidence")
+    follows.add_argument("--snapshot", type=int)
+    follows.add_argument("--term", default="", help="Filter by artist name or exact Spotify artist ID")
+    follows.add_argument("--output", type=Path, help="Save a private JSON report to a new file")
+    follow_import = sub.add_parser("import-followed-artists", help="Import a version 1 followed-artist JSON capture")
+    follow_import.add_argument("input", type=Path)
+    follow_import.add_argument("--account", required=True, help="Catalog account that supplied the export")
+    follow_import.add_argument("--coverage", required=True, choices=("complete", "partial"))
     sub.add_parser("snapshots")
     save_collection = sub.add_parser("save-collection", help="Save ordered members of a local playlist collection")
     save_collection.add_argument("collection_id")
@@ -492,14 +501,18 @@ def main():
             restore(args.archive, args.output)
             print("Restored catalog to", args.output)
             return 0
-        if args.command in ("import-ratings", "save-collection") and not args.db.is_file():
+        catalog_edits = ("import-ratings", "save-collection", "import-followed-artists")
+        if args.command in catalog_edits and not args.db.is_file():
             raise ValueError("Import an audit snapshot before editing the catalog.")
-        write = args.command in ("import", "import-ratings", "save-collection") or args.command in stream_imports
+        write = args.command == "import" or args.command in catalog_edits or args.command in stream_imports
         with closing(connect(args.db, write=write)) as db:
             if args.command == "import":
                 result = dict(snapshot_id=import_snapshot(db, json.loads(args.snapshot.read_text(encoding="utf-8-sig")), args.label))
             elif args.command == "import-ratings":
                 result = import_ratings(db, json.loads(args.input.read_text(encoding="utf-8-sig")))
+            elif args.command == "import-followed-artists":
+                result = artist_history.import_capture(db, json.loads(args.input.read_text(encoding="utf-8-sig")),
+                                                       args.account, args.coverage == "complete")
             elif args.command == "save-collection":
                 result = logical_playlists.save(db, args.collection_id, args.name, args.playlists, args.active)
             elif args.command in stream_imports:
@@ -513,7 +526,8 @@ def main():
                 backup(db, args.output)
                 result = dict(backup=str(args.output), uploaded=False)
             else:
-                if args.command in ("song-stats", "capacity", "availability", "metadata", "collections", "query"):
+                if args.command in ("song-stats", "capacity", "availability", "metadata", "collections", "query",
+                                    "artist-follow-history"):
                     db.execute("BEGIN")
                 sid = snapshot_id(db, args.snapshot)
                 if args.command == "playlists":
@@ -522,6 +536,12 @@ def main():
                     account = db.execute("SELECT account_id FROM snapshots WHERE id=?", (sid,)).fetchone()[0]
                     groups = logical_playlists.definitions(db, account)
                     result = logical_playlists.reports(db, sid, groups, sources(db, sid))
+                elif args.command == "artist-follow-history":
+                    result = artist_history.report(db, sid, args.term)
+                    if args.output:
+                        with args.output.open("x", encoding="utf-8") as stream:
+                            json.dump(result, stream, ensure_ascii=False, indent=2)
+                        result = dict(report=str(args.output.resolve()), artists=len(result["artists"]))
                 elif args.command == "find":
                     finder = lookup_identity if args.exact_key else lookup
                     result = finder(db, sid, args.term)

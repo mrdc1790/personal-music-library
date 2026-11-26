@@ -131,9 +131,12 @@ The catalog now supports an opt-in MusicBrainz recording-genre pass over saved c
 - Add synthetic regression cases for equal counts with different members, partial pages, unavailable items, local-only files, repeated local URIs, copied/transcoded files, and single/album IDs with no relink evidence in both playlists and Liked Songs. Cover remix/clean/live false matches and pre-existing replacement occurrences.
 - Keep candidate grouping, preferred-version migration, occurrence deduplication, and local-file cleanup as separate decisions. A migration must not silently collapse playlist duplicates.
 
-### Artist history and enrichment (planned)
+### Artist history and enrichment
 
-Retain this as an extension of the catalog, reusing capture, coverage, and offline reporting infrastructure. The current `artist_playlist_summary.csv` already distinguishes primary-credit placements, all-credit placements, and distinct observed track identities per source, with unmatched name-only artists kept separate. Follow history, external genre enrichment, persistent artist mappings, and the richer dashboard below are not implemented.
+The catalog now [imports followed-artist JSON and reports observed intervals](OPERATING_GUIDE.md#followed-artist-history)
+with exact-ID placements and coverage. The existing `artist_playlist_summary.csv`
+also preserves unmatched name-only credits. External artist enrichment,
+reviewed artist mappings, and the richer dashboard remain future work.
 
 - **Follow observations:** preserve each capture's artist IDs, returned API rank, account, capture time, and completion evidence. Track initial import, first/last seen, last confirmed followed, and observed follow/unfollow/refollow transitions. Detection times and intervals are not original follow dates; API rank is not chronology. Transitions entirely between captures are unknowable.
 - **Complete comparisons:** record transitions only between validated complete followed-artist captures for the same account. A partial or failed capture cannot mark absent artists as unfollowed or replace the last complete baseline. Retain its failure evidence separately.
@@ -144,7 +147,9 @@ Retain this as an extension of the catalog, reusing capture, coverage, and offli
 - **Independent refresh:** separate follow capture, playlist/library capture, enrichment, and report generation. Reuse captures only under their existing validation rules; cache enrichment with source timestamps and refresh policy. Revalidate provider fields and endpoints before implementation and retain unavailable metadata as unknown rather than zero.
 - **Historical imports:** existing dated artist exports could seed earlier observations after validating artist identities, capture provenance, account, and completeness. Filenames alone do not establish capture times or follow dates. Incomplete exports cannot establish unfollows.
 
-Start with complete follow snapshots and an artist report joined to existing catalog observations, then add reviewed mappings, genre enrichment, and richer presentation. Before shipping, cover partial captures, initial imports, observed refollows, duplicate artist names, featured credits, repeated placements, incomplete playlist coverage, manual exclusions, and uncertain historical imports with synthetic tests.
+Use complete follow snapshots for a real report, then add reviewed mappings,
+genre enrichment, and richer presentation. Extend the synthetic checks to
+cover manual exclusions and uncertain historical imports as those features land.
 
 #### Follow intervals, assertions, and exploration views
 

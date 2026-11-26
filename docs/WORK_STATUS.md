@@ -1,5 +1,14 @@
 # Work status
 
+## November 26, 2026 — followed-artist history
+
+Import [dated followed-artist captures](OPERATING_GUIDE.md#followed-artist-history)
+and join exact artist IDs to saved library placements. Complete observations
+establish follow, unfollow and refollow intervals. Partial captures preserve
+what was seen. Synthetic tests exercise out-of-order imports, duplicate names,
+featured credits, exact IDs, account validation and backup restoration. All
+115 offline tests passed.
+
 ## November 26, 2026 — measured catalog queries
 
 The [synthetic benchmark](STORAGE_DECISION.md#synthetic-query-benchmark) tested

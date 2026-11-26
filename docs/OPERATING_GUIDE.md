@@ -258,6 +258,30 @@ the catalog and included in its backups. The Spotify archive itself and fields
 such as IP address are excluded. Store the database, reports, and backups in
 private storage.
 
+## Followed-artist history
+
+Import the version 1 `artists.json` from the separate [followed-artists exporter](https://github.com/mrdc1790/spotify-followed-artists#save-and-compare-snapshots).
+Use the account ID for the source export and record its coverage explicitly.
+Version 1 does not embed the account or prove a complete traversal. Use
+`--coverage partial` when completeness is uncertain. Importing the same
+capture again is safe.
+
+```powershell
+python library.py import-followed-artists 'C:\private\artists.json' --account ACCOUNT_ID --coverage complete
+python library.py artist-follow-history --snapshot 2 --output 'C:\private\artist-history.json'
+```
+
+Follow and unfollow events are differences between successive complete
+captures. Their intervals give the earliest and latest observed bounds.
+Partial captures add observed names, ranks, and tags without inferring
+departures. The initial complete capture establishes the first baseline.
+Use `--term` to filter by artist name or exact Spotify artist ID.
+
+The report counts primary and all credited placements, distinct observed
+tracks, playlists, and observed Liked Songs tracks by exact artist ID. Its
+catalog snapshot and coverage are separate from the dated follow captures.
+The JSON and the catalog backup contain private follow history.
+
 ## Preview and folders
 
 The preview reads completed audit rows directly and is intentionally bounded; it is a useful trial, not a full-account claim.
