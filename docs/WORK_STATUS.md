@@ -1,5 +1,12 @@
 # Work status
 
+## November 27, 2026 — reusable set recipes
+
+[Save a local set recipe](INTEGRATION_DESIGN.md#smart-collections-and-recipes)
+and preview it against a saved snapshot. Preview evidence includes the operation,
+ordered source definitions, resolved playlist members, coverage, and identity
+ordering. The visual editor and publishing remain planned.
+
 ## November 26, 2026 — recording review history
 
 The catalog can [save and revise an explicit pair decision](RECORDING_CANDIDATES.md#save-an-explicit-review).
@@ -166,7 +173,7 @@ This can start with the data already on disk.
 | Is there a diff between runs? | Import two captures and run `library.py compare` with their snapshot IDs. It reports placement and order changes, including how many copies remain when a track loses placements. Unread sources remain unknown. Comparison is a separate offline step. See the [comparison guide](OPERATING_GUIDE.md#catalog-queries-and-exports). |
 | How do we investigate Liked Songs discrepancies? | Compare actual entries across the API, desktop, web, and phone where lists are available. Keep count-only evidence and device-specific gaps explicit. Use the read-only audio inventory for selected local folders. See [historical observations](HISTORICAL_OBSERVATIONS.md) and [local inventory](LOCAL_INVENTORY.md). |
 | What can I visualize? | The read-only viewer supports search and playlist/snapshot selection. The bounded preview can browse completed sources from a saved run. Full-scale import and browsing, capacity, broader overlap views, and duplicate review remain work items. See [preview and folders](OPERATING_GUIDE.md#preview-and-folders). |
-| How does Smarter Playlists fit? | Union, intersection, and difference work for covered sources. Saved recipes and a visual rule editor are planned. See [integration design](INTEGRATION_DESIGN.md). |
+| How does Smarter Playlists fit? | Save and rerun union, intersection, and difference recipes. A visual rule editor remains planned. See [integration design](INTEGRATION_DESIGN.md#smart-collections-and-recipes). |
 | How does this help with DJing or a central hub? | The catalog retains duration and supplied source metadata. Local filename and optional WAV duration can help surface file candidates. Verified recording matches, BPM/key analysis, cues, rekordbox exports, and player integration are roadmap work. See the [DJ workflow](DJ_LIBRARY_WORKFLOW.md). |
 | What can we do about Spotify's 10k limit? | Keep the larger collection in the catalog and curate numbered Spotify playlists within a folder. The per-playlist limit still applies. Automatic splitting and publishing are planned. See [playlist curation](PLAYLIST_CURATION.md). |
 

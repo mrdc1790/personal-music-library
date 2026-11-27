@@ -224,7 +224,7 @@ def lookup(db, sid, term):
             ("track_key", "title", "artists", "returned_id", "original_id")).casefold()]
 
 
-def set_query(db, sid, operation, selected):
+def query_sources(db, sid, selected):
     if len(selected) < 2 or len(set(selected)) != len(selected):
         raise ValueError("Provide at least two distinct playlist/source IDs.")
     coverage = dict(db.execute("SELECT source,exported FROM playlists WHERE snapshot_id=?", (sid,)))
@@ -243,6 +243,11 @@ def set_query(db, sid, operation, selected):
             members[source] = [source]
     if any(not coverage.get(playlist) for group in members.values() for playlist in group):
         raise ValueError("A requested playlist was not exported or does not exist. Use playlists to inspect coverage.")
+    return members
+
+
+def set_query(db, sid, operation, selected):
+    members = query_sources(db, sid, selected)
     selections = defaultdict(list)
     for source, group in members.items():
         for playlist in group:

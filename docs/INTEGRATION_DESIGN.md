@@ -87,7 +87,21 @@ each tested client separately from the captured folder tree. See the
 
 ## Smart collections and recipes
 
-The current CLI supports local union, intersection, and difference. A future recipe interface should make those steps visible and reproducible:
+Save a version 1 local set recipe and preview it against any compatible
+snapshot. Source IDs may refer to playlists, `liked`, or configured logical
+playlists. The first source is the base for `difference`.
+
+```powershell
+python playlist_recipe.py save 'C:\private\recipe.json' 'Not in Festival' difference collection:dance FESTIVAL_ID
+python playlist_recipe.py preview 'C:\private\recipe.json' 'C:\private\recipe-preview.json' --snapshot 3
+```
+
+The preview retains the rules, snapshot, resolved member IDs and output order.
+It requires exported coverage for every selected source and returns distinct
+observed identities in key order. Playlist publishing and scheduling remain
+separate work.
+
+A future visual editor can make these steps easier to follow:
 
 1. Select one saved snapshot and show its coverage.
 2. Select source playlists or Liked Songs by friendly name and stable ID.

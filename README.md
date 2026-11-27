@@ -33,6 +33,7 @@ for the folder pilot and the [roadmap](docs/ROADMAP.md#next-work) for delivery o
 | Browse a small completed capture | Read-only HTML preview with placements, search, and two-playlist set operations |
 | Keep history locally | Import snapshots into a separate SQLite catalog; prior snapshots remain intact |
 | Find and compare | Search every occurrence; local union, intersection, difference, duplicate, and scan comparison |
+| Reuse a set query | [Save and preview a local playlist recipe](docs/INTEGRATION_DESIGN.md#smart-collections-and-recipes) |
 | Inspect and protect | CSV exports, static catalog view, checksummed catalog ZIP, and restore verification |
 | Preserve folders | Optional read-only Spotifast rootlist import; live validation still needed |
 | Rank songs | [Playlist reach, personal plays, and worldwide streams](docs/OPERATING_GUIDE.md#song-stats) |
@@ -55,7 +56,7 @@ what each measure answers.
 
 The [local audio-folder inventory](docs/LOCAL_INVENTORY.md) uses MP3 tags, filenames, and available WAV duration to find candidates for saved Spotify local references. Explicit file confirmations carry across scans by byte hash.
 
-Not implemented: confirmed local recording matching, canonical recording matching across Spotify IDs, full-library scale validation, saved smart-playlist recipes, playlist publishing/splitting, player/server integration, or a universal playback/Connect replacement.
+The remaining roadmap includes canonical recording groups, large-history browser benchmarks, a visual recipe editor, playlist publishing and splitting, and player/server pilots.
 
 Planned [library intelligence](docs/LIBRARY_INTELLIGENCE.md) builds on that catalog: continuing change tracking, one-to-many playlist exploration, genre/BPM/key profiles, DJ transition candidates, and artist/album/future-release placement suggestions. The plan separates working queries from future features, metadata coverage, and provider-permission constraints.
 
