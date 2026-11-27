@@ -229,19 +229,25 @@ import and reopen at [190,000 placements](PLAYLIST_CURATION.md#how-the-limits-ap
 
 ## Continue here
 
-1. Use the [query benchmark](STORAGE_DECISION.md#synthetic-query-benchmark)
-   as the baseline for larger browser and reporting tests. Expand saved
-   coverage when a fresh read-only capture is appropriate.
-2. Try one category with two direct sibling volumes in Spotify while the
-   database work proceeds. When there is a concrete repair case, use the
-   [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md) for that work.
+1. Expand the saved capture and validate an account-matched folder tree.
+   Refresh the song-stats inputs when the dated listening and worldwide totals
+   are available.
+2. Try a category with two direct sibling volumes in Spotify. Use the
+   [capacity and volume guide](PLAYLIST_CURATION.md#one-category-playback-pilot)
+   to check the desktop and phone separately.
+3. Review one concrete local-track replacement or near-capacity repair using
+   the [shared integration roadmap](CATALOG_MIGRATOR_ROADMAP.md). The browser
+   checks selected playlist scope and fresh capacity before writes.
+4. Use the [benchmarks](STORAGE_DECISION.md#synthetic-query-benchmark) to guide
+   heavier import and report work. An owned-audio or rekordbox pilot can run
+   independently once the sample and target device are selected.
 
 ## Current publication status
 
-The checkpoint export, capacity report, selected playlist capture, and
-availability report are part of the catalog. Refreshing inputs for the
-[song-stats report](OPERATING_GUIDE.md#song-stats) remains a separate task.
-[Current milestone status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status).
+The [catalog's feature list](../README.md#what-works-today) covers the published
+commands and explorer. The [shared delivery status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status)
+tracks catalog and migrator integration. The [song-stats inputs](OPERATING_GUIDE.md#song-stats)
+still require a further data refresh after the saved checkpoint import.
 
 ## October 27, 2026 — DJ goal alignment and publication
 

@@ -29,9 +29,10 @@ recording joins, and a view of changes across snapshots remain follow-ons.
 ## Current priority
 
 The catalog supports offline checkpoint export, historical capacity reports,
-and targeted playlist captures. The next milestones cover query performance
-and a pilot for numbered playlist volumes. Song stats has a separate data
-refresh task. [Current milestone status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status).
+targeted captures, logical playlist volumes, and saved set recipes. The next
+milestones are a real volume pilot, wider source coverage, and measurements of
+larger imports and reports. Song stats has a separate data refresh task.
+[Current milestone status](CATALOG_MIGRATOR_ROADMAP.md#catalog-delivery-status).
 
 Retain SQLite for the local operational catalog. The [storage decision and alternatives](STORAGE_DECISION.md) explain the fit, query-performance work, optional analytics path, and criteria for reconsidering a server database. No cloud service or second database engine is currently required.
 
