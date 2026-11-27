@@ -42,3 +42,22 @@ Reviews are dated, backed up with SQLite, and retain superseded decisions.
 They apply to the exact pair. They leave historical identities, counts,
 ratings and migrations independent. A canonical group across multiple pairs
 would need its own review and rules for conflicting decisions.
+
+## Compare two saved releases
+
+Take the exact album IDs from captured metadata or a saved candidate report.
+Use the snapshot containing each edition's placements.
+
+```powershell
+python release_comparison.py OLD_RELEASE_ID NEW_RELEASE_ID --left-snapshot 1 --right-snapshot 3 --output 'C:\private\release-comparison.json'
+```
+
+The report lists observed tracks in disc and track order. Pairing uses the
+observed identity or recording metadata. Ordinals describe positions only. The
+report keeps resequenced candidates, competing matches, conflicts, duplicates
+in playlist placements, and tracks without a compatible candidate. Pair
+indexes are zero-based indexes into the left and right track lists.
+
+The reported album totals are captured metadata. The known track list comes
+from saved placements and may omit unobserved album tracks. Prepare a reviewed
+replacement separately for any specific pair you choose to use.

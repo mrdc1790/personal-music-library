@@ -181,9 +181,10 @@ These requirements preserve the useful design from the earlier “Spotify Librar
 The [recording candidate report](RECORDING_CANDIDATES.md) starts from an exact
 saved identity and compares historical release, ISRC, credit, duration, version
 and placement evidence. It also accepts Spotify local references as inputs.
-The catalog stores explicit, dated decisions for reviewed pairs.
-Release-family comparison, neighboring tracks, and recording-level grouping
-remain planned. The [identity taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy)
+The catalog stores explicit, dated decisions for reviewed pairs. Saved
+release comparisons show resequenced candidates and unmatched tracks.
+Discovering unobserved neighboring tracks and recording-level grouping remain
+planned. The [identity taxonomy](EVIDENCE_AND_MODEL.md#duplicate-and-identity-taxonomy)
 and [migration guide](MIGRATION.md) define the acceptance boundaries.
 
 The [October 6, 2026 navigation observation](HISTORICAL_OBSERVATIONS.md#october-6-2026-oldshadow-album-navigation-appears-restored) reports that View album now reaches the old/shadow album without an Android app update. Old-release discovery must cover both reachable and unreadable old albums; restored client navigation does not establish API readability, merged identities, or transferred membership. Capture the opened release identity separately from the stored track identity and keep migration optional.
@@ -192,7 +193,10 @@ The [October 6, 2026 navigation observation](HISTORICAL_OBSERVATIONS.md#october-
 2. Review saved ISRC and title/artist/duration candidates with their supporting,
    contradictory and unknown fields. Add release-family comparison, external
    recording IDs, and owned-audio fingerprints in later stages.
-3. Compare release track lists beyond disc/track ordinal position. Standard-to-deluxe, resequenced, missing-track, and bonus-track cases need partial candidate mappings with explicit unmatched entries. This does not relax either executor's current album/identity gates.
+3. [Compare observed release tracks](RECORDING_CANDIDATES.md#compare-two-saved-releases)
+   beyond disc and track order. The report includes resequenced candidates,
+   missing and bonus tracks, and conflicting evidence. Live release discovery
+   and complete album track lists are separate capture work.
 4. Apply [reviewed pair decisions](RECORDING_CANDIDATES.md#save-an-explicit-review)
    before designing recording-level placement queries. A preferred album or
    instance is a separate user choice. Literal placements remain queryable.

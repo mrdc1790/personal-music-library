@@ -1,5 +1,13 @@
 # Work status
 
+## November 27, 2026 — saved release comparison
+
+[Compare two observed releases](RECORDING_CANDIDATES.md#compare-two-saved-releases)
+using exact keys and recording metadata. The synthetic standard-to-deluxe
+fixture covers resequencing, bonus tracks, conflicting metadata, duplicate
+placements, and partial sources. Browse unobserved album tracks separately
+when the saved source lacks them.
+
 ## November 27, 2026 — reusable set recipes
 
 [Save a local set recipe](INTEGRATION_DESIGN.md#smart-collections-and-recipes)

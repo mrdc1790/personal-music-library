@@ -11,6 +11,7 @@ from unittest.mock import patch
 import library
 import recording_candidates
 import recording_review
+import release_comparison
 
 
 ISRC = 'USABC2600001'
@@ -30,6 +31,13 @@ def capture(day, *rows, partial=()):
                 status='partial' if partial else 'completed', liked_exported=False, occurrences=list(rows),
                 playlists=[dict(metadata=dict(id=source, name=source), exported=source not in partial)
                            for source in sorted({row['source'] for row in rows})])
+
+
+def album_member(row, release_id, ordinal, total):
+    track = row['raw']['item']
+    track.update(disc_number=1, track_number=ordinal)
+    track['album'].update(id=release_id, total_tracks=total)
+    return row
 
 
 class RecordingCandidateTests(unittest.TestCase):
@@ -103,3 +111,32 @@ class RecordingCandidateTests(unittest.TestCase):
         self.assertEqual(len(library.rows(self.db, sid)), 2)
         with self.assertRaisesRegex(ValueError, 'must be present'):
             recording_review.save(self.db, left, 'spotify:track:' + 'X' * 22, 'same-recording', 'Test')
+
+    def test_release_comparison_uses_metadata_over_ordinals_and_keeps_a_bonus_track(self):
+        old, deluxe = 'R' * 22, 'S' * 22
+        earlier = capture(1,
+                          album_member(observed('old', 0, 'A', code=ISRC), old, 1, 2),
+                          album_member(observed('old', 1, 'A', code=ISRC), old, 1, 2),
+                          album_member(observed('old', 2, 'Q', title='Interlude'), old, 2, 2))
+        later = capture(2,
+                        album_member(observed('new', 0, 'Q', title='Interlude'), deluxe, 1, 5),
+                        album_member(observed('new', 1, 'B', code=ISRC), deluxe, 2, 5),
+                        album_member(observed('new', 2, 'C', title='Bonus'), deluxe, 3, 5),
+                        album_member(observed('new', 3, 'D', code=ISRC, explicit=True), deluxe, 4, 5),
+                        partial=('new',))
+        before = library.import_snapshot(self.db, earlier, 'Standard')
+        after = library.import_snapshot(self.db, later, 'Deluxe partial')
+        output = self.path.with_name('release-comparison.json')
+        args = ['release_comparison.py', old, deluxe, '--db', str(self.path), '--left-snapshot', str(before),
+                '--right-snapshot', str(after), '--output', str(output)]
+        with patch('sys.argv', args), redirect_stdout(StringIO()):
+            release_comparison.main()
+        result = json.loads(output.read_text(encoding='utf-8'))
+        self.assertEqual(result['left']['observed_track_entries'], 2)
+        self.assertEqual(len(result['left']['tracks'][0]['placements']), 2)
+        self.assertEqual(result['right']['reported_track_totals'], [5])
+        self.assertEqual(result['right']['exported_sources'], 0)
+        self.assertEqual(result['right_without_compatible_candidate'], [2, 3])
+        self.assertEqual([(p['left'], p['right'], p['status']) for p in result['pairs']],
+                         [(0, 1, 'one_to_one_candidate'), (0, 3, 'conflicting_metadata'), (1, 0, 'one_to_one_candidate')])
+        self.assertTrue(result['pairs'][-1]['shared_observed_key'])

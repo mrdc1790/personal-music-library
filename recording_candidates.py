@@ -38,7 +38,7 @@ def placement(row, exported):
                 playable=bool(row['playable']) if row['playable'] in (0, 1) else None)
 
 
-def compare_pair(source, candidate):
+def compare_pair(source, candidate, *, shared_identity=False):
     support, conflicts, unknown = [], [], []
     for key in ('isrc', 'title', 'primary_artist_id', 'explicit'):
         left, right = source[key], candidate[key]
@@ -67,10 +67,10 @@ def compare_pair(source, candidate):
     else:
         gap = None
         unknown.append('duration_ms')
-    if 'isrc' not in support and not {'title', 'duration_ms'} <= set(support):
-        return None
-    if 'isrc' not in support and not {'primary_artist_id', 'primary_artist_name'} & set(support):
-        return None
+    if not shared_identity and 'isrc' not in support:
+        signals = set(support)
+        if not {'title', 'duration_ms'} <= signals or not {'primary_artist_id', 'primary_artist_name'} & signals:
+            return None
     return dict(support=support, conflicts=conflicts, unknown=unknown, duration_difference_ms=gap)
 
 
