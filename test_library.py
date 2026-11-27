@@ -40,6 +40,7 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(json.loads(payload.group(1))[0]['label'], label)
         self.assertIn(escape(str(catalog.resolve())), html)
         self.assertIn('<button id="clear-filters" type="button">Clear all filters</button>', html)
+        self.assertIn('<summary>Compare playlists and collections</summary>', html)
 
     def test_view_reports_missing_catalog_without_creating_it(self):
         catalog = self.folder / 'missing.sqlite'

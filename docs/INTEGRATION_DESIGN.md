@@ -87,6 +87,12 @@ each tested client separately from the captured folder tree. See the
 
 ## Smart collections and recipes
 
+Open **Compare playlists and collections** in the catalog explorer. Choose
+the snapshot, operation, and ordered sources. Preview the match count and up
+to 50 identities. Click a match for its saved placements. **Download recipe**
+saves the rules. Reopen that file in the explorer or run it with the CLI for
+the full result. Sources with partial or absent coverage block a preview.
+
 Save a version 1 local set recipe and preview it against any compatible
 snapshot. Source IDs may refer to playlists, `liked`, or configured logical
 playlists. The first source is the base for `difference`.
@@ -101,15 +107,9 @@ It requires exported coverage for every selected source and returns distinct
 observed identities in key order. Playlist publishing and scheduling remain
 separate work.
 
-A future visual editor can make these steps easier to follow:
-
-1. Select one saved snapshot and show its coverage.
-2. Select source playlists or Liked Songs by friendly name and stable ID.
-3. Connect simple rules: in either, in both, or in A but not B.
-4. Preview result count, entries, and inclusion explanation.
-5. Save either the recipe (rules) or a result (entries from a particular run); do not confuse the two.
-
-The expected synthetic examples are `Chill AND Festival → Moonrise` and `Chill NOT Festival → Harbor`. A recipe run must not mutate its sources. It must preserve snapshot ID, recipe version, parameters, coverage, output-order rule, and any shuffle seed so the result can be explained and reproduced.
+The synthetic examples are `Chill AND Festival → Moonrise` and
+`Chill NOT Festival → Harbor`. The downloaded recipe holds reusable rules.
+The CLI preview records them alongside the result of one run.
 
 Later operations—sorting, limits, artist spacing, explicit deduplication, scheduling, refresh against a newer snapshot, and Spotify publishing—need their own visible rules and review boundaries. Mathematical set operations do not define listening order. A large local result may later be projected to bounded service playlists, but splitting or publishing is not implemented.
 

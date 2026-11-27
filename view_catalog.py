@@ -86,6 +86,10 @@ button.link{border:0;background:transparent;color:#126244;text-decoration:underl
 #details button.link,#status button.link{margin:4px 12px 4px 0}#details li{line-height:1.55}
 #details dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px}#details dt{font-weight:700}#details dd{margin:0}
 #details ul{max-height:16rem;overflow:auto}#details label{max-width:200px}
+#recipe summary{cursor:pointer;font-weight:700}#recipe .controls{margin:14px 0}#recipe-sources{display:grid;gap:8px}
+.recipe-source{display:flex;align-items:end;gap:8px}.recipe-source button{margin:0;white-space:nowrap}
+#recipe .recipe-source label{min-width:0}#recipe .controls label{min-width:min(220px,100%)}
+#recipe-results{max-height:15rem;overflow:auto}
 </style></head><body><main><div class="eyebrow">PERSONAL MUSIC LIBRARY / READ-ONLY</div>
 <h1>Where is your music?</h1><div class="path">__PATH__</div>
 <div class="note" id="notice"></div>
@@ -94,6 +98,17 @@ button.link{border:0;background:transparent;color:#126244;text-decoration:underl
 <label>Rating<select id="rating-filter"><option value="">Any rating</option><option value="unrated">Unrated</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
 <label>Order<select id="rating-order"><option value="">Source order</option><option value="highest">Highest rating first</option><option value="lowest">Lowest rating first</option></select></label>
 <button id="clear-filters" type="button">Clear all filters</button></div>
+<details id="recipe" class="note"><summary>Compare playlists and collections</summary>
+<div class="controls"><label>Recipe name<input id="recipe-name" value="Playlist comparison"></label>
+<label>Operation<select id="recipe-operation"><option value="intersection">Tracks shared by every source</option>
+<option value="union">Tracks in any source</option><option value="difference">First source minus the rest</option></select></label></div>
+<div id="recipe-sources"></div>
+<button id="recipe-add" type="button">Add source</button>
+<button id="recipe-preview" type="button">Preview recipe</button>
+<button id="recipe-save" type="button" disabled>Download recipe</button>
+<label for="recipe-open">Open a recipe file</label><input id="recipe-open" type="file" accept=".json,application/json">
+<p id="recipe-status" role="status"></p><ol id="recipe-results" hidden></ol>
+</details>
 <section id="collection-details" class="note" hidden></section>
 <section id="details" class="note" hidden aria-live="polite"></section>
 <div id="rating-changes" hidden><button id="download-ratings" type="button">Download rating changes</button><span id="rating-status" role="status"></span></div>
@@ -118,6 +133,14 @@ function option(text, value) {
     node.value = value;
     return node;
 }
+function downloadJson(payload, filename) {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'}));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 function append(parent, tag, value) {
     const node = document.createElement(tag);
     node.textContent = value;
@@ -137,6 +160,97 @@ function folderLabel(path) {
 function playlistLabel(source) {
     const folders = source.paths.map(folderLabel).join(' · ');
     return folders ? folders + ' / ' + source.name : source.name;
+}
+function recipeChoices() {
+    const choices = new Map(current.sources.map(source => [source.source, {
+        name: playlistLabel(source), complete: Boolean(source.exported), members: [source.source],
+    }]));
+    for (const group of current.collections) {
+        choices.set('collection:' + group.collection_id, {
+            name: group.name + ' (logical playlist)', complete: group.complete,
+            members: group.members.map(member => member.playlist_id),
+        });
+    }
+    return choices;
+}
+function recipeSourceValues() {
+    return Array.from(el('recipe-sources').querySelectorAll('select'), select => select.value);
+}
+function clearRecipePreview(message = '') {
+    el('recipe-results').replaceChildren();
+    el('recipe-results').hidden = true;
+    el('recipe-status').textContent = message;
+    el('recipe-save').disabled = true;
+}
+function renderRecipeSources(values) {
+    const choices = recipeChoices(), list = el('recipe-sources');
+    list.replaceChildren();
+    values.forEach((value, index) => {
+        const row = append(list, 'div', '');
+        row.className = 'recipe-source';
+        const label = append(row, 'label', 'Source ' + (index + 1));
+        const select = document.createElement('select');
+        select.append(option('Choose a playlist or collection', ''));
+        for (const [key, source] of choices) {
+            select.append(option(source.name + (source.complete ? '' : ' · partial coverage'), key));
+        }
+        if (value && !choices.has(value)) select.append(option(value + ' · absent from this snapshot', value));
+        select.value = value;
+        select.onchange = () => clearRecipePreview();
+        label.append(select);
+        if (index >= 2) {
+            const remove = append(row, 'button', 'Remove');
+            remove.type = 'button';
+            remove.setAttribute('aria-label', 'Remove source ' + (index + 1));
+            remove.onclick = () => renderRecipeSources(recipeSourceValues().filter((_, i) => i !== index));
+        }
+    });
+    clearRecipePreview();
+}
+function recipeDraft() {
+    return {
+        version: 1, name: el('recipe-name').value.trim() || 'Playlist comparison',
+        operation: el('recipe-operation').value, sources: recipeSourceValues(),
+    };
+}
+function previewRecipe() {
+    const {operation, sources} = recipeDraft(), choices = recipeChoices();
+    if (sources.some(source => !source) || new Set(sources).size !== sources.length) {
+        clearRecipePreview('Choose a different playlist or collection for each source.');
+        return;
+    }
+    const unavailable = sources.find(source => !choices.get(source)?.complete);
+    if (unavailable) {
+        clearRecipePreview('Complete saved coverage is required for ' + (choices.get(unavailable)?.name ?? unavailable) + '.');
+        return;
+    }
+    const selected = new Map(), observed = new Map();
+    sources.forEach((source, index) => {
+        for (const member of choices.get(source).members) {
+            if (!selected.has(member)) selected.set(member, []);
+            selected.get(member).push(index);
+        }
+    });
+    for (const row of current.items) {
+        if (row.identity_basis === 'unidentified' || !selected.has(row.source)) continue;
+        if (!observed.has(row.track_key)) observed.set(row.track_key, {row, inputs: new Set()});
+        selected.get(row.source).forEach(input => observed.get(row.track_key).inputs.add(input));
+    }
+    const keys = [...observed.keys()].filter(key => {
+        const {inputs} = observed.get(key);
+        if (operation === 'intersection') return inputs.size === sources.length;
+        if (operation === 'difference') return inputs.has(0) && inputs.size === 1;
+        return true;
+    }).sort();
+    clearRecipePreview(`${keys.length.toLocaleString()} matching identities in snapshot ${current.id}` +
+        (keys.length > 50 ? ' · showing the first 50. Run the downloaded recipe for the full result.' : '.'));
+    const results = el('recipe-results');
+    for (const key of keys.slice(0, 50)) {
+        const {row} = observed.get(key);
+        action(append(results, 'li', ''), (row.title || 'Unknown') + ' — ' + row.artists, () => showSong(row));
+    }
+    results.hidden = !keys.length;
+    el('recipe-save').disabled = false;
 }
 function folderSources() {
     if (el('folder').value === '') return current.sources;
@@ -199,6 +313,8 @@ function load(key = '') {
         : ' No folder tree is available for this account.';
     el('notice').textContent = (current.account_id.startsWith('SYNTHETIC') ? 'SYNTHETIC DEMO. ' : '') +
         'Capture status: ' + current.status + '.' + tree;
+    const recipeSources = recipeSourceValues();
+    if (recipeSources.length) renderRecipeSources(recipeSources);
     render();
     if (key) {
         const row = current.items.find(item => item.track_key === key && item.identity_basis !== 'unidentified');
@@ -356,17 +472,39 @@ el('clear-filters').onclick = () => {
     el('rating-order').value = '';
     searchCatalog();
 };
+el('recipe').ontoggle = () => {
+    if (el('recipe').open && !recipeSourceValues().length) renderRecipeSources(['', '']);
+};
+el('recipe-operation').onchange = () => clearRecipePreview();
+el('recipe-add').onclick = () => renderRecipeSources([...recipeSourceValues(), '']);
+el('recipe-preview').onclick = previewRecipe;
+el('recipe-save').onclick = () => downloadJson(recipeDraft(), 'playlist-recipe.json');
+el('recipe-open').onchange = async event => {
+    const [file] = event.target.files;
+    event.target.value = '';
+    if (!file) return;
+    try {
+        const recipe = JSON.parse((await file.text()).replace(/^\uFEFF/, ''));
+        if (recipe?.version !== 1 || Object.keys(recipe).length !== 4 ||
+            typeof recipe.name !== 'string' || !recipe.name.trim() ||
+            !['intersection', 'difference', 'union'].includes(recipe.operation) ||
+            !Array.isArray(recipe.sources) || recipe.sources.length < 2 ||
+            !recipe.sources.every(source => typeof source === 'string' && source.trim()) ||
+            new Set(recipe.sources).size !== recipe.sources.length) throw new Error('Invalid recipe');
+        el('recipe-name').value = recipe.name;
+        el('recipe-operation').value = recipe.operation;
+        renderRecipeSources(recipe.sources);
+        el('recipe-status').textContent = 'Recipe loaded. Preview it against this snapshot.';
+    } catch {
+        clearRecipePreview('Choose a valid version 1 playlist recipe.');
+    }
+};
 el('download-ratings').onclick = () => {
     const changes = Array.from(ratingChanges, ([track_key, rating]) => ({
         track_key, before: ratings.get(track_key) ?? null, rating,
     }));
     const payload = {format: 'personal-music-library-ratings-1', account: current.account_id, changes};
-    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'}));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'catalog-rating-changes.json';
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadJson(payload, 'catalog-rating-changes.json');
     el('rating-status').textContent = 'Apply this file locally with library.py import-ratings.';
 };
 el('previous').onclick = () => { page--; render(); };
