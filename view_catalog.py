@@ -4,9 +4,11 @@ from storage_paths import data_root
 from contextlib import closing
 import html
 import json
+import os
 from pathlib import Path
 import re
 import sqlite3
+import tempfile
 import webbrowser
 
 import folder_tree
@@ -27,10 +29,28 @@ def default_catalog():
     return max(candidates, key=lambda p: p.stat().st_mtime) if candidates else None
 
 
+def script_json(value):
+    return json.dumps(value, ensure_ascii=True).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
+
+
+def write_placements(stream, db, snapshot):
+    stream.write(f'<script type="application/json" id="placements-{snapshot}">[')
+    for index, row in enumerate(db.execute(
+            'SELECT source,position,title,artists,track_key,identity_basis,is_local,missing,raw_json '
+            'FROM items WHERE snapshot_id=? ORDER BY source,position', (snapshot,))):
+        item = dict(row)
+        item['artists'] = ', '.join(json.loads(item['artists']))
+        item['metadata'] = track_metadata.card(json.loads(item.pop('raw_json')))
+        if index:
+            stream.write(',')
+        stream.write(script_json(item))
+    stream.write(']</script>\n')
+
+
 def create_view(catalog, output, hierarchy=None, snapshot=None):
-    output = Path(output)
+    output = Path(output).resolve()
     for source in (catalog, hierarchy):
-        if source is not None and (output.resolve() == Path(source).resolve() or
+        if source is not None and (output == Path(source).resolve() or
                                   (output.exists() and Path(source).exists() and output.samefile(source))):
             raise ValueError('Choose an HTML output separate from the catalog and hierarchy files.')
     snapshots = []
@@ -52,27 +72,30 @@ def create_view(catalog, output, hierarchy=None, snapshot=None):
             for source in sources:
                 source['paths'] = paths.get(source['source'], [])
                 source['folders'] = sorted(membership.get(source['source'], ()))
-            items = []
-            for row in db.execute('SELECT source,position,title,artists,track_key,identity_basis,is_local,missing,raw_json '
-                                  'FROM items WHERE snapshot_id=? ORDER BY source,position', (s['id'],)):
-                item = dict(row)
-                item['artists'] = ', '.join(json.loads(item['artists']))
-                item['metadata'] = track_metadata.card(json.loads(item.pop('raw_json')))
-                items.append(item)
-            snapshots.append(dict(s, sources=sources, items=items,
+            snapshots.append(dict(s, sources=sources,
                                   collections=collections,
                                   folders=folders, tree_imported_at=tree['imported_at'] if tree else None))
-    if not snapshots:
-        raise ValueError('This catalog has no snapshots.')
-    data = json.dumps(snapshots, ensure_ascii=True).replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
-    replacements = {
-        '__DATA__': data,
-        '__RATINGS__': json.dumps(list(ratings.items()), ensure_ascii=True).replace('<', '\\u003c'),
-        '__PATH__': html.escape(str(Path(catalog).resolve())),
-    }
-    page = re.sub(r'__DATA__|__RATINGS__|__PATH__', lambda match: replacements[match.group()], TEMPLATE)
-    output.write_text(page, encoding='utf-8')
-    return output.resolve()
+        if not snapshots:
+            raise ValueError('This catalog has no snapshots.')
+        replacements = {
+            '__DATA__': script_json(snapshots),
+            '__RATINGS__': script_json(list(ratings.items())),
+            '__PATH__': html.escape(str(Path(catalog).resolve())),
+        }
+        prefix, suffix = TEMPLATE.split('__PLACEMENTS__', 1)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=output.parent, delete=False) as stream:
+                temporary = Path(stream.name)
+                stream.write(re.sub(r'__DATA__|__RATINGS__|__PATH__', lambda match: replacements[match.group()], prefix))
+                for saved in snapshots:
+                    write_placements(stream, db, saved['id'])
+                stream.write(suffix)
+            os.replace(temporary, output)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+    return output
 
 
 TEMPLATE = '''<!doctype html>
@@ -117,6 +140,7 @@ button.link{border:0;background:transparent;color:#126244;text-decoration:underl
 <footer>One row means one placement. A song may appear in several playlists or twice in the same one.<br>Positions here start at 1. Local presence and playback require separate evidence.<br>Reopen the launcher after importing new data or applying rating changes. No data is uploaded.</footer>
 <script type="application/json" id="data">__DATA__</script>
 <script type="application/json" id="ratings">__RATINGS__</script>
+__PLACEMENTS__
 <script>
 'use strict';
 const data=JSON.parse(document.getElementById('data').textContent);
@@ -296,7 +320,8 @@ function showCollection(key = '') {
     details.append(list);
 }
 function load(key = '') {
-    current = data[Number(el('snapshot').value)];
+    const snapshot = data[Number(el('snapshot').value)];
+    current = {...snapshot, items: JSON.parse(el('placements-' + snapshot.id).textContent)};
     names = new Map(current.sources.map(source => [source.source, source]));
     selectedKey = key;
     page = 0;

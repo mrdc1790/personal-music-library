@@ -1,5 +1,19 @@
 # Work status
 
+## November 27, 2026 — large saved explorer views
+
+The catalog streams HTML placements to disk and loads one snapshot's
+placements into the browser at a time. [Measurements](STORAGE_DECISION.md#explorer-generation-and-browser-memory)
+show lower Python and Chrome heap allocations on a two-snapshot synthetic
+history. Chrome verified snapshot switching, recipe files, and rating changes.
+
+## November 26, 2026 — partial song-stats refresh
+
+The private catalog imported a saved checkpoint and generated refreshed song
+stats. Pending or failed sources remain incomplete. A comparable fresh
+capture, the validated folder tree, an Extended Streaming History export,
+and dated worldwide totals remain data follow-ups.
+
 ## November 27, 2026 — saved release comparison
 
 [Compare two observed releases](RECORDING_CANDIDATES.md#compare-two-saved-releases)

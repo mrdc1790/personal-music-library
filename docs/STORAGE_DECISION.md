@@ -104,7 +104,30 @@ The traced comparison peak fell from 472 to about 25 MiB. The traced
 intersection fell from 232 to about 6 MiB. The import still took about 5–6
 seconds per snapshot with a traced peak of about 196 MiB. With 350,000
 placements per snapshot, imports took roughly 8 seconds, the comparison 1.64
-seconds, and the database occupied 524 MiB. The default explorer still embeds
-its selected history. Generate a smaller file with `view_catalog.py --snapshot ID`.
+seconds, and the database occupied 524 MiB.
+
+### Explorer generation and browser memory
+
+The explorer writes placements one at a time and embeds a separate JSON block
+for each snapshot. The browser parses placements for the selected snapshot.
+The full-history file still contains all snapshots. Use `view_catalog.py
+--snapshot ID` to generate a smaller file with one capture.
+
+On one Windows run with two synthetic snapshots of 110,001 placements each,
+the full-history file occupied about 51 MiB. The comparison used the same
+SQLite file before and after the change. Python data excludes native SQLite
+allocations. Chrome heap data is V8 heap after garbage collection, excluding
+other browser memory and the on-disk HTML.
+
+| Measurement | Before | Updated |
+|---|---:|---:|
+| Full-history Python allocation peak | 552.6 MiB | 0.17 MiB |
+| Full-history generation with allocation tracing | 28.45 s | 29.62 s |
+| Full-history Chrome V8 heap | 48.0 MiB | 24.3 MiB |
+| Full-history Chrome DOM ready | 0.535 s | 0.441 s |
+| Single-snapshot file size | 25.65 MiB | 25.54 MiB |
+
+Reproduce HTML generation measurements with
+`python benchmark_catalog.py --repeats 10001 --explorer --trace-memory`.
 
 The browser migrator was checked: its preview checkpoints and cooldown storage are recovery state, not a historical catalog. Its October 22, 2026 update adds IndexedDB preview persistence, with explicit session/memory fallback and fresh version checks on resume. This does not require this catalog to be complete or add SQLite to the browser. A future durable mutation journal or versioned catalog interface still needs a separate design and tests; neither app opens the other's database. The chat can be deleted without losing these choices or reconsideration criteria.

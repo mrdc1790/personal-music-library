@@ -56,7 +56,7 @@ what each measure answers.
 
 The [local audio-folder inventory](docs/LOCAL_INVENTORY.md) uses MP3 tags, filenames, and available WAV duration to find candidates for saved Spotify local references. Explicit file confirmations carry across scans by byte hash.
 
-The remaining roadmap includes canonical recording groups, large-history browser benchmarks, playlist publishing and splitting, and player/server pilots.
+The remaining roadmap includes canonical recording groups, playlist publishing and splitting, and player/server pilots.
 
 Planned [library intelligence](docs/LIBRARY_INTELLIGENCE.md) builds on that catalog: continuing change tracking, one-to-many playlist exploration, genre/BPM/key profiles, DJ transition candidates, and artist/album/future-release placement suggestions. The plan separates working queries from future features, metadata coverage, and provider-permission constraints.
 

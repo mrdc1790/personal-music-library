@@ -56,11 +56,12 @@ The offline checkpoint export and [historical capacity baseline](OPERATING_GUIDE
 are implemented and verified on saved evidence. Resume or run a live capture
 separately when additional coverage is needed and any cooldown has elapsed.
 
-1. **Scale the browser and heavier reports.** The [SQLite benchmark](STORAGE_DECISION.md#synthetic-query-benchmark)
+1. **Scale heavier reports and imports.** The [SQLite benchmark](STORAGE_DECISION.md#synthetic-query-benchmark)
    covered 100,000 identities and up to 350,000 placements per snapshot. Indexed
    identity lookup and narrower set and comparison queries are available.
-   Measure HTML generation and browser memory on larger histories, along with
-   import and song-stats memory, before selecting the next optimization.
+   The [explorer benchmark](STORAGE_DECISION.md#explorer-generation-and-browser-memory)
+   measured streamed generation and one-snapshot browser parsing. Use the
+   existing import and song-stats measurements to guide the next optimization.
 2. **Pilot category volumes.** Use [logical playlists](#logical-playlists-for-split-collections)
    to group existing splits and record the active volume. Use the capacity
    report to preview manual rollover. Pilot the [folder-tree adapter](INTEGRATION_DESIGN.md#folder-structure-adapter)
@@ -107,7 +108,7 @@ playback and rollover pilot remain pending.
 | Playlist capacity and rollover | Historical capacity and logical volume mappings implemented | Test one category with direct sibling playlists on both devices |
 | Song stats | Offline playlist and folder scoring, personal play imports, and dated worldwide totals | Refresh the membership and folder captures. Import a current Extended Streaming History ZIP and available service totals. Check field coverage on a small real sample |
 | Browser preview recovery | IndexedDB checkpoints, resume/stop, counters, and visible fallback implemented in the separate migrator | When a repair is needed, measure an authorized read-only preview with retained coverage and progress |
-| Query performance | Benchmarked indexed lookup, streaming search, projected set queries, and per-source comparisons | Measure browser memory and larger historical reports |
+| Query performance | Benchmarked indexed lookup, slimmer SQL queries, and streamed HTML with one-snapshot parsing | Measure import and heavier historical reports on larger datasets |
 | Catalog discovery bridge | Deferred behind useful catalog coverage and a manual repair trial | Measured value, then versioned evidence export/import, account validation, and fresh discovery |
 | Recording resolver and rich library intelligence | Planned extensions | Reviewed identities and permitted metadata with provenance; no silent provider calls during ordinary queries |
 

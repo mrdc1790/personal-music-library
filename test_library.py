@@ -32,15 +32,28 @@ class CatalogTests(unittest.TestCase):
         catalog = self.folder / '__DATA__ & catalog.sqlite'
         output = self.folder / 'view.html'
         label = '__PATH__ <Sample & title>'
+        self.before['occurrences'][0]['title'] = '</script><p>Untrusted song title</p> __PLACEMENTS__'
         with closing(lib.connect(catalog, write=True)) as db:
             lib.import_snapshot(db, self.before, label)
 
         html = view_catalog.create_view(catalog, output).read_text(encoding='utf-8')
         payload = re.search(r'<script type="application/json" id="data">(.*?)</script>', html)
         self.assertEqual(json.loads(payload.group(1))[0]['label'], label)
+        self.assertNotIn('items', json.loads(payload.group(1))[0])
+        placements = re.search(r'<script type="application/json" id="placements-1">(.*?)</script>', html)
+        self.assertIn(self.before['occurrences'][0]['title'], {row['title'] for row in json.loads(placements.group(1))})
+        self.assertNotIn('<p>Untrusted song title</p>', html)
         self.assertIn(escape(str(catalog.resolve())), html)
         self.assertIn('<button id="clear-filters" type="button">Clear all filters</button>', html)
         self.assertIn('<summary>Compare playlists and collections</summary>', html)
+
+    def test_view_keeps_existing_output_if_streaming_fails(self):
+        output = self.folder / 'view.html'
+        output.write_text('Previously generated view', encoding='utf-8')
+        with patch('view_catalog.write_placements', side_effect=OSError('Render interrupted')):
+            with self.assertRaisesRegex(OSError, 'Render interrupted'):
+                view_catalog.create_view(self.folder / 'catalog.sqlite', output)
+        self.assertEqual(output.read_text(encoding='utf-8'), 'Previously generated view')
 
     def test_view_reports_missing_catalog_without_creating_it(self):
         catalog = self.folder / 'missing.sqlite'
@@ -164,6 +177,7 @@ class CatalogTests(unittest.TestCase):
         page = view_catalog.create_view(catalog, output, snapshot=self.a).read_text(encoding='utf-8')
         payload = re.search(r'<script type="application/json" id="data">(.*?)</script>', page)
         self.assertEqual([snapshot['id'] for snapshot in json.loads(payload.group(1))], [self.a])
+        self.assertEqual(re.findall(r'id="placements-(\d+)"', page), [str(self.a)])
 
     def test_logical_collection_keeps_order_duplicates_renames_and_coverage(self):
         logical_playlists.save(self.db, 'split', 'Split playlist', ['Festival', 'Chill'], active='Chill')

@@ -10,6 +10,7 @@ import tracemalloc
 
 import library
 import song_stats
+import view_catalog
 
 
 def snapshot(identities, repeats, later):
@@ -49,7 +50,7 @@ def measure(operation, trace):
     return result, dict(seconds=round(seconds, 4), python_peak_mib=peak)
 
 
-def run(identities, repeats, trace):
+def run(identities, repeats, trace, explorer=False):
     output = dict(identities=identities, placements_per_snapshot=identities + repeats, snapshots=2)
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / 'benchmark.sqlite'
@@ -78,6 +79,11 @@ def run(identities, repeats, trace):
                     assert result is not None
                 del result
         output['sqlite_file_mib'] = round(path.stat().st_size / (1024 * 1024), 2)
+        if explorer:
+            for name, selection in [('whole_explorer', None), ('single_snapshot_explorer', after)]:
+                html, measurement = measure(
+                    lambda: view_catalog.create_view(path, path.with_name(name + '.html'), snapshot=selection), trace)
+                output[name] = dict(measurement, html_mib=round(html.stat().st_size / (1024 * 1024), 2))
     return output
 
 
@@ -86,10 +92,11 @@ def main():
     parser.add_argument('--identities', type=int, default=100_000)
     parser.add_argument('--repeats', type=int, default=90_000, help='Repeated placements per snapshot (at least 10001)')
     parser.add_argument('--trace-memory', action='store_true', help='Measure Python allocation peaks and instrumented time')
+    parser.add_argument('--explorer', action='store_true', help='Also benchmark whole-history and single-snapshot HTML generation')
     args = parser.parse_args()
     if args.identities < 2 or args.repeats < 10001:
         parser.error('Use at least two identities and 10001 repeated placements.')
-    print(json.dumps(run(args.identities, args.repeats, args.trace_memory), indent=2))
+    print(json.dumps(run(args.identities, args.repeats, args.trace_memory, args.explorer), indent=2))
 
 
 if __name__ == '__main__':
