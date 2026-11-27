@@ -90,6 +90,62 @@ The union contains Moonrise, Harbor, and the local track Warehouse Edit.
 The difference contains just Warehouse Edit. The catalog uses the local URI
 as its identity and preserves the playlist positions in the snapshot.
 
+### Group two playlists and reuse a recipe
+
+```powershell
+python library.py --db data/example.sqlite save-collection demo-volumes 'Demo volumes' Festival Chill --active Chill
+python library.py --db data/example.sqlite collections --snapshot 1
+python playlist_recipe.py save data/demo-recipe.json 'Outside Festival' difference collection:demo-volumes Festival
+python playlist_recipe.py --db data/example.sqlite preview data/demo-recipe.json data/demo-result.json --snapshot 1
+python view_catalog.py data/example.sqlite
+```
+
+The collection lists Festival first and Chill second. It has five placements
+and three distinct identities. The recipe returns Harbor. In the explorer,
+choose snapshot 1, open **Compare playlists and collections**, and load
+`data/demo-recipe.json`. Preview returns the same result. Click Harbor to see
+its placements, including Liked Songs. For another run, choose a new result
+filename. The CLI requires complete coverage of every selected member.
+
+### Rate a song and verify it after reopening
+
+In the same explorer, search for Moonrise and open its song details. Set **Your
+rating** to **5/5** and filter on rating **5**. Snapshot 1 shows four matching
+placements and snapshot 2 shows three. Download the changes before closing.
+
+```powershell
+python library.py --db data/example.sqlite import-ratings "$env:USERPROFILE\Downloads\catalog-rating-changes.json"
+python view_catalog.py data/example.sqlite
+```
+
+Use the actual downloaded filename if the browser added a suffix. The saved
+5/5 rating follows the identity across both snapshots. Select **Unrated** in
+the song details and download and apply a new change file to clear it.
+
+### Review greyed-out tracks in a saved playlist
+
+This example uses a playlist already exported in a resumable audit. The JSON
+examples above exercise the catalog commands. Use the audit folder itself for
+the comparison launcher.
+
+```powershell
+python preview_audit.py --run 'C:\private\saved-audit' --playlist SAVED_PLAYLIST_ID --output 'C:\private\availability-preview.html' --open
+```
+
+1. Select the playlist in **Playlist A** and choose **Browse A**.
+2. Set **Availability** to **Greyed out or restricted**. The result count shows
+   both distinct rows and matching placements. A song with one unavailable
+   copy and one playable copy appears once with one matching placement.
+3. Open the song to see each saved position and its own availability label.
+   Try **Unknown** for missing playability evidence or **Local files** for local
+   references. **Clear all filters** resets availability and search while
+   keeping the selected playlist and operation.
+
+For separate workflows, see the [release comparison](RECORDING_CANDIDATES.md#compare-two-saved-releases),
+[followed-artist report](OPERATING_GUIDE.md#followed-artist-history),
+[MusicBrainz pass](METADATA.md#musicbrainz-recording-genres), and
+[owned-audio draft](OWNED_AUDIO_PROJECTION.md) walkthroughs.
+
 ### What changed?
 
 ```powershell

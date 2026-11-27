@@ -28,6 +28,10 @@ recording joins, and a view of changes across snapshots remain follow-ons.
 
 ## Current priority
 
+Saved playlist comparisons can now filter by per-placement availability and
+show the evidence for each duplicate. Fresh capture and device playback checks
+remain separate milestones. [Availability walkthrough](EXAMPLES.md#review-greyed-out-tracks-in-a-saved-playlist)
+
 The catalog supports offline checkpoint export, historical capacity reports,
 targeted captures, logical playlist volumes, and saved set recipes. The next
 milestones are a real volume pilot, wider source coverage, and measurements of

@@ -1,5 +1,15 @@
 # Work status
 
+## November 27, 2026 — availability in saved comparisons
+
+Filter a saved comparison for greyed-out or restricted placements, unknown
+availability, or local references. Grouped song rows retain each position and
+its own evidence. The synthetic fixture covers duplicate positions with
+different availability states. The [worked examples](EXAMPLES.md) cover
+availability review, logical playlists, recipe reuse, and rating round trips.
+All 124 offline tests passed. An offline Chrome fixture verified the
+availability filter, both duplicate positions, and reset behavior.
+
 ## November 27, 2026 — large saved explorer views
 
 The catalog streams HTML placements to disk and loads one snapshot's

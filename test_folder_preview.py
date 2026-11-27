@@ -85,6 +85,20 @@ class PreviewTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_preview_keeps_availability_per_placement(self):
+        with closing(sqlite3.connect(self.path)) as db, db:
+            raw = db.execute('SELECT data FROM occurrences WHERE source=? AND position=0', (P,)).fetchone()[0]
+            row = json.loads(raw)
+            row['is_playable'] = False
+            row['raw'] = {'item': {'restrictions': {'reason': 'market'}}}
+            db.execute('UPDATE occurrences SET data=? WHERE source=? AND position=0', (json.dumps(row), P))
+        data = preview_audit.load_trial(self.path)
+        self.assertEqual([row['availability'] for row in data['items']], ['unavailable', 'unknown'])
+        self.assertEqual(data['items'][0]['key'], data['items'][1]['key'])
+        page = preview_audit.render(data, self.path.parent / 'availability.html').read_text(encoding='utf-8')
+        self.assertIn('Greyed out or restricted', page)
+        self.assertIn('scopedPlacements(song).some(matchesAvailability)', page)
+
     def test_catalog_placements_preserve_duplicates_and_partial_source_evidence(self):
         data = preview_audit.load_trial(self.path)
         key = data['items'][0]['key']

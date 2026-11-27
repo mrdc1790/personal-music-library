@@ -42,6 +42,35 @@ def similar_duration(left, right):
     return left is None or right is None or abs(left - right) <= 2000
 
 
+def track_evidence(item):
+    uri = item.get("returned_uri") or ""
+    if item.get("is_local") or uri.startswith("spotify:local:"):
+        return "local", None
+    raw = item.get("raw") or {}
+    track = (raw.get("item") if "item" in raw else raw.get("track")) or {}
+    if track.get("type") not in (None, "track") or (uri and not uri.startswith("spotify:track:")):
+        return "other", None
+    restrictions = track.get("restrictions") or {}
+    return "track", restrictions.get("reason") or ("unspecified" if restrictions else None)
+
+
+def placement_status(item):
+    kind, restriction = track_evidence(item)
+    if kind != "track":
+        return kind
+    if item.get("missing"):
+        return "unknown"
+    playable = item.get("is_playable")
+    if restriction and (restriction != "market" or playable == 1):
+        return "restricted"
+    if playable == 0 or restriction == "market":
+        return "unavailable"
+    if playable == 1:
+        original, returned = item.get("original_id"), item.get("returned_id")
+        return "relinked" if original and returned and original != returned else "playable"
+    return "unknown"
+
+
 def report(db, sid, inventory=None):
     files, local_coverage = local_files(inventory)
     snapshot = dict(db.execute(
@@ -55,18 +84,14 @@ def report(db, sid, inventory=None):
     for row in rows:
         source = sources[row["source"]]
         source["observed"] += 1
-        uri = row["returned_uri"] or ""
-        if row["is_local"] or uri.startswith("spotify:local:"):
+        item = json.loads(row["raw_json"])
+        kind, restriction = track_evidence(item)
+        if kind == "local":
             source["local"] += 1
             continue
-        item = json.loads(row["raw_json"])
-        raw = item.get("raw") or {}
-        track = (raw.get("item") if "item" in raw else raw.get("track")) or {}
-        if track.get("type") not in (None, "track") or (uri and not uri.startswith("spotify:track:")):
+        if kind == "other":
             source["non_track"] += 1
             continue
-        restrictions = track.get("restrictions") or {}
-        restriction = restrictions.get("reason") or ("unspecified" if restrictions else None)
         returned, original = row["returned_id"], row["original_id"]
         relinked = original and returned and original != returned
         playable = row["playable"] if row["playable"] in (0, 1) else None

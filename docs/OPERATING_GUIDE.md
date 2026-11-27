@@ -297,6 +297,12 @@ lengths at the end. Trial playlists sorts by the number of distinct playlists in
 the preview that contain the song, including playlists outside the current A/B
 selection.
 
+To see greyed-out tracks in one captured playlist, select it as **Playlist A**,
+choose **Browse A**, and set **Availability** to **Greyed out or restricted**.
+The preview uses the selected playlist's saved evidence and groups duplicates
+while preserving their positions. Use **Unknown** for missing Spotify evidence.
+Local file playback depends on the device, so local references have their own filter.
+
 Use the funnel beside any header to sort in either direction or filter that
 column. **Value** lets you search the available values and choose which to keep.
 To keep only a few, uncheck **Select all matching values** with an empty search,
@@ -308,9 +314,9 @@ rounded seconds. Use **Value** to select unknown lengths. Choose **Apply** to sa
 filter, **Cancel** to discard edits, or **Clear** to remove the column's filter.
 Active funnels are highlighted. Column filters combine with each other, the
 playlist operation, and the main search before pagination. **Clear all filters**
-clears the search and every column filter, then returns to page one with the
-same playlists, operation, and sort order. Regenerate older HTML from the saved
-run with the command above to get the new controls offline.
+clears the search, availability selection, and every column filter. It returns
+to page one with the same playlists, operation, and sort order. Regenerate
+older HTML from the saved run to get the new controls. [Worked example](EXAMPLES.md#review-greyed-out-tracks-in-a-saved-playlist)
 
 Click a song to see metadata and each **Date added**. Release dates use the
 provider's available precision. Use `--inventory-db` or `--inventory` to attach

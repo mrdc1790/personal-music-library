@@ -8,6 +8,7 @@ from pathlib import Path
 import sqlite3
 import webbrowser
 
+import availability
 import folder_tree
 import genre_enrichment
 import library
@@ -73,7 +74,7 @@ def load_trial(database, selected=None, max_playlists=8, max_rows=10000, hierarc
                 item = dict(source=k, position=position + 1, key=identity, basis=basis,
                     title=row.get('title') or 'Unknown', artists=', '.join(row.get('artists') or []),
                     duration_ms=row.get('duration_ms'), local=bool(row.get('is_local')), missing=bool(row.get('missing')),
-                    **track_metadata.card(row))
+                    availability=availability.placement_status(row), **track_metadata.card(row))
                 if genre_cache is not None:
                     item['recording_genre'] = recording_genre(genre_enrichment.reference(row))
                 if files is not None and item['local']:
@@ -166,6 +167,7 @@ dialog label{margin-top:10px;min-width:0}dialog label:has(input[type="checkbox"]
 <div id="coverage" class="banner"></div><div class="controls">
 <label>Playlist A<select id="a"></select></label><label>Operation<select id="op"><option value="single">Browse A</option><option value="intersection">In both A and B</option><option value="difference">In A, absent from B</option><option value="reverse-difference">In B, absent from A</option><option value="union">In either A or B</option></select></label>
 <label>Playlist B<select id="b"></select></label><label>Search song, artist, album or ID<input id="search" type="search"></label>
+<label>Availability<select id="availability"><option value="all">All placements</option><option value="greyed">Greyed out or restricted</option><option value="unknown">Unknown</option><option value="local">Local files</option></select></label>
 <button id="clear-filters" type="button">Clear all filters</button></div>
 <div class="grid"><section><h2>Playlist folders</h2><div id="folder-note" class="muted"></div><div id="tree"></div><h2>Overlap with A</h2><div id="overlap"></div></section>
 <section id="details"><h2>Where is this song?</h2><p>Click a song below to see its placements across the trial playlists.</p><small>Identity means the same observed Spotify ID or local URI. Different releases are not automatically merged.</small></section></div>
@@ -190,7 +192,15 @@ const names=new Map(d.playlists.map(p=>[p.id,p.name])),songs=new Map(),sets=new 
 for(const r of d.items){if(!songs.has(r.key))songs.set(r.key,{...r,placements:[]});songs.get(r.key).placements.push(r);if(r.basis!=='unidentified')sets.get(r.source).add(r.key);}
 function option(text,value){const o=document.createElement('option');o.textContent=text;o.value=value;return o;}
 for(const p of d.playlists){for(const id of ['a','b'])el(id).append(option(`${p.name} (${p.count.toLocaleString()} placements)`,p.id));}if(d.playlists.length>1)el('b').selectedIndex=1;
+if (names.has(d.initial_playlist)) {
+    el('a').value = d.initial_playlist;
+    const other = d.playlists.find(p => p.id !== d.initial_playlist);
+    if (other) el('b').value = other.id;
+}
+if (d.initial_availability === 'greyed') el('availability').value = 'greyed';
 el('coverage').textContent=`REAL SAVED DATA — small trial: ${d.playlists.length} playlists, ${d.items.length.toLocaleString()} placements. The saved run has ${d.completed_sources}/${d.known_sources} known sources complete. This is a subset, not your entire library. No new Spotify requests. Liked Songs ${names.has('liked')?'is included.':'is NOT included.'}`;
+if (d.capture_summary) el('coverage').textContent = d.capture_summary;
+el('coverage').append(' Availability reflects the saved captures. Local file playback on this device is unknown.');
 el('foot').textContent=`Saved audit state: ${d.run_status} at ${d.saved_at}. This label is historical; it does not prove a process is running. Source: ${d.run}. Local entries are Spotify metadata references, not an inventory or backup of your audio files. Missing/unidentified items are excluded from set operations. Data stays in this file; no uploads or external scripts.`;
 function addText(box, tag, text) {
     const node = document.createElement(tag);
@@ -327,7 +337,8 @@ function showSong(song) {
     if (song.local) addText(box, 'small', 'Audio file tags appear separately under Local file locations when inventory evidence is supplied.');
     addText(box, 'h3', 'Comparison placements');
     for (const r of song.placements) {
-        const evidence = [names.get(r.source) + ' · position ' + r.position];
+        const evidence = [names.get(r.source) + ' · position ' + r.position,
+            availabilityLabels[r.availability ?? 'unknown']];
         if (r.added_at) evidence.push('Added ' + r.added_at);
         if (r.album) evidence.push(r.album);
         if (r.release_date) evidence.push('Released ' + r.release_date);
@@ -397,9 +408,28 @@ for (const song of songs.values()) {
     }
 }
 
+const availabilityLabels = {unavailable: 'Unavailable on Spotify', restricted: 'Restricted',
+    relinked: 'Playable relink', playable: 'Playable', unknown: 'Unknown', local: 'Local file', other: 'Other item'};
+
+function scopedPlacements(song) {
+    const a = el('a').value, b = el('b').value, op = el('op').value;
+    if (op === 'reverse-difference') return song.placements.filter(row => row.source === b);
+    if (op === 'single' || op === 'difference') return song.placements.filter(row => row.source === a);
+    return song.placements.filter(row => row.source === a || row.source === b);
+}
+
+function matchesAvailability(row) {
+    const mode = el('availability').value, status = row.availability ?? 'unknown';
+    if (mode === 'all') return true;
+    if (mode === 'greyed') return status === 'unavailable' || status === 'restricted';
+    return status === mode;
+}
+
 const columns = [
     {label: 'Song', value: song => song.title},
     {label: 'Artist', value: song => song.artists},
+    {label: 'Availability', value: song => [...new Set(scopedPlacements(song)
+        .filter(matchesAvailability).map(row => availabilityLabels[row.availability ?? 'unknown']))].join(' · ')},
     {label: 'Length', value: song => durationLabel(song.duration_ms), number: song => song.duration_ms,
         parse: durationSeconds, conditionValue: song => song.duration_ms == null ? null : Math.round(song.duration_ms / 1000),
         inputLabel: 'Length (m:ss or whole seconds)'},
@@ -481,6 +511,7 @@ function baseResults() {
     const query = el('search').value.toLocaleLowerCase();
     return [...songs.values()].filter(song =>
         matchesOperation(op, song, a, sets.get(a), sets.get(b)) &&
+        scopedPlacements(song).some(matchesAvailability) &&
         [song.title, song.artists, song.album, song.album_artist, song.isrc, song.key]
             .join(' ').toLocaleLowerCase().includes(query));
 }
@@ -596,6 +627,7 @@ el('clear-filters').onclick = () => {
     for (const column of filters.keys()) column.filter.setAttribute('aria-pressed', 'false');
     filters.clear();
     el('search').value = '';
+    el('availability').value = 'all';
     resetResults();
 };
 el('filter-cancel').onclick = () => el('column-filter').close();
@@ -657,7 +689,8 @@ function render() {
         for (const column of columns.slice(1)) addText(row, 'td', column.value(song));
         el('rows').append(row);
     }
-    el('status').textContent = `${found.length.toLocaleString()} observed identities · page ${page + 1} · duplicates grouped; click a song for every position`;
+    const placements = found.reduce((count, song) => count + scopedPlacements(song).filter(matchesAvailability).length, 0);
+    el('status').textContent = `${found.length.toLocaleString()} observed identities · ${placements.toLocaleString()} matching placements · page ${page + 1} · duplicates grouped; click a song for every position`;
     el('prev').disabled = page === 0;
     el('next').disabled = (page + 1) * 100 >= found.length;
     const a = el('a').value;
@@ -681,7 +714,7 @@ function render() {
     }
 }
 if(!d.hierarchy){el('folder-note').textContent='Folder hierarchy NOT captured yet. A flat playlist list does not preserve folders.';}else{el('folder-note').textContent=`Imported ${d.hierarchy.imported_at}. Cached tree; upstream capture time/completeness unverified. Folder capture is separate from track coverage.`;const parents=new Map([[null,el('tree')]]);for(const n of d.hierarchy.nodes){const parent=parents.get(n.parent_id);if(n.kind==='folder'){const det=document.createElement('details'),sum=document.createElement('summary');sum.textContent=n.name||'(unnamed folder)';det.append(sum);parent.append(det);parents.set(n.node_id,det);}else{const row=document.createElement('p');if(names.has(n.provider_id)){const btn=document.createElement('button');btn.className='link';btn.textContent=names.get(n.provider_id);btn.onclick=()=>{el('a').value=n.provider_id;el('op').value='single';page=0;render();};row.append(btn);}else row.textContent=(d.playlist_names[n.provider_id]||n.provider_id)+' — outside trial';parent.append(row);}}}
-for(const id of ['a','b','op','search'])el(id).addEventListener(id==='search'?'input':'change',()=>{page=0;render();});el('prev').onclick=()=>{page--;render();};el('next').onclick=()=>{page++;render();};render();
+for(const id of ['a','b','op','search','availability'])el(id).addEventListener(id==='search'?'input':'change',resetResults);el('prev').onclick=()=>{page--;render();};el('next').onclick=()=>{page++;render();};render();
 </script></html>'''
 
 
